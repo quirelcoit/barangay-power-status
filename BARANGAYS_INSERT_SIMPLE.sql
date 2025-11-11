@@ -1,12 +1,14 @@
--- Complete Quirino Province Barangays (132 total)
--- As of 2020 Census
+-- SIMPLIFIED BARANGAY INSERT (132 Quirino Barangays)
+-- Run this in Supabase SQL Editor if the main script fails
 
--- Delete old sample data
+-- Step 1: Clear existing data
 DELETE FROM public.barangays;
 
--- Insert all Quirino barangays
+-- Step 2: Disable RLS temporarily (if you have admin access)
+ALTER TABLE public.barangays DISABLE ROW LEVEL SECURITY;
+
+-- Step 3: Insert all 132 barangays
 INSERT INTO public.barangays (name, municipality, island_group, is_active) VALUES
--- Aglipay (25 barangays)
 ('Alicia', 'Aglipay', 'Luzon', true),
 ('Cabugao', 'Aglipay', 'Luzon', true),
 ('Dagupan', 'Aglipay', 'Luzon', true),
@@ -32,8 +34,6 @@ INSERT INTO public.barangays (name, municipality, island_group, is_active) VALUE
 ('Villa Pagaduan', 'Aglipay', 'Luzon', true),
 ('Villa Santiago', 'Aglipay', 'Luzon', true),
 ('Villa Ventura', 'Aglipay', 'Luzon', true),
-
--- Cabarroguis (17 barangays)
 ('Banuar', 'Cabarroguis', 'Luzon', true),
 ('Burgos', 'Cabarroguis', 'Luzon', true),
 ('Calaocan', 'Cabarroguis', 'Luzon', true),
@@ -51,8 +51,6 @@ INSERT INTO public.barangays (name, municipality, island_group, is_active) VALUE
 ('Villamor', 'Cabarroguis', 'Luzon', true),
 ('Villarose', 'Cabarroguis', 'Luzon', true),
 ('Zamora', 'Cabarroguis', 'Luzon', true),
-
--- Diffun (34 barangays)
 ('Aklan Village', 'Diffun', 'Luzon', true),
 ('Andres Bonifacio', 'Diffun', 'Luzon', true),
 ('Aurora East', 'Diffun', 'Luzon', true),
@@ -86,8 +84,6 @@ INSERT INTO public.barangays (name, municipality, island_group, is_active) VALUE
 ('San Isidro', 'Diffun', 'Luzon', true),
 ('San Pascual', 'Diffun', 'Luzon', true),
 ('Villa Pascua', 'Diffun', 'Luzon', true),
-
--- Maddela (32 barangays)
 ('Abbag', 'Maddela', 'Luzon', true),
 ('Balligui', 'Maddela', 'Luzon', true),
 ('Buenavista', 'Maddela', 'Luzon', true),
@@ -120,8 +116,6 @@ INSERT INTO public.barangays (name, municipality, island_group, is_active) VALUE
 ('Villa Hermosa Sur', 'Maddela', 'Luzon', true),
 ('Villa Jose V Ylanan', 'Maddela', 'Luzon', true),
 ('Ysmael', 'Maddela', 'Luzon', true),
-
--- Nagtipunan (16 barangays)
 ('Anak', 'Nagtipunan', 'Luzon', true),
 ('Asaklat', 'Nagtipunan', 'Luzon', true),
 ('Dipantan', 'Nagtipunan', 'Luzon', true),
@@ -138,8 +132,6 @@ INSERT INTO public.barangays (name, municipality, island_group, is_active) VALUE
 ('San Ramos', 'Nagtipunan', 'Luzon', true),
 ('Sangbay', 'Nagtipunan', 'Luzon', true),
 ('Wasid', 'Nagtipunan', 'Luzon', true),
-
--- Saguday (9 barangays)
 ('Cardenas', 'Saguday', 'Luzon', true),
 ('Dibul', 'Saguday', 'Luzon', true),
 ('Gamis', 'Saguday', 'Luzon', true),
@@ -148,10 +140,10 @@ INSERT INTO public.barangays (name, municipality, island_group, is_active) VALUE
 ('Rizal', 'Saguday', 'Luzon', true),
 ('Salvacion', 'Saguday', 'Luzon', true),
 ('Santo Tomas', 'Saguday', 'Luzon', true),
-('Tres Reyes', 'Saguday', 'Luzon', true),
-('Tuao', 'Saguday', 'Luzon', true);
+('Tres Reyes', 'Saguday', 'Luzon', true);
 
--- Verify insert
-SELECT COUNT(*) as total_barangays, 
-       COUNT(DISTINCT municipality) as municipalities
-FROM public.barangays;
+-- Step 4: Verify success
+SELECT COUNT(*) as total_barangays FROM public.barangays;
+
+-- Step 5: Re-enable RLS
+ALTER TABLE public.barangays ENABLE ROW LEVEL SECURITY;

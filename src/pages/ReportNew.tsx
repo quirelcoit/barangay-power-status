@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import {
   Card,
-  BarangayPicker,
+  MunicipalityBarangayPicker,
   GPSChip,
   PhotoCapture,
   useToast,
@@ -42,7 +41,6 @@ const CATEGORIES = [
 ];
 
 export function ReportNew() {
-  const navigate = useNavigate();
   const { addToast } = useToast();
   const { isOnline } = useOnlineQueue();
 
@@ -161,7 +159,17 @@ export function ReportNew() {
         );
       }
 
-      setTimeout(() => navigate("/"), 1500);
+      // Show success message but DON'T redirect - let user submit another report
+      addToast("Report submitted successfully!", "success");
+      
+      // Reset form for next report
+      setCategory("");
+      setBarangayId("");
+      setCustomLocation(undefined);
+      setDescription("");
+      setContactHint("");
+      setPhotoFile(null);
+      setLocation(null);
     } catch (err) {
       console.error("Failed to submit report:", err);
       addToast(
@@ -241,9 +249,10 @@ export function ReportNew() {
               </div>
             </div>
 
-            {/* Barangay */}
-            <BarangayPicker
+            {/* Barangay - Municipality & Barangay Two-tier */}
+            <MunicipalityBarangayPicker
               value={barangayId}
+              customLocation={customLocation}
               onChange={handleBarangayChange}
             />
 
