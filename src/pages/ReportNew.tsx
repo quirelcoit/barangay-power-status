@@ -322,7 +322,13 @@ export function ReportNew() {
             {/* Submit */}
             <button
               type="submit"
-              disabled={loading || !category || !barangayId || !location}
+              disabled={
+                loading ||
+                !category ||
+                !barangayId ||
+                !location ||
+                (barangayId.startsWith("__CUSTOM__:") && !customLocation)
+              }
               className="w-full px-4 py-3 bg-power-600 text-white rounded-lg font-medium hover:bg-power-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Submitting..." : "Submit Report"}
