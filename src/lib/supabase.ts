@@ -3,13 +3,18 @@ import { createClient } from "@supabase/supabase-js";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Default to placeholder if missing to prevent app crash
+const url = supabaseUrl || "https://placeholder.supabase.co";
+const key = supabaseAnonKey || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder";
+
+// Show warning in console if environment variables are missing
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    "Missing Supabase environment variables. Please create a .env file with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY"
+  console.warn(
+    "⚠️ Missing Supabase environment variables. The app will load but features requiring Supabase will not work. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment."
   );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(url, key, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
