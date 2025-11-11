@@ -7,19 +7,4 @@ export default defineConfig({
   server: {
     middlewareMode: false,
   },
-  build: {
-    rollupOptions: {
-      input: {
-        main: "index.html",
-        sw: "src/worker/service-worker.ts",
-      },
-      output: {
-        entryFileNames: (chunkInfo) => {
-          return chunkInfo.name === "sw"
-            ? "service-worker.js"
-            : "[name]-[hash].js";
-        },
-      },
-    },
-  },
 });
