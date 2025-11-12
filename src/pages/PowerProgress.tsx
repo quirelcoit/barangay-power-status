@@ -145,7 +145,8 @@ export function PowerProgress() {
             (sum, m) => sum + m.no_power_barangays,
             0
           );
-          const overallPercent = (energizedBgy / totalBgy) * 100;
+          // Use exact same calculation as QUIRELCO FRANCHISE AREA row for consistency
+          const overallPercent = totalBgy > 0 ? (energizedBgy / totalBgy) * 100 : 0;
 
           return (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
@@ -162,7 +163,7 @@ export function PowerProgress() {
                 <div className="text-sm opacity-90">No Power</div>
               </div>
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-lg shadow">
-                <div className="text-2xl font-bold">{overallPercent.toFixed(1)}%</div>
+                <div className="text-2xl font-bold">{overallPercent.toFixed(2)}%</div>
                 <div className="text-sm opacity-90">Overall</div>
               </div>
             </div>

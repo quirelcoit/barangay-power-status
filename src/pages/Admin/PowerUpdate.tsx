@@ -275,8 +275,8 @@ export function PowerUpdate() {
                     const energized = updates[muni.value]?.energized || 0;
                     const percentage =
                       energized > 0
-                        ? Math.round((energized / muni.totalBarangays) * 100)
-                        : 0;
+                        ? ((energized / muni.totalBarangays) * 100).toFixed(2)
+                        : (0).toFixed(2);
 
                     return (
                       <tr
@@ -317,13 +317,13 @@ export function PowerUpdate() {
                         </td>
                         <td
                           className={`px-6 py-4 text-center font-bold text-lg ${
-                            percentage === 100
+                            parseFloat(percentage) === 100
                               ? "text-green-600 bg-green-50"
-                              : percentage >= 75
+                              : parseFloat(percentage) >= 75
                               ? "text-lime-600"
-                              : percentage >= 50
+                              : parseFloat(percentage) >= 50
                               ? "text-yellow-600"
-                              : percentage > 0
+                              : parseFloat(percentage) > 0
                               ? "text-orange-600"
                               : "text-gray-400"
                           }`}
@@ -333,6 +333,52 @@ export function PowerUpdate() {
                       </tr>
                     );
                   })}
+                  {/* Total Row */}
+                  <tr className="bg-gray-200 border-t-2 border-gray-300 font-bold">
+                    <td className="px-6 py-4 text-gray-900">TOTAL</td>
+                    <td className="px-6 py-4 text-center text-gray-900">
+                      {MUNICIPALITIES.reduce((sum, m) => sum + m.totalBarangays, 0)}
+                    </td>
+                    <td className="px-6 py-4 text-center text-gray-900">
+                      {MUNICIPALITIES.reduce(
+                        (sum, m) => sum + (updates[m.value]?.energized || 0),
+                        0
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-center font-bold text-lg">
+                      {(() => {
+                        const totalBgy = MUNICIPALITIES.reduce(
+                          (sum, m) => sum + m.totalBarangays,
+                          0
+                        );
+                        const energizedBgy = MUNICIPALITIES.reduce(
+                          (sum, m) => sum + (updates[m.value]?.energized || 0),
+                          0
+                        );
+                        const totalPercent =
+                          totalBgy > 0
+                            ? ((energizedBgy / totalBgy) * 100).toFixed(2)
+                            : (0).toFixed(2);
+                        return (
+                          <span
+                            className={
+                              parseFloat(totalPercent) === 100
+                                ? "text-green-600 bg-green-50 px-2 py-1 rounded"
+                                : parseFloat(totalPercent) >= 75
+                                ? "text-lime-600"
+                                : parseFloat(totalPercent) >= 50
+                                ? "text-yellow-600"
+                                : parseFloat(totalPercent) > 0
+                                ? "text-orange-600"
+                                : "text-gray-400"
+                            }
+                          >
+                            {totalPercent}%
+                          </span>
+                        );
+                      })()}
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
