@@ -280,7 +280,7 @@ export function ReportsMap() {
         ) : (
           <MapContainer
             center={[12.5, 121.5] as L.LatLngExpression}
-            zoom={8}
+            zoom={9}
             style={{ width: "100%", height: "100%" }}
           >
             <TileLayer
