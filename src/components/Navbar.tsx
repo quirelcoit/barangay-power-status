@@ -1,7 +1,19 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Power } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
 
 export function Navbar() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleAdminClick = () => {
+    if (user) {
+      navigate("/admin/dashboard");
+    } else {
+      navigate("/admin/login");
+    }
+  };
+
   return (
     <nav className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -23,12 +35,16 @@ export function Navbar() {
           >
             📍 View Map
           </Link>
-          <Link
-            to="/admin/login"
-            className="px-3 py-2 bg-gray-200 text-gray-800 rounded-lg text-sm hover:bg-gray-300 transition-colors"
+          <button
+            onClick={handleAdminClick}
+            className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+              user
+                ? "bg-green-600 text-white hover:bg-green-700"
+                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+            }`}
           >
-            Admin
-          </Link>
+            {user ? "✓ Admin" : "Admin"}
+          </button>
         </div>
       </div>
     </nav>
