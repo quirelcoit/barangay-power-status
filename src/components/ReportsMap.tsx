@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { supabase } from "../lib/supabase";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Trash2 } from "lucide-react";
 
 interface Report {
   id: string;
@@ -65,15 +65,60 @@ export function ReportsMap() {
   const [barangays, setBarangays] = useState<Map<string, Barangay>>(new Map());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     byCategory: {} as Record<string, number>,
   });
 
   useEffect(() => {
+    checkAdmin();
     loadReports();
     loadBarangays();
   }, []);
+
+  const checkAdmin = async () => {
+    const { data } = await supabase.auth.getSession();
+    setIsAdmin(!!data?.session?.user);
+  };
+
+  const deleteReport = async (reportId: string) => {
+    if (!isAdmin) {
+      alert("Only admins can delete reports");
+      return;
+    }
+
+    if (!window.confirm("Are you sure you want to delete this report?")) {
+      return;
+    }
+
+    try {
+      const { error: err } = await supabase
+        .from("reports")
+        .delete()
+        .eq("id", reportId);
+
+      if (err) throw err;
+
+      // Remove from local state
+      setReports(reports.filter((r) => r.id !== reportId));
+
+      // Recalculate stats
+      const newReports = reports.filter((r) => r.id !== reportId);
+      const byCategory: Record<string, number> = {};
+      newReports.forEach((r) => {
+        byCategory[r.category] = (byCategory[r.category] || 0) + 1;
+      });
+      setStats({
+        total: newReports.length,
+        byCategory,
+      });
+
+      alert("Report deleted successfully");
+    } catch (err) {
+      alert(`Error deleting report: ${err instanceof Error ? err.message : "Unknown error"}`);
+    }
+  };
 
   const loadBarangays = async () => {
     const { data, error: err } = await supabase
@@ -201,10 +246,15 @@ export function ReportsMap() {
           </div>
 
           {/* Total Reports */}
-          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
             <p className="text-sm font-semibold text-blue-900">
-              ✅ Total: {stats.total} reports collected from Quirino Province
+              ✅ Total: {stats.total} reports collected from Quirino & San Agustin Province
             </p>
+            {isAdmin && (
+              <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">
+                ADMIN MODE
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -267,9 +317,20 @@ export function ReportsMap() {
                     )}
 
                     {/* Timestamp */}
-                    <div className="text-xs text-gray-500 border-t border-gray-200 pt-2">
+                    <div className="text-xs text-gray-500 border-t border-gray-200 pt-2 mb-2">
                       <p>🕐 {new Date(report.created_at).toLocaleString()}</p>
                     </div>
+
+                    {/* Delete Button - Admin only */}
+                    {isAdmin && (
+                      <button
+                        onClick={() => deleteReport(report.id)}
+                        className="w-full mt-2 px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded hover:bg-red-100 transition-colors text-sm font-semibold flex items-center justify-center gap-2"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Delete Report
+                      </button>
+                    )}
                   </div>
                 </Popup>
               </Marker>
