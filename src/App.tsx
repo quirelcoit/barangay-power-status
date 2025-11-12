@@ -1,12 +1,15 @@
 import "./App.css";
 import { ToastProvider } from "./components";
+import { AuthProvider } from "./contexts/AuthContext";
 import { AppRoutes } from "./routes";
 
 function App() {
   return (
-    <ToastProvider>
-      <AppRoutes />
-    </ToastProvider>
+    <AuthProvider>
+      <ToastProvider>
+        <AppRoutes />
+      </ToastProvider>
+    </AuthProvider>
   );
 }
 
