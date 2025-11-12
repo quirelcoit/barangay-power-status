@@ -112,7 +112,7 @@ export function ReportNew() {
       // Validate location is within Quirino Province
       if (!isLocationInQuirinoBounds(finalLocation.lat, finalLocation.lng)) {
         addToast(
-          "❌ Your location is outside Quirino Province. Please recapture GPS or move to the province.",
+          "❌ Your location is outside the service area. Please recapture GPS or move to Quirino Province or San Agustin, Isabela.",
           "error"
         );
         setLocation(finalLocation);
@@ -352,9 +352,9 @@ export function ReportNew() {
                     <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-300 rounded-lg text-red-800 text-sm">
                       <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="font-semibold">⚠️ Location Outside Quirino Province</p>
+                        <p className="font-semibold">⚠️ Location Outside Service Area</p>
                         <p className="text-xs mt-1 mb-2">
-                          Your GPS location appears to be outside Quirino Province. This report cannot be submitted from outside the province.
+                          Your GPS location is outside our service area (Quirino Province + San Agustin, Isabela). Reports can only be submitted from within the service area.
                         </p>
                         <button
                           type="button"

@@ -130,34 +130,43 @@ export function calculateDistance(
 }
 
 /**
- * Quirino Province Boundaries (approximate)
- * Covers all municipalities in Quirino: Aglipay, Cabarroguis, Diffun, Maddela, Nagtipunan, Saguday
+ * Service Area Boundaries (approximate)
+ * Covers: 
+ * - All municipalities in Quirino: Aglipay, Cabarroguis, Diffun, Maddela, Nagtipunan, Saguday
+ * - San Agustin, Isabela (neighboring consumer area)
  */
-const QUIRINO_BOUNDS = {
-  minLat: 16.0,   // Southern boundary
-  maxLat: 17.5,   // Northern boundary
+const SERVICE_AREA_BOUNDS = {
+  minLat: 15.8,   // Southern boundary (San Agustin, Isabela)
+  maxLat: 17.5,   // Northern boundary (Quirino)
   minLng: 120.5,  // Western boundary
   maxLng: 122.0,  // Eastern boundary
 };
 
 /**
- * Check if a location is within Quirino Province bounds
+ * Check if a location is within service area (Quirino + San Agustin, Isabela)
  */
-export function isLocationInQuirinoBounds(lat: number, lng: number): boolean {
+export function isLocationInServiceArea(lat: number, lng: number): boolean {
   return (
-    lat >= QUIRINO_BOUNDS.minLat &&
-    lat <= QUIRINO_BOUNDS.maxLat &&
-    lng >= QUIRINO_BOUNDS.minLng &&
-    lng <= QUIRINO_BOUNDS.maxLng
+    lat >= SERVICE_AREA_BOUNDS.minLat &&
+    lat <= SERVICE_AREA_BOUNDS.maxLat &&
+    lng >= SERVICE_AREA_BOUNDS.minLng &&
+    lng <= SERVICE_AREA_BOUNDS.maxLng
   );
 }
 
 /**
- * Get Quirino Province center for map focusing
+ * Check if a location is within Quirino Province bounds (legacy function)
+ */
+export function isLocationInQuirinoBounds(lat: number, lng: number): boolean {
+  return isLocationInServiceArea(lat, lng);
+}
+
+/**
+ * Get service area center for map focusing
  */
 export function getQuirinoCenterLocation(): { lat: number; lng: number } {
   return {
-    lat: (QUIRINO_BOUNDS.minLat + QUIRINO_BOUNDS.maxLat) / 2,
-    lng: (QUIRINO_BOUNDS.minLng + QUIRINO_BOUNDS.maxLng) / 2,
+    lat: (SERVICE_AREA_BOUNDS.minLat + SERVICE_AREA_BOUNDS.maxLat) / 2,
+    lng: (SERVICE_AREA_BOUNDS.minLng + SERVICE_AREA_BOUNDS.maxLng) / 2,
   };
 }
