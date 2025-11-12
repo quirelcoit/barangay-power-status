@@ -1,80 +1,97 @@
 # 🔴 Critical Fix: Storage RLS Policy Issue
 
 ## Problem
+
 Photo uploads are failing with:
+
 ```
 StorageApiError: new row violates row level security policy
 ```
 
 ## Root Cause
+
 The `report-photos` storage bucket is **Private** but has **NO RLS policies** allowing public uploads.
 
 ## Solution: Add Storage RLS Policies
 
-### Step 1: Go to Supabase Dashboard
+### Method 1: Using SQL Editor (Try First)
+
 1. Open https://app.supabase.com
 2. Select your project `brgy-power-status` (dragaqmmigajbjxlmafm)
 3. Go to **SQL Editor** (left sidebar)
+4. Copy all SQL from `FIX_STORAGE_RLS.sql` and paste into editor
+5. Click **Run**
 
-### Step 2: Run the Fix Script
-Copy all the SQL from `FIX_STORAGE_RLS.sql` and paste into SQL Editor, then click "Run"
+If you get an error about `storage.policies` - that's okay, it might still have worked. Skip to verification.
 
-The script will:
-- ✅ Allow anonymous users to **upload** to `report-photos` bucket
-- ✅ Allow anonymous users to **read** from `report-photos` bucket
-- ✅ Allow admin staff to **delete** from `report-photos` bucket
+### Method 2: Verify in Dashboard UI
 
-### Step 3: Verify the Fix
-Run this query to confirm policies exist:
+1. Go to **Storage** (left sidebar)
+2. Click **report-photos** bucket
+3. Go to **Policies** tab
+4. You should see 3 policies listed:
+   - ✅ `Allow public uploads to report-photos`
+   - ✅ `Allow public reads from report-photos`
+   - ✅ `Allow staff deletes from report-photos`
 
-```sql
-SELECT policy_name, roles, operation
-FROM storage.policies
-WHERE bucket_id = 'report-photos';
-```
+If you don't see them, use **Method 3** below.
 
-You should see 3 policies:
-- `Allow public uploads to report-photos` (for INSERT)
-- `Allow public reads from report-photos` (for SELECT)
-- `Allow staff deletes from report-photos` (for DELETE)
+### Method 3: Create Policies Manually via UI (If Needed)
 
-### Step 4: Test the App
+1. Go to **Storage** → **report-photos** bucket
+2. Click **Policies** tab
+3. Click **New Policy** button
+
+#### Create Policy 1: Allow Public Uploads
+- Click "For INSERT" template
+- Name: `Allow public uploads to report-photos`
+- Roles: `anon` (check the box)
+- Filter: `bucket_id = 'report-photos'`
+- Click **Create**
+
+#### Create Policy 2: Allow Public Reads
+- Click "For SELECT" template
+- Name: `Allow public reads from report-photos`
+- Roles: `anon` (check the box)
+- Filter: `bucket_id = 'report-photos'`
+- Click **Create**
+
+#### Create Policy 3: Allow Staff Deletes (Optional)
+- Click "For DELETE" template
+- Name: `Allow staff deletes from report-photos`
+- Roles: `authenticated` (check the box)
+- Filter: `bucket_id = 'report-photos' AND EXISTS (SELECT 1 FROM public.staff_profiles WHERE uid = auth.uid())`
+- Click **Create**
+
+---
+
+## Test the Fix
+
+After creating the 3 policies:
+
 1. Go to https://barangay-power-status.vercel.app
 2. Create a new report **with uploaded photo**
-3. Check browser console - should see:
+3. Check browser console (F12) - should see:
    ```
    ✅ Photo uploaded successfully
    ✅ Photo record created in database
    ```
-4. Go to admin dashboard → **📸 Photos** button
-5. Photos should now appear! ✅
-
----
-
-## Alternative: Fix via Supabase Dashboard (If SQL doesn't work)
-
-1. Go to **Storage** in Supabase Dashboard
-2. Click **report-photos** bucket
-3. Go to **Policies** tab
-4. Click **New Policy** → **For INSERT**:
-   - Name: `Allow public uploads`
-   - Roles: `anon`
-   - Check: `bucket_id = 'report-photos'`
-   - Click **Create**
-5. Repeat for **SELECT** (read) policy
+4. Go to admin dashboard
+5. Click **📸 Photos** button
+6. Photos should now appear! ✅
 
 ---
 
 ## Why This Works
 
 **Before:**
-- Bucket: Private ❌
+- Bucket privacy: Private
 - RLS policies: None ❌
 - Result: All uploads blocked
 
 **After:**
-- Bucket: Private (doesn't matter)
+- Bucket privacy: Private (unchanged)
 - RLS policies: Allow anon INSERT/SELECT ✅
 - Result: Public can upload and view photos
 
-RLS policies at the **row level** override bucket privacy settings - they grant access even if bucket is Private.
+RLS policies override bucket privacy - they grant specific access even if bucket is Private.

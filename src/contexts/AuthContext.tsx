@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const { data, error } = await supabase.auth.getSession();
         if (error) throw error;
-        
+
         setSession(data.session);
         setUser(data.session?.user || null);
       } catch (err) {

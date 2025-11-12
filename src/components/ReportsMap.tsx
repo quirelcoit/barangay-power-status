@@ -119,7 +119,11 @@ export function ReportsMap() {
 
       alert("Report deleted successfully");
     } catch (err) {
-      alert(`Error deleting report: ${err instanceof Error ? err.message : "Unknown error"}`);
+      alert(
+        `Error deleting report: ${
+          err instanceof Error ? err.message : "Unknown error"
+        }`
+      );
     }
   };
 
@@ -148,7 +152,11 @@ export function ReportsMap() {
       if (data) {
         // Filter reports with valid coordinates
         const validReports = data.filter(
-          (r) => r.lat && r.lng && typeof r.lat === "number" && typeof r.lng === "number"
+          (r) =>
+            r.lat &&
+            r.lng &&
+            typeof r.lat === "number" &&
+            typeof r.lng === "number"
         );
         setReports(validReports);
 
@@ -176,20 +184,24 @@ export function ReportsMap() {
     }
     if (report.barangay_id) {
       const barangay = barangays.get(report.barangay_id);
-      return barangay ? `${barangay.name}, ${barangay.municipality}` : "Unknown Location";
+      return barangay
+        ? `${barangay.name}, ${barangay.municipality}`
+        : "Unknown Location";
     }
     return "Unknown Location";
   };
 
   // Filter reports by selected category
-  const filteredReports = selectedCategory === "all" 
-    ? reports 
-    : reports.filter((r) => r.category === selectedCategory);
+  const filteredReports =
+    selectedCategory === "all"
+      ? reports
+      : reports.filter((r) => r.category === selectedCategory);
 
   // Filter reports for list panel (separate from map filter)
-  const listFilteredReports = listCategoryFilter === "all"
-    ? reports
-    : reports.filter((r) => r.category === listCategoryFilter);
+  const listFilteredReports =
+    listCategoryFilter === "all"
+      ? reports
+      : reports.filter((r) => r.category === listCategoryFilter);
 
   // Calculate map center based on filtered reports or default to Quirino
   const getMapCenter = (): [number, number] => {
@@ -200,9 +212,11 @@ export function ReportsMap() {
 
     // Calculate average latitude and longitude from filtered reports
     const avgLat =
-      filteredReports.reduce((sum, r) => sum + r.lat, 0) / filteredReports.length;
+      filteredReports.reduce((sum, r) => sum + r.lat, 0) /
+      filteredReports.length;
     const avgLng =
-      filteredReports.reduce((sum, r) => sum + r.lng, 0) / filteredReports.length;
+      filteredReports.reduce((sum, r) => sum + r.lng, 0) /
+      filteredReports.length;
 
     return [avgLat, avgLng];
   };
@@ -241,8 +255,12 @@ export function ReportsMap() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-start justify-between mb-3">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">📍 Hazard Reports Map</h1>
-              <p className="text-gray-600 text-sm mt-1">See all reported power hazards on the map</p>
+              <h1 className="text-2xl font-bold text-gray-900">
+                📍 Hazard Reports Map
+              </h1>
+              <p className="text-gray-600 text-sm mt-1">
+                See all reported power hazards on the map
+              </p>
             </div>
             <div className="flex gap-2 flex-wrap">
               <button
@@ -265,7 +283,9 @@ export function ReportsMap() {
 
           {/* Legend - Clickable Category Filter */}
           <div className="mt-4 pt-4 border-t border-gray-200">
-            <p className="text-xs font-semibold text-gray-600 mb-2">Filter by Category:</p>
+            <p className="text-xs font-semibold text-gray-600 mb-2">
+              Filter by Category:
+            </p>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
               {/* All button */}
               <button
@@ -293,12 +313,22 @@ export function ReportsMap() {
                         ? "text-white border-2 border-opacity-100"
                         : "bg-gray-100 text-gray-900 border-2 border-transparent hover:bg-gray-200"
                     }`}
-                    style={isSelected ? { backgroundColor: info.color, borderColor: info.color } : {}}
+                    style={
+                      isSelected
+                        ? {
+                            backgroundColor: info.color,
+                            borderColor: info.color,
+                          }
+                        : {}
+                    }
                     title={info.label}
                   >
                     <div
                       className="w-3 h-3 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: info.color, opacity: isSelected ? 0.3 : 1 }}
+                      style={{
+                        backgroundColor: info.color,
+                        opacity: isSelected ? 0.3 : 1,
+                      }}
                     />
                     <span className="font-bold">{count}</span>
                     <span className="text-xs font-medium leading-tight">
@@ -313,7 +343,8 @@ export function ReportsMap() {
           {/* Total Reports */}
           <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
             <p className="text-sm font-semibold text-blue-900">
-              ✅ Total: {stats.total} reports collected from Quirino & San Agustin Province
+              ✅ Total: {stats.total} reports collected from Quirino & San
+              Agustin Province
             </p>
             {isAdmin && (
               <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">
@@ -332,9 +363,12 @@ export function ReportsMap() {
             <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
               <div className="text-center max-w-md mx-auto px-4">
                 <AlertCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-gray-900 mb-2">No reports yet</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  No reports yet
+                </h3>
                 <p className="text-gray-600 mb-6">
-                  Help us keep Quirino Province safe! Submit your first hazard report.
+                  Help us keep Quirino Province safe! Submit your first hazard
+                  report.
                 </p>
                 <a
                   href="/#/report"
@@ -347,7 +381,9 @@ export function ReportsMap() {
           ) : filteredReports.length === 0 ? (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
               <div className="text-center">
-                <p className="text-gray-600 font-semibold">No reports found for selected category</p>
+                <p className="text-gray-600 font-semibold">
+                  No reports found for selected category
+                </p>
               </div>
             </div>
           ) : (
@@ -372,18 +408,23 @@ export function ReportsMap() {
                     <div className="w-72 p-2">
                       {/* Title */}
                       <h3 className="font-bold text-lg text-gray-900 mb-2">
-                        {CATEGORY_COLORS[report.category]?.label || report.category}
+                        {CATEGORY_COLORS[report.category]?.label ||
+                          report.category}
                       </h3>
 
                       {/* Location - prominent */}
                       <div className="mb-3 p-2 bg-blue-50 border-l-4 border-blue-500 rounded">
-                        <p className="text-sm font-semibold text-gray-900">📍 {getLocationName(report)}</p>
+                        <p className="text-sm font-semibold text-gray-900">
+                          📍 {getLocationName(report)}
+                        </p>
                       </div>
 
                       {/* Description if available */}
                       {report.description && (
                         <div className="mb-3">
-                          <p className="text-xs font-semibold text-gray-600 mb-1">Description:</p>
+                          <p className="text-xs font-semibold text-gray-600 mb-1">
+                            Description:
+                          </p>
                           <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
                             "{report.description}"
                           </p>
@@ -419,7 +460,9 @@ export function ReportsMap() {
             {/* Panel Header */}
             <div className="border-b border-gray-200 p-4 bg-gray-50">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-bold text-gray-900">📋 Reports List</h2>
+                <h2 className="text-lg font-bold text-gray-900">
+                  📋 Reports List
+                </h2>
                 <button
                   onClick={() => setShowReportsList(false)}
                   className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
@@ -430,7 +473,9 @@ export function ReportsMap() {
 
               {/* Category Filter for List */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-600">Filter by Category:</label>
+                <label className="text-xs font-semibold text-gray-600">
+                  Filter by Category:
+                </label>
                 <div className="flex flex-wrap gap-1">
                   <button
                     onClick={() => setListCategoryFilter("all")}
@@ -459,7 +504,9 @@ export function ReportsMap() {
                             : {}
                         }
                       >
-                        <span className="text-xs">{info.label.split(" ")[0]}</span>
+                        <span className="text-xs">
+                          {info.label.split(" ")[0]}
+                        </span>
                         <span className="font-bold">({count})</span>
                       </button>
                     );
@@ -470,7 +517,10 @@ export function ReportsMap() {
               <p className="text-sm text-gray-600 mt-3 pt-3 border-t border-gray-200">
                 {listCategoryFilter === "all"
                   ? `All ${listFilteredReports.length} reports`
-                  : `${listFilteredReports.length} ${CATEGORY_COLORS[listCategoryFilter]?.label || listCategoryFilter}`}
+                  : `${listFilteredReports.length} ${
+                      CATEGORY_COLORS[listCategoryFilter]?.label ||
+                      listCategoryFilter
+                    }`}
               </p>
             </div>
 
@@ -483,15 +533,23 @@ export function ReportsMap() {
               ) : (
                 <div className="divide-y divide-gray-200">
                   {listFilteredReports.map((report) => (
-                    <div key={report.id} className="p-4 hover:bg-gray-50 transition-colors">
+                    <div
+                      key={report.id}
+                      className="p-4 hover:bg-gray-50 transition-colors"
+                    >
                       <div className="mb-2">
                         <div className="flex items-center gap-2 mb-1">
                           <div
                             className="w-3 h-3 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: CATEGORY_COLORS[report.category]?.color || "#8b5cf6" }}
+                            style={{
+                              backgroundColor:
+                                CATEGORY_COLORS[report.category]?.color ||
+                                "#8b5cf6",
+                            }}
                           />
                           <h4 className="font-semibold text-sm text-gray-900">
-                            {CATEGORY_COLORS[report.category]?.label || report.category}
+                            {CATEGORY_COLORS[report.category]?.label ||
+                              report.category}
                           </h4>
                         </div>
                         <p className="text-xs text-gray-600">

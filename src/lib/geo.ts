@@ -1,7 +1,10 @@
 /**
  * Get current location using Geolocation API with fallback methods
  */
-export async function getCurrentLocation(): Promise<{ lat: number; lng: number }> {
+export async function getCurrentLocation(): Promise<{
+  lat: number;
+  lng: number;
+}> {
   // Try GPS first (most accurate)
   try {
     const gpsLocation = await getGPSLocation();
@@ -90,7 +93,9 @@ async function getIPGeolocation(): Promise<{ lat: number; lng: number }> {
     };
   } catch (err) {
     throw new Error(
-      `IP geolocation failed: ${err instanceof Error ? err.message : "Unknown error"}`
+      `IP geolocation failed: ${
+        err instanceof Error ? err.message : "Unknown error"
+      }`
     );
   }
 }

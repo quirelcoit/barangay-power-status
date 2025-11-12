@@ -113,7 +113,9 @@ export function BarangayView() {
               <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1">
                 {barangay.name}
               </h1>
-              <p className="text-sm sm:text-base text-gray-600">{barangay.municipality}</p>
+              <p className="text-sm sm:text-base text-gray-600">
+                {barangay.municipality}
+              </p>
             </div>
 
             {/* Latest Status */}

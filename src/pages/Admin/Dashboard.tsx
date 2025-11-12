@@ -288,7 +288,10 @@ export function Dashboard() {
 
       {/* Image Gallery Modal */}
       {isGalleryOpen && (
-        <ImageGallery isOpen={isGalleryOpen} onClose={() => setIsGalleryOpen(false)} />
+        <ImageGallery
+          isOpen={isGalleryOpen}
+          onClose={() => setIsGalleryOpen(false)}
+        />
       )}
     </div>
   );

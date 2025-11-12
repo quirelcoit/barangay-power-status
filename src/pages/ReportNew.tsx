@@ -93,7 +93,8 @@ export function ReportNew() {
           setLocation(finalLocation);
           addToast("✅ Location acquired!", "success");
         } catch (locError) {
-          const errorMsg = locError instanceof Error ? locError.message : "Unknown error";
+          const errorMsg =
+            locError instanceof Error ? locError.message : "Unknown error";
           addToast(errorMsg, "error");
           setLoading(false);
           return;
@@ -164,16 +165,24 @@ export function ReportNew() {
             addToast("⚠️ Photo upload failed, but report was saved", "info");
           } else {
             console.log("✅ Photo uploaded successfully");
-            const { error: photoRecordError } = await supabase.from("report_photos").insert([
-              {
-                report_id: insertedReport[0].id,
-                storage_path: fileName,
-              },
-            ]);
-            
+            const { error: photoRecordError } = await supabase
+              .from("report_photos")
+              .insert([
+                {
+                  report_id: insertedReport[0].id,
+                  storage_path: fileName,
+                },
+              ]);
+
             if (photoRecordError) {
-              console.error("❌ Failed to create photo record:", photoRecordError);
-              addToast("⚠️ Photo saved to storage but database record failed", "info");
+              console.error(
+                "❌ Failed to create photo record:",
+                photoRecordError
+              );
+              addToast(
+                "⚠️ Photo saved to storage but database record failed",
+                "info"
+              );
             } else {
               console.log("✅ Photo record created in database");
             }
@@ -203,7 +212,7 @@ export function ReportNew() {
 
       // Show success message but DON'T redirect - let user submit another report
       addToast("Report submitted successfully!", "success");
-      
+
       // Reset ONLY optional fields - keep required fields for next report
       setDescription("");
       setContactHint("");
@@ -225,7 +234,9 @@ export function ReportNew() {
   return (
     <div className="min-h-screen bg-gray-50 py-6">
       <div className="max-w-2xl mx-auto px-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Report Hazard</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+          Report Hazard
+        </h1>
         <p className="text-sm sm:text-base text-gray-600 mb-6">
           Help us keep everyone safe by reporting power hazards
         </p>
@@ -303,9 +314,10 @@ export function ReportNew() {
                 <div>
                   <p className="font-medium">GPS will be captured on submit</p>
                   <p className="text-xs mt-1">
-                    When you click "Submit Report", we'll request your GPS location.
-                    Make sure GPS is enabled on your phone for accurate coordinates.
-                    If GPS unavailable, we'll use your internet connection.
+                    When you click "Submit Report", we'll request your GPS
+                    location. Make sure GPS is enabled on your phone for
+                    accurate coordinates. If GPS unavailable, we'll use your
+                    internet connection.
                   </p>
                 </div>
               </div>
@@ -313,7 +325,8 @@ export function ReportNew() {
                 <div className="flex items-center gap-2 p-2 bg-power-50 border border-power-200 rounded-lg">
                   <div className="w-2 h-2 bg-power-600 rounded-full"></div>
                   <span className="text-sm text-power-700 font-medium">
-                    ✅ Location ready: ({location.lat.toFixed(4)}, {location.lng.toFixed(4)})
+                    ✅ Location ready: ({location.lat.toFixed(4)},{" "}
+                    {location.lng.toFixed(4)})
                   </span>
                 </div>
               )}

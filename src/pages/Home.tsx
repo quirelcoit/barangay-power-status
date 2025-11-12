@@ -22,7 +22,9 @@ export function Home() {
   const [filtered, setFiltered] = useState<BarangayWithUpdate[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "no_power" | "partial" | "energized">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "no_power" | "partial" | "energized"
+  >("all");
   const [municipalityFilter, setMunicipalityFilter] = useState<string>("all");
   const [municipalities, setMunicipalities] = useState<string[]>([]);
 
@@ -57,13 +59,13 @@ export function Home() {
         }));
 
         setBarangays(barangaysWithUpdates);
-        
+
         // Extract unique municipalities
         const uniqueMunicipalities = Array.from(
           new Set(barangaysWithUpdates.map((b) => b.municipality))
         ).sort();
         setMunicipalities(uniqueMunicipalities);
-        
+
         setFiltered(barangaysWithUpdates);
       } catch (err) {
         console.error("Failed to load barangays:", err);
@@ -85,7 +87,11 @@ export function Home() {
     applyFilters(query, statusFilter, municipalityFilter);
   };
 
-  const applyFilters = (searchQuery: string, status: string, municipality: string) => {
+  const applyFilters = (
+    searchQuery: string,
+    status: string,
+    municipality: string
+  ) => {
     let result = barangays;
 
     // Search filter

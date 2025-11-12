@@ -188,7 +188,9 @@ export function ImageGallery({ isOpen, onClose }: ImageGalleryProps) {
         {/* Header */}
         <div className="border-b border-gray-200 p-4 bg-gray-50 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">📸 Report Photos</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              📸 Report Photos
+            </h1>
             <p className="text-sm text-gray-600 mt-1">
               {filteredPhotos.length} of {photos.length} photos
             </p>
@@ -228,7 +230,9 @@ export function ImageGallery({ isOpen, onClose }: ImageGalleryProps) {
                     </button>
                     <button
                       onClick={() =>
-                        setSelectedIndex((selectedIndex + 1) % filteredPhotos.length)
+                        setSelectedIndex(
+                          (selectedIndex + 1) % filteredPhotos.length
+                        )
                       }
                       className="absolute right-4 bg-white/80 hover:bg-white p-2 rounded-full text-gray-900"
                     >
@@ -246,7 +250,9 @@ export function ImageGallery({ isOpen, onClose }: ImageGalleryProps) {
           <div className="w-full lg:w-80 border-l border-gray-200 bg-gray-50 flex flex-col overflow-hidden">
             {/* Category Filter */}
             <div className="border-b border-gray-200 p-4">
-              <h3 className="font-semibold text-gray-900 mb-2">Filter by Category:</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">
+                Filter by Category:
+              </h3>
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => setCategoryFilter("all")}
@@ -290,24 +296,34 @@ export function ImageGallery({ isOpen, onClose }: ImageGalleryProps) {
                 <>
                   {/* Report Category */}
                   <div>
-                    <p className="text-xs font-semibold text-gray-600 mb-1">Category:</p>
+                    <p className="text-xs font-semibold text-gray-600 mb-1">
+                      Category:
+                    </p>
                     <div className="flex items-center gap-2 p-2 bg-white rounded border">
                       <div
                         className="w-3 h-3 rounded-full"
                         style={{
                           backgroundColor:
-                            CATEGORY_COLORS[currentPhoto.report?.category || "other"],
+                            CATEGORY_COLORS[
+                              currentPhoto.report?.category || "other"
+                            ],
                         }}
                       />
                       <span className="text-sm font-semibold text-gray-900">
-                        {CATEGORY_LABELS[currentPhoto.report?.category || "other"]}
+                        {
+                          CATEGORY_LABELS[
+                            currentPhoto.report?.category || "other"
+                          ]
+                        }
                       </span>
                     </div>
                   </div>
 
                   {/* Location */}
                   <div>
-                    <p className="text-xs font-semibold text-gray-600 mb-1">📍 Location:</p>
+                    <p className="text-xs font-semibold text-gray-600 mb-1">
+                      📍 Location:
+                    </p>
                     <p className="text-sm text-gray-800 bg-white p-2 rounded border">
                       {currentPhoto.barangay
                         ? `${currentPhoto.barangay.name}, ${currentPhoto.barangay.municipality}`
@@ -322,7 +338,8 @@ export function ImageGallery({ isOpen, onClose }: ImageGalleryProps) {
                         🗺️ Coordinates:
                       </p>
                       <p className="text-xs text-gray-700 bg-white p-2 rounded border font-mono">
-                        {currentPhoto.report.lat.toFixed(6)}, {currentPhoto.report.lng.toFixed(6)}
+                        {currentPhoto.report.lat.toFixed(6)},{" "}
+                        {currentPhoto.report.lng.toFixed(6)}
                       </p>
                     </div>
                   )}
@@ -330,7 +347,9 @@ export function ImageGallery({ isOpen, onClose }: ImageGalleryProps) {
                   {/* Description */}
                   {currentPhoto.report?.description && (
                     <div>
-                      <p className="text-xs font-semibold text-gray-600 mb-1">Description:</p>
+                      <p className="text-xs font-semibold text-gray-600 mb-1">
+                        Description:
+                      </p>
                       <p className="text-sm text-gray-700 bg-white p-2 rounded border">
                         "{currentPhoto.report.description}"
                       </p>
@@ -339,7 +358,9 @@ export function ImageGallery({ isOpen, onClose }: ImageGalleryProps) {
 
                   {/* Date */}
                   <div>
-                    <p className="text-xs font-semibold text-gray-600 mb-1">📅 Date:</p>
+                    <p className="text-xs font-semibold text-gray-600 mb-1">
+                      📅 Date:
+                    </p>
                     <p className="text-sm text-gray-700 bg-white p-2 rounded border">
                       {new Date(currentPhoto.created_at).toLocaleString()}
                     </p>
@@ -362,7 +383,9 @@ export function ImageGallery({ isOpen, onClose }: ImageGalleryProps) {
                   </div>
                 </>
               ) : (
-                <p className="text-gray-600 text-center">No photo details available</p>
+                <p className="text-gray-600 text-center">
+                  No photo details available
+                </p>
               )}
             </div>
           </div>

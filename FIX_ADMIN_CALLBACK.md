@@ -1,6 +1,7 @@
 # Fix Admin Login Callback URL
 
 ## Problem
+
 Supabase redirect URL needs to use hash-based routing for React Router.
 
 ## Solution

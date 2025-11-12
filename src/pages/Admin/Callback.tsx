@@ -13,7 +13,10 @@ export function AdminCallback() {
       try {
         // Handle the callback from Supabase
         // The hash will contain the access_token and other params
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
 
         if (error) {
           console.error("Supabase error:", error);
@@ -28,7 +31,7 @@ export function AdminCallback() {
           const params = new URLSearchParams(location.hash.substring(1));
           const errorCode = params.get("error_code");
           const errorDesc = params.get("error_description");
-          
+
           if (errorCode === "otp_expired") {
             setError("Login link has expired. Please request a new one.");
           } else if (errorCode) {
@@ -36,11 +39,12 @@ export function AdminCallback() {
           } else {
             setError("Authentication failed. Please try again.");
           }
-          
+
           setTimeout(() => navigate("/admin/login", { replace: true }), 3000);
         }
       } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : "Authentication error";
+        const errorMsg =
+          err instanceof Error ? err.message : "Authentication error";
         setError(errorMsg);
         console.error("Callback error:", err);
         setTimeout(() => navigate("/admin/login", { replace: true }), 3000);

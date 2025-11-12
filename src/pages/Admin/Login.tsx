@@ -39,8 +39,12 @@ export function AdminLogin() {
       <div className="w-full max-w-md px-4">
         <Card padding="lg">
           <div className="text-center mb-6">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Admin Login</h1>
-            <p className="text-sm sm:text-base text-gray-600 mt-2">Email verification for staff</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+              Admin Login
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-2">
+              Email verification for staff
+            </p>
           </div>
 
           {step === "email" ? (

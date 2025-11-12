@@ -133,7 +133,7 @@ export function UpdateEditor() {
               <label htmlFor="headline" className="font-medium text-gray-700">
                 Headline * (or select from common options)
               </label>
-              
+
               {/* Common Headlines Dropdown */}
               <div className="mb-3">
                 <select
@@ -148,7 +148,9 @@ export function UpdateEditor() {
                   <option value="">📝 Select a common headline...</option>
                   <optgroup label="Power Restoration">
                     <option>Power restored - all systems normal</option>
-                    <option>Partial power restored - still working on full restoration</option>
+                    <option>
+                      Partial power restored - still working on full restoration
+                    </option>
                     <option>Crew working on restoration - ETA 2 hours</option>
                     <option>Power line repair in progress</option>
                   </optgroup>
