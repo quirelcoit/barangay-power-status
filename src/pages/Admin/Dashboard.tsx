@@ -219,7 +219,9 @@ export function Dashboard() {
                     )}
                     {(report.contact_name || report.contact_number) && (
                       <div className="text-xs text-gray-600 mt-2 bg-blue-50 px-2 py-1 rounded border border-blue-200">
-                        <p className="font-semibold text-blue-900 mb-1">📞 Contact Info (Admin Only):</p>
+                        <p className="font-semibold text-blue-900 mb-1">
+                          📞 Contact Info (Admin Only):
+                        </p>
                         {report.contact_name && (
                           <p>Name: {report.contact_name}</p>
                         )}

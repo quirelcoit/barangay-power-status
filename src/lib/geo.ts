@@ -128,3 +128,36 @@ export function calculateDistance(
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
+
+/**
+ * Quirino Province Boundaries (approximate)
+ * Covers all municipalities in Quirino: Aglipay, Cabarroguis, Diffun, Maddela, Nagtipunan, Saguday
+ */
+const QUIRINO_BOUNDS = {
+  minLat: 16.0,   // Southern boundary
+  maxLat: 17.5,   // Northern boundary
+  minLng: 120.5,  // Western boundary
+  maxLng: 122.0,  // Eastern boundary
+};
+
+/**
+ * Check if a location is within Quirino Province bounds
+ */
+export function isLocationInQuirinoBounds(lat: number, lng: number): boolean {
+  return (
+    lat >= QUIRINO_BOUNDS.minLat &&
+    lat <= QUIRINO_BOUNDS.maxLat &&
+    lng >= QUIRINO_BOUNDS.minLng &&
+    lng <= QUIRINO_BOUNDS.maxLng
+  );
+}
+
+/**
+ * Get Quirino Province center for map focusing
+ */
+export function getQuirinoCenterLocation(): { lat: number; lng: number } {
+  return {
+    lat: (QUIRINO_BOUNDS.minLat + QUIRINO_BOUNDS.maxLat) / 2,
+    lng: (QUIRINO_BOUNDS.minLng + QUIRINO_BOUNDS.maxLng) / 2,
+  };
+}

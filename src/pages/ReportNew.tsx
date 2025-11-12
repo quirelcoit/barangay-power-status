@@ -8,6 +8,7 @@ import {
 } from "../components";
 import { addToQueue, getQueue } from "../store/reportQueue";
 import { useOnlineQueue } from "../hooks/useOnlineQueue";
+import { isLocationInQuirinoBounds } from "../lib/geo";
 import { AlertCircle, Wifi, WifiOff } from "lucide-react";
 
 const CATEGORIES = [
@@ -104,6 +105,17 @@ export function ReportNew() {
 
       if (!finalLocation) {
         addToast("Unable to determine location. Please try again.", "error");
+        setLoading(false);
+        return;
+      }
+
+      // Validate location is within Quirino Province
+      if (!isLocationInQuirinoBounds(finalLocation.lat, finalLocation.lng)) {
+        addToast(
+          "❌ Your location is outside Quirino Province. Please recapture GPS or move to the province.",
+          "error"
+        );
+        setLocation(finalLocation);
         setLoading(false);
         return;
       }
@@ -326,12 +338,54 @@ export function ReportNew() {
                 </div>
               </div>
               {location && (
-                <div className="flex items-center gap-2 p-2 bg-power-50 border border-power-200 rounded-lg">
-                  <div className="w-2 h-2 bg-power-600 rounded-full"></div>
-                  <span className="text-sm text-power-700 font-medium">
-                    ✅ Location ready: ({location.lat.toFixed(4)},{" "}
-                    {location.lng.toFixed(4)})
-                  </span>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 p-2 bg-power-50 border border-power-200 rounded-lg">
+                    <div className="w-2 h-2 bg-power-600 rounded-full"></div>
+                    <span className="text-sm text-power-700 font-medium">
+                      ✅ Location ready: ({location.lat.toFixed(4)},{" "}
+                      {location.lng.toFixed(4)})
+                    </span>
+                  </div>
+                  
+                  {/* Location Validation Warning */}
+                  {!isLocationInQuirinoBounds(location.lat, location.lng) && (
+                    <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-300 rounded-lg text-red-800 text-sm">
+                      <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold">⚠️ Location Outside Quirino Province</p>
+                        <p className="text-xs mt-1 mb-2">
+                          Your GPS location appears to be outside Quirino Province. This report cannot be submitted from outside the province.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setLoading(true);
+                            try {
+                              const { getCurrentLocation } = await import("../lib/geo");
+                              const newLocation = await getCurrentLocation();
+                              setLocation(newLocation);
+                              if (isLocationInQuirinoBounds(newLocation.lat, newLocation.lng)) {
+                                addToast("✅ Location is now valid!", "success");
+                              } else {
+                                addToast("⚠️ New location is still outside Quirino Province", "info");
+                              }
+                            } catch (err) {
+                              addToast(
+                                err instanceof Error ? err.message : "Failed to get location",
+                                "error"
+                              );
+                            } finally {
+                              setLoading(false);
+                            }
+                          }}
+                          disabled={loading}
+                          className="text-xs bg-red-200 hover:bg-red-300 disabled:bg-gray-300 px-3 py-1 rounded font-medium transition-colors"
+                        >
+                          🔄 Recapture GPS
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -365,12 +419,16 @@ export function ReportNew() {
                 Contact Information (optional)
               </label>
               <p className="text-xs text-gray-500 mb-2">
-                🔒 Only visible to admin staff for follow-up. Not shown publicly.
+                🔒 Only visible to admin staff for follow-up. Not shown
+                publicly.
               </p>
-              
+
               <div className="space-y-3">
                 <div>
-                  <label htmlFor="contactName" className="text-sm text-gray-600">
+                  <label
+                    htmlFor="contactName"
+                    className="text-sm text-gray-600"
+                  >
                     Name
                   </label>
                   <input
@@ -378,15 +436,18 @@ export function ReportNew() {
                     type="text"
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
+                    onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
                     placeholder="E.g., Juan Dela Cruz"
                     maxLength={100}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-power-500"
                   />
                 </div>
-                
+
                 <div>
-                  <label htmlFor="contactNumber" className="text-sm text-gray-600">
+                  <label
+                    htmlFor="contactNumber"
+                    className="text-sm text-gray-600"
+                  >
                     Contact Number
                   </label>
                   <input
@@ -394,7 +455,7 @@ export function ReportNew() {
                     type="tel"
                     value={contactNumber}
                     onChange={(e) => setContactNumber(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
+                    onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
                     placeholder="E.g., 09171234567"
                     maxLength={20}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-power-500"

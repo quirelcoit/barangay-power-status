@@ -43,6 +43,7 @@ If you don't see them, use **Method 3** below.
 3. Click **New Policy** button
 
 #### Create Policy 1: Allow Public Uploads
+
 - Click "For INSERT" template
 - Name: `Allow public uploads to report-photos`
 - Roles: `anon` (check the box)
@@ -50,6 +51,7 @@ If you don't see them, use **Method 3** below.
 - Click **Create**
 
 #### Create Policy 2: Allow Public Reads
+
 - Click "For SELECT" template
 - Name: `Allow public reads from report-photos`
 - Roles: `anon` (check the box)
@@ -57,6 +59,7 @@ If you don't see them, use **Method 3** below.
 - Click **Create**
 
 #### Create Policy 3: Allow Staff Deletes (Optional)
+
 - Click "For DELETE" template
 - Name: `Allow staff deletes from report-photos`
 - Roles: `authenticated` (check the box)
@@ -85,11 +88,13 @@ After creating the 3 policies:
 ## Why This Works
 
 **Before:**
+
 - Bucket privacy: Private
 - RLS policies: None ❌
 - Result: All uploads blocked
 
 **After:**
+
 - Bucket privacy: Private (unchanged)
 - RLS policies: Allow anon INSERT/SELECT ✅
 - Result: Public can upload and view photos
