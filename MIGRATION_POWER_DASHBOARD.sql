@@ -71,6 +71,11 @@ ORDER BY municipality;
 -- Create RLS policies for municipality_updates table
 ALTER TABLE public.municipality_updates ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Allow public to read published municipality updates" ON public.municipality_updates;
+DROP POLICY IF EXISTS "Allow authenticated staff to insert municipality updates" ON public.municipality_updates;
+DROP POLICY IF EXISTS "Allow authenticated staff to update municipality updates" ON public.municipality_updates;
+
 -- Allow public to read published updates
 CREATE POLICY "Allow public to read published municipality updates"
 ON public.municipality_updates FOR SELECT
