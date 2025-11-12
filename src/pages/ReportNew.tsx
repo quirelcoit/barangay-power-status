@@ -69,19 +69,52 @@ export function ReportNew() {
       ? customLocation // Will be stored as the location text
       : barangayId;
 
-    // GPS is now REQUIRED
-    if (!category || !actualBarangayId || !location) {
-      if (!location) {
-        addToast("GPS location is required to submit a report", "error");
-      } else {
-        addToast("Please fill in all required fields", "error");
-      }
+    // Check required fields (excluding GPS first)
+    if (!category || !actualBarangayId) {
+      addToast("Please fill in all required fields", "error");
       return;
     }
 
     setLoading(true);
 
     try {
+      // Auto-capture GPS if not already set
+      let finalLocation = location;
+      if (!finalLocation) {
+        addToast("📍 Requesting GPS location...", "info");
+        try {
+          finalLocation = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                resolve({
+                  lat: pos.coords.latitude,
+                  lng: pos.coords.longitude,
+                });
+              },
+              (err) => {
+                reject(new Error(`GPS error: ${err.message}`));
+              },
+              { timeout: 10000, maximumAge: 0 }
+            );
+          });
+          setLocation(finalLocation);
+          addToast("📍 GPS location captured!", "success");
+        } catch (gpsError) {
+          addToast(
+            `Failed to get GPS location. Please enable location services and try again.`,
+            "error"
+          );
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (!finalLocation) {
+        addToast("GPS location is required to submit a report", "error");
+        setLoading(false);
+        return;
+      }
+
       let photoBase64: string | undefined;
 
       if (photoFile) {
@@ -98,8 +131,8 @@ export function ReportNew() {
           category,
           description: description || null,
           contact_hint: contactHint || null,
-          lat: location.lat,
-          lng: location.lng,
+          lat: finalLocation.lat,
+          lng: finalLocation.lng,
           turnstile_ok: true,
         };
 
@@ -153,8 +186,8 @@ export function ReportNew() {
           category,
           description: description || "",
           contactHint: contactHint || "",
-          lat: location.lat,
-          lng: location.lng,
+          lat: finalLocation.lat,
+          lng: finalLocation.lng,
           photoBase64,
         });
 
