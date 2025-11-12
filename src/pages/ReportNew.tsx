@@ -55,6 +55,7 @@ export function ReportNew() {
   const [loading, setLoading] = useState(false);
 
   const handleBarangayChange = (id: string, custom?: string) => {
+    console.log("📍 Barangay changed:", id);
     setBarangayId(id);
     setCustomLocation(custom);
   };
@@ -71,6 +72,7 @@ export function ReportNew() {
       location: location ? "✅ GPS ready" : "❌ No GPS",
       loading,
     });
+    console.log("🔍 Stack trace:", new Error().stack);
 
     // Prevent double-submit
     if (loading) {
@@ -277,7 +279,16 @@ export function ReportNew() {
         </div>
 
         <Card padding="lg">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form 
+            onSubmit={handleSubmit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && e.ctrlKey === false && (e.target as any).type !== 'textarea') {
+                console.warn("🚨 Enter key pressed - preventing default form submission");
+                e.preventDefault();
+              }
+            }}
+            className="space-y-6"
+          >
             {/* Safety Warning */}
             <div className="bg-danger-50 border border-danger-200 p-4 rounded-lg flex gap-3 text-danger-800">
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
