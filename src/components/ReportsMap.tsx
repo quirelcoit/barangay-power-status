@@ -162,41 +162,69 @@ export function ReportsMap() {
 
   return (
     <div className="w-full h-screen flex flex-col bg-gray-50">
-      {/* Stats Bar */}
+      {/* Header with Instructions */}
       <div className="bg-white border-b border-gray-200 p-4 shadow-sm">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Power Hazard Reports Map</h1>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
-            <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-              <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
-              <div className="text-sm text-gray-600">Total Reports</div>
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">📍 Hazard Reports Map</h1>
+              <p className="text-gray-600 text-sm mt-1">See all reported power hazards on the map</p>
             </div>
+            <button
+              onClick={loadReports}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              <span className={loading ? "animate-spin" : ""}>🔄</span>
+              Refresh
+            </button>
+          </div>
 
+          {/* Legend - Simple and Clear */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mt-4 pt-4 border-t border-gray-200">
             {Object.entries(CATEGORY_COLORS).map(([category, info]) => {
               const count = stats.byCategory[category] || 0;
-              return count > 0 ? (
-                <div
-                  key={category}
-                  className="rounded-lg p-3 text-white"
-                  style={{ backgroundColor: info.color }}
-                >
-                  <div className="text-2xl font-bold">{count}</div>
-                  <div className="text-sm opacity-90">{info.label}</div>
+              return (
+                <div key={category} className="flex items-center gap-2 text-sm">
+                  <div
+                    className="w-6 h-6 rounded-full border-2 border-white flex-shrink-0"
+                    style={{ backgroundColor: info.color }}
+                    title={info.label}
+                  />
+                  <div className="min-w-0">
+                    <div className="font-semibold text-gray-900">{count}</div>
+                    <div className="text-xs text-gray-600 truncate">{info.label}</div>
+                  </div>
                 </div>
-              ) : null;
+              );
             })}
+          </div>
+
+          {/* Total Reports */}
+          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm font-semibold text-blue-900">
+              ✅ Total: {stats.total} reports collected from Quirino Province
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Map */}
+      {/* Map Container */}
       <div className="flex-1 relative">
         {reports.length === 0 ? (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
-            <div className="text-center">
-              <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">No reports with GPS coordinates yet</p>
+            <div className="text-center max-w-md mx-auto px-4">
+              <AlertCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-gray-900 mb-2">No reports yet</h3>
+              <p className="text-gray-600 mb-6">
+                Help us keep Quirino Province safe! Submit your first hazard report.
+              </p>
+              <a
+                href="/#/report"
+                className="inline-block px-6 py-3 bg-power-600 text-white rounded-lg hover:bg-power-700 transition-colors font-semibold"
+              >
+                🚩 Report a Hazard Now
+              </a>
             </div>
           </div>
         ) : (
@@ -216,25 +244,32 @@ export function ReportsMap() {
                 position={[report.lat, report.lng] as L.LatLngExpression}
                 icon={createMarkerIcon(report.category)}
               >
-                <Popup>
-                  <div className="w-64">
-                    <h3 className="font-bold text-gray-900">
+                <Popup className="leaflet-popup-simple">
+                  <div className="w-72 p-2">
+                    {/* Title */}
+                    <h3 className="font-bold text-lg text-gray-900 mb-2">
                       {CATEGORY_COLORS[report.category]?.label || report.category}
                     </h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      <strong>Location:</strong> {getLocationName(report)}
-                    </p>
+
+                    {/* Location - prominent */}
+                    <div className="mb-3 p-2 bg-blue-50 border-l-4 border-blue-500 rounded">
+                      <p className="text-sm font-semibold text-gray-900">📍 {getLocationName(report)}</p>
+                    </div>
+
+                    {/* Description if available */}
                     {report.description && (
-                      <p className="text-sm text-gray-600 mt-1">
-                        <strong>Description:</strong> {report.description}
-                      </p>
+                      <div className="mb-3">
+                        <p className="text-xs font-semibold text-gray-600 mb-1">Description:</p>
+                        <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
+                          "{report.description}"
+                        </p>
+                      </div>
                     )}
-                    <p className="text-xs text-gray-500 mt-2">
-                      <strong>GPS:</strong> {report.lat.toFixed(4)}, {report.lng.toFixed(4)}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      <strong>Reported:</strong> {new Date(report.created_at).toLocaleString()}
-                    </p>
+
+                    {/* Timestamp */}
+                    <div className="text-xs text-gray-500 border-t border-gray-200 pt-2">
+                      <p>🕐 {new Date(report.created_at).toLocaleString()}</p>
+                    </div>
                   </div>
                 </Popup>
               </Marker>

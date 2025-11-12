@@ -18,6 +18,12 @@ export function Navbar() {
             Report Hazard
           </Link>
           <Link
+            to="/admin/map"
+            className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors hidden sm:block"
+          >
+            📍 View Map
+          </Link>
+          <Link
             to="/admin/login"
             className="px-3 py-2 bg-gray-200 text-gray-800 rounded-lg text-sm hover:bg-gray-300 transition-colors"
           >
