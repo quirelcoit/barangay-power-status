@@ -12,6 +12,7 @@ import { AdminLogin } from "./pages/Admin/Login";
 import { AdminCallback } from "./pages/Admin/Callback";
 import { Dashboard } from "./pages/Admin/Dashboard";
 import { UpdateEditor } from "./pages/Admin/UpdateEditor";
+import { AdminMap } from "./pages/AdminMap";
 
 export function AppRoutes() {
   return (
@@ -25,6 +26,7 @@ export function AppRoutes() {
         <Route path="/admin/callback" element={<AdminCallback />} />
         <Route path="/admin/dashboard" element={<Dashboard />} />
         <Route path="/admin/updates" element={<UpdateEditor />} />
+        <Route path="/admin/map" element={<AdminMap />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
