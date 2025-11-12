@@ -39,11 +39,24 @@ CREATE INDEX IF NOT EXISTS idx_municipality_updates_published
 ON public.municipality_updates(is_published) 
 WHERE is_published = true;
 
--- Create municipality_status view for dashboard (get LATEST update per municipality, not aggregate)
+-- Create municipality_status view for dashboard (get LATEST update per municipality only)
 DROP VIEW IF EXISTS public.municipality_status;
 
 CREATE VIEW public.municipality_status AS
-SELECT DISTINCT ON (municipality)
+WITH ranked_updates AS (
+  SELECT 
+    id,
+    municipality,
+    total_barangays,
+    energized_barangays,
+    partial_barangays,
+    no_power_barangays,
+    updated_at,
+    ROW_NUMBER() OVER (PARTITION BY municipality ORDER BY updated_at DESC, id DESC) as rn
+  FROM public.municipality_updates
+  WHERE is_published = true
+)
+SELECT 
   municipality,
   total_barangays,
   energized_barangays,
@@ -51,9 +64,9 @@ SELECT DISTINCT ON (municipality)
   no_power_barangays,
   ROUND((energized_barangays::numeric / total_barangays) * 100, 2) as percent_energized,
   updated_at as last_updated
-FROM public.municipality_updates
-WHERE is_published = true
-ORDER BY municipality, updated_at DESC;
+FROM ranked_updates
+WHERE rn = 1
+ORDER BY municipality;
 
 -- Create RLS policies for municipality_updates table
 ALTER TABLE public.municipality_updates ENABLE ROW LEVEL SECURITY;

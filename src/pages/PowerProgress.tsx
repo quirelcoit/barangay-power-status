@@ -103,6 +103,48 @@ export function PowerProgress() {
           </p>
         </div>
 
+        {/* Summary Cards */}
+        {municipalities.length > 0 && (() => {
+          const totalBgy = municipalities.reduce(
+            (sum, m) => sum + m.total_barangays,
+            0
+          );
+          const energizedBgy = municipalities.reduce(
+            (sum, m) => sum + m.energized_barangays,
+            0
+          );
+          const partialBgy = municipalities.reduce(
+            (sum, m) => sum + m.partial_barangays,
+            0
+          );
+          const noPowerBgy = municipalities.reduce(
+            (sum, m) => sum + m.no_power_barangays,
+            0
+          );
+          const overallPercent = (energizedBgy / totalBgy) * 100;
+
+          return (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+              <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-lg shadow">
+                <div className="text-2xl font-bold">{energizedBgy}</div>
+                <div className="text-sm opacity-90">Energized</div>
+              </div>
+              <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white p-4 rounded-lg shadow">
+                <div className="text-2xl font-bold">{partialBgy}</div>
+                <div className="text-sm opacity-90">Partial Power</div>
+              </div>
+              <div className="bg-gradient-to-br from-red-500 to-red-600 text-white p-4 rounded-lg shadow">
+                <div className="text-2xl font-bold">{noPowerBgy}</div>
+                <div className="text-sm opacity-90">No Power</div>
+              </div>
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-lg shadow">
+                <div className="text-2xl font-bold">{overallPercent.toFixed(1)}%</div>
+                <div className="text-sm opacity-90">Overall</div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Table */}
         <div className="overflow-x-auto bg-white rounded-lg shadow">
           <table className="w-full">
@@ -207,21 +249,53 @@ export function PowerProgress() {
                       0
                     )}
                   </td>
-                  <td className="px-6 py-4 text-center text-green-600 text-lg font-bold">
-                    {municipalities.length > 0
-                      ? (
-                          (municipalities.reduce(
-                            (sum, m) => sum + m.energized_barangays,
-                            0
-                          ) /
-                            municipalities.reduce(
-                              (sum, m) => sum + m.total_barangays,
-                              0
-                            )) *
-                          100
-                        ).toFixed(2)
-                      : 0}
-                    %
+                  <td className="px-6 py-4">
+                    {(() => {
+                      const totalBgy = municipalities.reduce(
+                        (sum, m) => sum + m.total_barangays,
+                        0
+                      );
+                      const energizedBgy = municipalities.reduce(
+                        (sum, m) => sum + m.energized_barangays,
+                        0
+                      );
+                      const totalPercent = (energizedBgy / totalBgy) * 100;
+                      const percentColor =
+                        totalPercent === 100
+                          ? "text-green-600 bg-green-50"
+                          : totalPercent >= 75
+                          ? "text-lime-600 bg-lime-50"
+                          : totalPercent >= 50
+                          ? "text-yellow-600 bg-yellow-50"
+                          : totalPercent >= 25
+                          ? "text-orange-600 bg-orange-50"
+                          : "text-red-600 bg-red-50";
+
+                      const barColor =
+                        totalPercent === 100
+                          ? "bg-green-500"
+                          : totalPercent >= 75
+                          ? "bg-lime-500"
+                          : totalPercent >= 50
+                          ? "bg-yellow-500"
+                          : totalPercent >= 25
+                          ? "bg-orange-500"
+                          : "bg-red-500";
+
+                      return (
+                        <div className="space-y-1">
+                          <div className={`text-center font-bold text-lg ${percentColor}`}>
+                            {totalPercent.toFixed(2)}%
+                          </div>
+                          <div className="w-full bg-gray-300 rounded-full h-2.5 overflow-hidden">
+                            <div
+                              className={`h-full ${barColor} transition-all duration-500`}
+                              style={{ width: `${totalPercent}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </td>
                 </tr>
               )}
