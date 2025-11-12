@@ -98,7 +98,8 @@ export function PowerProgress() {
             </p>
           )}
           <p className="text-sm text-gray-700">
-            Latest update of Quirelco's power restoration per Municipality/Town within the franchise area.
+            Latest update of Quirelco's power restoration per Municipality/Town
+            within the franchise area.
           </p>
         </div>
 
@@ -124,7 +125,10 @@ export function PowerProgress() {
             <tbody>
               {municipalities.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-gray-600">
+                  <td
+                    colSpan={4}
+                    className="px-6 py-8 text-center text-gray-600"
+                  >
                     No data available
                   </td>
                 </tr>
@@ -156,8 +160,30 @@ export function PowerProgress() {
                       <td className="px-6 py-4 text-center font-semibold text-gray-900">
                         {muni.energized_barangays}
                       </td>
-                      <td className={`px-6 py-4 text-center font-bold text-lg ${percentColor}`}>
-                        {muni.percent_energized}%
+                      <td className={`px-6 py-4`}>
+                        <div className="space-y-1">
+                          <div
+                            className={`text-center font-bold text-lg ${percentColor}`}
+                          >
+                            {muni.percent_energized.toFixed(2)}%
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                            <div
+                              className={`h-full ${
+                                muni.percent_energized === 100
+                                  ? "bg-green-500"
+                                  : muni.percent_energized >= 75
+                                  ? "bg-lime-500"
+                                  : muni.percent_energized >= 50
+                                  ? "bg-yellow-500"
+                                  : muni.percent_energized >= 25
+                                  ? "bg-orange-500"
+                                  : "bg-red-500"
+                              } transition-all duration-500`}
+                              style={{ width: `${muni.percent_energized}%` }}
+                            />
+                          </div>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -170,18 +196,30 @@ export function PowerProgress() {
                     QUIRELCO FRANCHISE AREA
                   </td>
                   <td className="px-6 py-4 text-center text-gray-900">
-                    {municipalities.reduce((sum, m) => sum + m.total_barangays, 0)}
+                    {municipalities.reduce(
+                      (sum, m) => sum + m.total_barangays,
+                      0
+                    )}
                   </td>
                   <td className="px-6 py-4 text-center text-gray-900">
-                    {municipalities.reduce((sum, m) => sum + m.energized_barangays, 0)}
+                    {municipalities.reduce(
+                      (sum, m) => sum + m.energized_barangays,
+                      0
+                    )}
                   </td>
-                  <td className="px-6 py-4 text-center text-green-600 text-lg">
+                  <td className="px-6 py-4 text-center text-green-600 text-lg font-bold">
                     {municipalities.length > 0
-                      ? Math.round(
-                          (municipalities.reduce((sum, m) => sum + m.energized_barangays, 0) /
-                            municipalities.reduce((sum, m) => sum + m.total_barangays, 0)) *
-                            100
-                        )
+                      ? (
+                          (municipalities.reduce(
+                            (sum, m) => sum + m.energized_barangays,
+                            0
+                          ) /
+                            municipalities.reduce(
+                              (sum, m) => sum + m.total_barangays,
+                              0
+                            )) *
+                          100
+                        ).toFixed(2)
                       : 0}
                     %
                   </td>

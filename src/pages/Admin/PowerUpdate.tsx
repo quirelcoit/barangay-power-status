@@ -34,6 +34,7 @@ export function PowerUpdate() {
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     checkAdmin();
@@ -61,9 +62,38 @@ export function PowerUpdate() {
       }
 
       setIsAdmin(true);
+
+      // Fetch latest municipality data to pre-populate form
+      await loadLatestData();
+      setInitialized(true);
     } catch (err) {
       console.error("Auth check failed:", err);
       navigate("/admin/login");
+    }
+  };
+
+  const loadLatestData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("municipality_status")
+        .select("*")
+        .order("municipality");
+
+      if (error) throw error;
+
+      const newUpdates: { [key: string]: any } = {};
+      MUNICIPALITIES.forEach((muni) => {
+        const latest = data?.find((d) => d.municipality === muni.label);
+        newUpdates[muni.value] = {
+          energized: latest?.energized_barangays || 0,
+          remarks: latest?.remarks || "",
+          photo: null,
+        };
+      });
+
+      setUpdates(newUpdates);
+    } catch (err) {
+      console.warn("Could not load latest data:", err);
     }
   };
 
@@ -73,7 +103,10 @@ export function PowerUpdate() {
     // Check if at least one municipality has data
     const hasUpdates = Object.values(updates).some((u) => u.energized > 0);
     if (!hasUpdates) {
-      addToast("Please enter at least one municipality's energized barangays", "error");
+      addToast(
+        "Please enter at least one municipality's energized barangays",
+        "error"
+      );
       return;
     }
 
@@ -119,27 +152,28 @@ export function PowerUpdate() {
         const noPower = Math.max(0, muni.totalBarangays - update.energized);
 
         // Insert municipality update
-        const { error } = await supabase
-          .from("municipality_updates")
-          .insert([
-            {
-              municipality: muni.label,
-              total_barangays: muni.totalBarangays,
-              energized_barangays: update.energized,
-              partial_barangays: 0,
-              no_power_barangays: noPower,
-              remarks: update.remarks || null,
-              photo_url: photoUrl,
-              updated_by: session?.session?.user?.id,
-              is_published: true,
-            },
-          ]);
+        const { error } = await supabase.from("municipality_updates").insert([
+          {
+            municipality: muni.label,
+            total_barangays: muni.totalBarangays,
+            energized_barangays: update.energized,
+            partial_barangays: 0,
+            no_power_barangays: noPower,
+            remarks: update.remarks || null,
+            photo_url: photoUrl,
+            updated_by: session?.session?.user?.id,
+            is_published: true,
+          },
+        ]);
 
         if (error) throw error;
       }
 
       setSubmitted(true);
-      addToast("✅ All power status updates submitted successfully!", "success");
+      addToast(
+        "✅ All power status updates submitted successfully!",
+        "success"
+      );
 
       setTimeout(() => {
         setUpdates({});
@@ -164,6 +198,14 @@ export function PowerUpdate() {
     );
   }
 
+  if (!isAdmin || !initialized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4">
@@ -175,7 +217,9 @@ export function PowerUpdate() {
           >
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-3xl font-bold">Power Status Update - All Municipalities</h1>
+          <h1 className="text-3xl font-bold">
+            Power Status Update - All Municipalities
+          </h1>
         </div>
 
         {/* Success Message */}
@@ -184,7 +228,9 @@ export function PowerUpdate() {
             <div className="flex items-center gap-3">
               <Check size={24} className="text-green-600" />
               <div>
-                <p className="font-semibold text-green-900">Updates Submitted</p>
+                <p className="font-semibold text-green-900">
+                  Updates Submitted
+                </p>
                 <p className="text-sm text-green-700">
                   All power status updates have been successfully recorded.
                 </p>
@@ -199,7 +245,8 @@ export function PowerUpdate() {
             {/* Instructions */}
             <div className="p-6 bg-blue-50 border-b border-blue-200">
               <p className="text-sm text-blue-900">
-                ℹ️ Enter the number of energized barangays for each municipality. Leave blank or zero to skip.
+                ℹ️ Enter the number of energized barangays for each
+                municipality. Leave blank or zero to skip.
               </p>
             </div>
 
@@ -232,7 +279,10 @@ export function PowerUpdate() {
                         : 0;
 
                     return (
-                      <tr key={muni.value} className={`${bgColor} border-b border-gray-200`}>
+                      <tr
+                        key={muni.value}
+                        className={`${bgColor} border-b border-gray-200`}
+                      >
                         <td className="px-6 py-4 font-semibold text-gray-900">
                           {muni.label}
                         </td>
@@ -248,7 +298,10 @@ export function PowerUpdate() {
                             onChange={(e) => {
                               const val = Math.max(
                                 0,
-                                Math.min(muni.totalBarangays, parseInt(e.target.value) || 0)
+                                Math.min(
+                                  muni.totalBarangays,
+                                  parseInt(e.target.value) || 0
+                                )
                               );
                               setUpdates({
                                 ...updates,
@@ -262,17 +315,19 @@ export function PowerUpdate() {
                             className="w-20 mx-auto px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
                           />
                         </td>
-                        <td className={`px-6 py-4 text-center font-bold text-lg ${
-                          percentage === 100
-                            ? "text-green-600 bg-green-50"
-                            : percentage >= 75
-                            ? "text-lime-600"
-                            : percentage >= 50
-                            ? "text-yellow-600"
-                            : percentage > 0
-                            ? "text-orange-600"
-                            : "text-gray-400"
-                        }`}>
+                        <td
+                          className={`px-6 py-4 text-center font-bold text-lg ${
+                            percentage === 100
+                              ? "text-green-600 bg-green-50"
+                              : percentage >= 75
+                              ? "text-lime-600"
+                              : percentage >= 50
+                              ? "text-yellow-600"
+                              : percentage > 0
+                              ? "text-orange-600"
+                              : "text-gray-400"
+                          }`}
+                        >
                           {percentage}%
                         </td>
                       </tr>
@@ -285,7 +340,8 @@ export function PowerUpdate() {
             {/* Notes & Submit */}
             <div className="p-6 bg-gray-50 border-t border-gray-200">
               <p className="text-xs text-gray-600 mb-4">
-                * Percentage calculates automatically. Leave energized barangays empty or zero to skip that municipality.
+                * Percentage calculates automatically. Leave energized barangays
+                empty or zero to skip that municipality.
               </p>
 
               {/* Submit Button */}
@@ -303,4 +359,3 @@ export function PowerUpdate() {
     </div>
   );
 }
-

@@ -39,11 +39,11 @@ CREATE INDEX IF NOT EXISTS idx_municipality_updates_published
 ON public.municipality_updates(is_published) 
 WHERE is_published = true;
 
--- Create municipality_status view for dashboard (get latest update per municipality)
+-- Create municipality_status view for dashboard (get LATEST update per municipality, not aggregate)
 DROP VIEW IF EXISTS public.municipality_status;
 
 CREATE VIEW public.municipality_status AS
-SELECT
+SELECT DISTINCT ON (municipality)
   municipality,
   total_barangays,
   energized_barangays,
@@ -53,7 +53,7 @@ SELECT
   updated_at as last_updated
 FROM public.municipality_updates
 WHERE is_published = true
-ORDER BY municipality;
+ORDER BY municipality, updated_at DESC;
 
 -- Create RLS policies for municipality_updates table
 ALTER TABLE public.municipality_updates ENABLE ROW LEVEL SECURITY;
