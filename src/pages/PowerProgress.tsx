@@ -23,6 +23,17 @@ const MUNICIPALITY_ORDER = [
   "SAN AGUSTIN, ISABELA",
 ];
 
+// Define correct total barangays for each municipality (must match PowerUpdate.tsx)
+const MUNICIPALITY_TOTALS: { [key: string]: number } = {
+  "DIFFUN": 33,
+  "CABARROGUIS": 17,
+  "SAGUDAY": 9,
+  "MADDELA": 32,
+  "AGLIPAY": 25,
+  "NAGTIPUNAN": 16,
+  "SAN AGUSTIN, ISABELA": 18,
+};
+
 const formatTimestamp = (dateString: string): string => {
   const date = new Date(dateString);
   const options: Intl.DateTimeFormatOptions = {
@@ -64,12 +75,23 @@ export function PowerProgress() {
         (data || []).map((m) => [m.municipality.toUpperCase(), m])
       );
 
-      // Ensure all municipalities are displayed, even if no data exists
+      // Ensure all municipalities are displayed with correct total barangays
       const allMunicipalities = MUNICIPALITY_ORDER.map((municipality) => {
         const existing = dataMap.get(municipality);
-        return existing || {
+        const totalBgy = MUNICIPALITY_TOTALS[municipality] || 0;
+        
+        if (existing) {
+          // Use existing data but ensure total_barangays is correct
+          return {
+            ...existing,
+            total_barangays: totalBgy,
+          };
+        }
+        
+        // Return default data with correct total barangays
+        return {
           municipality,
-          total_barangays: 0,
+          total_barangays: totalBgy,
           energized_barangays: 0,
           partial_barangays: 0,
           no_power_barangays: 0,
