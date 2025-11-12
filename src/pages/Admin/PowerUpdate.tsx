@@ -1,21 +1,38 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
-import { Card, useToast, MunicipalityBarangayPicker, PhotoCapture } from "../../components";
-import { isLocationInServiceArea } from "../../lib/geo";
-import { ArrowLeft, AlertCircle } from "lucide-react";
+import { Card, useToast, PhotoCapture } from "../../components";
+import { ArrowLeft, Check } from "lucide-react";
+
+interface Municipality {
+  value: string;
+  label: string;
+  totalBarangays: number;
+}
+
+const MUNICIPALITIES: Municipality[] = [
+  { value: "diffun", label: "Diffun", totalBarangays: 33 },
+  { value: "cabarroguis", label: "Cabarroguis", totalBarangays: 17 },
+  { value: "saguday", label: "Saguday", totalBarangays: 9 },
+  { value: "maddela", label: "Maddela", totalBarangays: 32 },
+  { value: "aglipay", label: "Aglipay", totalBarangays: 25 },
+  { value: "nagtipunan", label: "Nagtipunan", totalBarangays: 16 },
+  { value: "san_agustin_isabela", label: "San Agustin, Isabela", totalBarangays: 18 },
+];
 
 export function PowerUpdate() {
   const navigate = useNavigate();
   const { addToast } = useToast();
 
-  const [barangayId, setBarangayId] = useState<string>("");
-  const [powerStatus, setPowerStatus] = useState<"no_power" | "partial" | "energized">("no_power");
+  const [municipality, setMunicipality] = useState<string>("");
+  const [totalBarangays, setTotalBarangays] = useState<number>(0);
+  const [energizedBarangays, setEnergizedBarangays] = useState<number>(0);
+  const [partialBarangays, setPartialBarangays] = useState<number>(0);
   const [remarks, setRemarks] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     checkAdmin();
@@ -49,88 +66,108 @@ export function PowerUpdate() {
     }
   };
 
-  const handleBarangayChange = (id: string) => {
-    setBarangayId(id);
+  const handleMunicipalityChange = (value: string) => {
+    setMunicipality(value);
+    const muni = MUNICIPALITIES.find((m) => m.value === value);
+    if (muni) {
+      setTotalBarangays(muni.totalBarangays);
+      setEnergizedBarangays(0);
+      setPartialBarangays(0);
+    }
+  };
+
+  const calculateNopower = (): number => {
+    return Math.max(0, totalBarangays - energizedBarangays - partialBarangays);
+  };
+
+  const calculatePercentage = (): number => {
+    return totalBarangays > 0
+      ? Math.round((energizedBarangays / totalBarangays) * 100)
+      : 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!barangayId) {
-      addToast("Please select a barangay", "error");
+    if (!municipality) {
+      addToast("Please select a municipality", "error");
+      return;
+    }
+
+    if (energizedBarangays + partialBarangays > totalBarangays) {
+      addToast(
+        "Energized + Partial barangays cannot exceed total barangays",
+        "error"
+      );
       return;
     }
 
     setLoading(true);
 
     try {
-      // Get location
+      const { data: session } = await supabase.auth.getSession();
       let photoUrl: string | null = null;
-
-      if (!location) {
-        addToast("📍 Requesting location...", "info");
-        try {
-          const { getCurrentLocation } = await import("../../lib/geo");
-          const newLocation = await getCurrentLocation();
-          setLocation(newLocation);
-
-          if (!isLocationInServiceArea(newLocation.lat, newLocation.lng)) {
-            addToast(
-              "⚠️ Location is outside service area. Update recorded but location not saved.",
-              "info"
-            );
-          }
-        } catch (locError) {
-          console.warn("Could not get location:", locError);
-        }
-      }
 
       // Upload photo if provided
       if (photoFile) {
         try {
-          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.jpg`;
-          const { error: uploadError } = await supabase.storage
+          const fileName = `${Date.now()}-${Math.random()
+            .toString(36)
+            .substring(7)}.jpg`;
+          const { data: uploadData, error: uploadError } = await supabase.storage
             .from("report-photos")
-            .upload(fileName, photoFile, { contentType: "image/jpeg" });
+            .upload(fileName, photoFile, {
+              cacheControl: "3600",
+              upsert: false,
+            });
 
-          if (!uploadError) {
-            photoUrl = fileName;
-            addToast("✅ Photo uploaded", "success");
-          }
-        } catch (err) {
-          console.warn("Photo upload failed:", err);
+          if (uploadError) throw uploadError;
+
+          const { data: urlData } = supabase.storage
+            .from("report-photos")
+            .getPublicUrl(uploadData.path);
+
+          photoUrl = urlData.publicUrl;
+        } catch (photoErr) {
+          console.warn("Photo upload failed:", photoErr);
+          addToast("Photo upload failed, continuing without photo", "info");
         }
       }
 
-      // Insert update record
-      const { error: insertError } = await supabase
-        .from("barangay_updates")
-        .insert([
-          {
-            barangay_id: barangayId,
-            power_status: powerStatus,
-            remarks: remarks || null,
-            photo_url: photoUrl,
-            lat: location?.lat || null,
-            lng: location?.lng || null,
-            updated_by: (await supabase.auth.getSession()).data.session?.user.id,
-            is_published: true,
-          },
-        ]);
+      // Insert municipality update
+      const { error } = await supabase.from("municipality_updates").insert([
+        {
+          municipality: municipality,
+          total_barangays: totalBarangays,
+          energized_barangays: energizedBarangays,
+          partial_barangays: partialBarangays,
+          no_power_barangays: calculateNopower(),
+          remarks: remarks || null,
+          photo_url: photoUrl,
+          updated_by: session?.session?.user?.id,
+          is_published: true,
+        },
+      ]);
 
-      if (insertError) throw insertError;
+      if (error) throw error;
 
+      setSubmitted(true);
       addToast("✅ Power status updated successfully!", "success");
 
-      // Reset form
-      setBarangayId("");
-      setPowerStatus("no_power");
-      setRemarks("");
-      setPhotoFile(null);
-      setLocation(null);
+      setTimeout(() => {
+        // Reset form
+        setMunicipality("");
+        setTotalBarangays(0);
+        setEnergizedBarangays(0);
+        setPartialBarangays(0);
+        setRemarks("");
+        setPhotoFile(null);
+        setSubmitted(false);
+      }, 2000);
     } catch (err) {
+      console.error("Submission error:", err);
       addToast(
-        err instanceof Error ? err.message : "Failed to update status",
+        err instanceof Error ? err.message : "Failed to update power status",
         "error"
       );
     } finally {
@@ -140,127 +177,188 @@ export function PowerUpdate() {
 
   if (!isAdmin) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-gray-600">Checking permissions...</p>
+      <div className="flex items-center justify-center py-12">
+        <p className="text-gray-600">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-6">
-      <div className="max-w-2xl mx-auto px-4">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate(-1)}
-          className="mb-6 flex items-center gap-2 text-power-600 hover:text-power-700 font-medium"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </button>
-
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
+      <div className="max-w-2xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            ⚡ Update Power Status
-          </h1>
-          <p className="text-gray-600">
-            Record the latest power restoration status for a barangay
-          </p>
+        <div className="mb-6 flex items-center gap-2">
+          <button
+            onClick={() => navigate("/admin")}
+            className="p-2 hover:bg-gray-200 rounded-lg transition"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <h1 className="text-3xl font-bold">Power Status Update</h1>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Barangay Selection */}
-          <MunicipalityBarangayPicker
-            value={barangayId}
-            onChange={(id: string) => handleBarangayChange(id)}
-          />
-
-          {/* Power Status */}
-          <div className="space-y-2">
-            <label className="font-medium text-gray-700">Power Status *</label>
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { value: "no_power", label: "🔴 No Power", color: "red" },
-                { value: "partial", label: "🟡 Partial", color: "yellow" },
-                {
-                  value: "energized",
-                  label: "🟢 Energized",
-                  color: "green",
-                },
-              ].map((status) => (
-                <button
-                  key={status.value}
-                  type="button"
-                  onClick={() => setPowerStatus(status.value as any)}
-                  className={`p-3 rounded-lg border-2 font-medium transition-colors ${
-                    powerStatus === status.value
-                      ? `border-${status.color}-500 bg-${status.color}-50 text-${status.color}-700`
-                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  {status.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Location Info */}
-          <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 text-sm">
-            <span className="text-xl">📍</span>
-            <div>
-              <p className="font-medium">GPS Auto-Capture</p>
-              <p className="text-xs mt-1">
-                Location will be automatically captured when you submit this form. Make sure GPS is enabled.
-              </p>
-            </div>
-          </div>
-
-          {/* Photo Capture */}
-          <PhotoCapture onPhotoSelect={setPhotoFile} />
-
-          {/* Remarks */}
-          <div className="space-y-2">
-            <label htmlFor="remarks" className="font-medium text-gray-700">
-              Remarks (optional)
-            </label>
-            <textarea
-              id="remarks"
-              value={remarks}
-              onChange={(e) => setRemarks(e.target.value)}
-              placeholder="E.g., Restored lines in north sector, awaiting transformer replacement..."
-              maxLength={500}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-power-500"
-            />
-            <p className="text-xs text-gray-500">{remarks.length}/500</p>
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading || !barangayId}
-            className="w-full px-4 py-3 bg-power-600 text-white rounded-lg font-medium hover:bg-power-700 disabled:bg-gray-400 transition-colors"
+        {/* Success message */}
+        {submitted && (
+          <Card
+            className="mb-6 bg-green-50 border-green-200"
+            padding="md"
           >
-            {loading ? "Updating..." : "✅ Update Status"}
-          </button>
-        </form>
-
-        {/* Info Box */}
-        <Card className="mt-8" padding="md">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-gray-700">
-              <p className="font-medium mb-1">💡 Tips for Accurate Updates:</p>
-              <ul className="space-y-1 text-xs list-disc list-inside">
-                <li>Take photos from the barangay area showing actual power lines</li>
-                <li>Include relevant remarks about restoration progress</li>
-                <li>Enable GPS for accurate location tracking</li>
-                <li>Update only when you have verified the current status</li>
-              </ul>
+            <div className="flex items-center gap-3">
+              <Check size={24} className="text-green-600" />
+              <div>
+                <p className="font-semibold text-green-900">Update Recorded</p>
+                <p className="text-sm text-green-700">
+                  The power status has been successfully updated. Consumers will
+                  see this in the Power Progress dashboard.
+                </p>
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit}>
+          <Card padding="lg">
+            {/* Municipality Selection */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold mb-2">
+                Municipality / City
+              </label>
+              <select
+                value={municipality}
+                onChange={(e) => handleMunicipalityChange(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select a municipality...</option>
+                {MUNICIPALITIES.map((muni) => (
+                  <option key={muni.value} value={muni.value}>
+                    {muni.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Power Status Grid */}
+            {municipality && (
+              <>
+                <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <h3 className="font-semibold mb-4 text-blue-900">
+                    Power Status
+                  </h3>
+
+                  {/* Total Barangays (Read-only) */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold mb-2">
+                      Total Barangays
+                    </label>
+                    <input
+                      type="number"
+                      value={totalBarangays}
+                      disabled
+                      className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-600"
+                    />
+                  </div>
+
+                  {/* Energized Barangays */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold mb-2">
+                      🟢 Energized Barangays
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max={totalBarangays}
+                      value={energizedBarangays}
+                      onChange={(e) =>
+                        setEnergizedBarangays(Math.max(0, parseInt(e.target.value) || 0))
+                      }
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+
+                  {/* Partial Barangays */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold mb-2">
+                      🟡 Partial Power Barangays
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max={totalBarangays}
+                      value={partialBarangays}
+                      onChange={(e) =>
+                        setPartialBarangays(Math.max(0, parseInt(e.target.value) || 0))
+                      }
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    />
+                  </div>
+
+                  {/* No Power (Calculated) */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold mb-2">
+                      🔴 No Power Barangays
+                    </label>
+                    <input
+                      type="number"
+                      value={calculateNopower()}
+                      disabled
+                      className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-600"
+                    />
+                  </div>
+
+                  {/* Percentage */}
+                  <div className="pt-4 border-t border-blue-200">
+                    <p className="text-sm text-gray-600 mb-2">
+                      Overall Energization Rate:
+                    </p>
+                    <p className="text-4xl font-bold text-green-600">
+                      {calculatePercentage()}%
+                    </p>
+                  </div>
+                </div>
+
+                {/* Remarks */}
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold mb-2">
+                    Remarks (Optional)
+                  </label>
+                  <textarea
+                    value={remarks}
+                    onChange={(e) =>
+                      setRemarks(e.target.value.substring(0, 500))
+                    }
+                    maxLength={500}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows={4}
+                    placeholder="Any additional notes about the power restoration progress..."
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {remarks.length}/500 characters
+                  </p>
+                </div>
+
+                {/* Photo Upload */}
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold mb-2">
+                    Photo (Optional)
+                  </label>
+                  <PhotoCapture
+                    onPhotoSelect={setPhotoFile}
+                  />
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 rounded-lg transition"
+                >
+                  {loading ? "⏳ Updating..." : "📤 Submit Update"}
+                </button>
+              </>
+            )}
+          </Card>
+        </form>
       </div>
     </div>
   );

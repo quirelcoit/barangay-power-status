@@ -346,32 +346,51 @@ export function ReportNew() {
                       {location.lng.toFixed(4)})
                     </span>
                   </div>
-                  
+
                   {/* Location Validation Warning */}
                   {!isLocationInQuirinoBounds(location.lat, location.lng) && (
                     <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-300 rounded-lg text-red-800 text-sm">
                       <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="font-semibold">⚠️ Location Outside Service Area</p>
+                        <p className="font-semibold">
+                          ⚠️ Location Outside Service Area
+                        </p>
                         <p className="text-xs mt-1 mb-2">
-                          Your GPS location is outside our service area (Quirino Province + San Agustin, Isabela). Reports can only be submitted from within the service area.
+                          Your GPS location is outside our service area (Quirino
+                          Province + San Agustin, Isabela). Reports can only be
+                          submitted from within the service area.
                         </p>
                         <button
                           type="button"
                           onClick={async () => {
                             setLoading(true);
                             try {
-                              const { getCurrentLocation } = await import("../lib/geo");
+                              const { getCurrentLocation } = await import(
+                                "../lib/geo"
+                              );
                               const newLocation = await getCurrentLocation();
                               setLocation(newLocation);
-                              if (isLocationInQuirinoBounds(newLocation.lat, newLocation.lng)) {
-                                addToast("✅ Location is now valid!", "success");
+                              if (
+                                isLocationInQuirinoBounds(
+                                  newLocation.lat,
+                                  newLocation.lng
+                                )
+                              ) {
+                                addToast(
+                                  "✅ Location is now valid!",
+                                  "success"
+                                );
                               } else {
-                                addToast("⚠️ New location is still outside Quirino Province", "info");
+                                addToast(
+                                  "⚠️ New location is still outside Quirino Province",
+                                  "info"
+                                );
                               }
                             } catch (err) {
                               addToast(
-                                err instanceof Error ? err.message : "Failed to get location",
+                                err instanceof Error
+                                  ? err.message
+                                  : "Failed to get location",
                                 "error"
                               );
                             } finally {

@@ -131,15 +131,15 @@ export function calculateDistance(
 
 /**
  * Service Area Boundaries (approximate)
- * Covers: 
+ * Covers:
  * - All municipalities in Quirino: Aglipay, Cabarroguis, Diffun, Maddela, Nagtipunan, Saguday
  * - San Agustin, Isabela (neighboring consumer area)
  */
 const SERVICE_AREA_BOUNDS = {
-  minLat: 15.8,   // Southern boundary (San Agustin, Isabela)
-  maxLat: 17.5,   // Northern boundary (Quirino)
-  minLng: 120.5,  // Western boundary
-  maxLng: 122.0,  // Eastern boundary
+  minLat: 15.8, // Southern boundary (San Agustin, Isabela)
+  maxLat: 17.5, // Northern boundary (Quirino)
+  minLng: 120.5, // Western boundary
+  maxLng: 122.0, // Eastern boundary
 };
 
 /**

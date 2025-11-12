@@ -13,9 +13,24 @@ interface MunicipalityStatus {
   last_updated: string;
 }
 
+const formatTimestamp = (dateString: string): string => {
+  const date = new Date(dateString);
+  const options: Intl.DateTimeFormatOptions = {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  };
+  return date.toLocaleString("en-US", options);
+};
+
 export function PowerProgress() {
   const { addToast } = useToast();
-  const [municipalities, setMunicipalities] = useState<MunicipalityStatus[]>([]);
+  const [municipalities, setMunicipalities] = useState<MunicipalityStatus[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
   const [totalStats, setTotalStats] = useState({
     total: 0,
@@ -23,20 +38,21 @@ export function PowerProgress() {
     partial: 0,
     no_power: 0,
   });
+  const [latestTimestamp, setLatestTimestamp] = useState<string>("");
 
   useEffect(() => {
     loadMunicipalityStatus();
-    
+
     // Auto-refresh every 2 minutes
     const interval = setInterval(loadMunicipalityStatus, 120000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
   const loadMunicipalityStatus = async () => {
     try {
       setLoading(true);
-      
+
       const { data, error } = await supabase
         .from("municipality_status")
         .select("*")
@@ -45,6 +61,14 @@ export function PowerProgress() {
       if (error) throw error;
 
       setMunicipalities(data || []);
+
+      // Get latest timestamp from all records
+      if (data && data.length > 0) {
+        const latestTimestamp = new Date(
+          Math.max(...data.map((d) => new Date(d.last_updated).getTime()))
+        ).toISOString();
+        setLatestTimestamp(latestTimestamp);
+      }
 
       // Calculate totals
       const totals = (data || []).reduce(
@@ -100,11 +124,16 @@ export function PowerProgress() {
   return (
     <div className="min-h-screen bg-gray-50 py-6">
       <div className="max-w-6xl mx-auto px-4">
-        {/* Header */}
+        {/* Header with "As of" timestamp */}
         <div className="mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-            ⚡ Power Restoration Status
+            ⚡ Power Restoration Progress
           </h1>
+          {latestTimestamp && (
+            <p className="text-lg font-semibold text-blue-600 mb-2">
+              As of {formatTimestamp(latestTimestamp)}
+            </p>
+          )}
           <p className="text-sm sm:text-base text-gray-600">
             Real-time power restoration progress across municipalities
           </p>
@@ -131,7 +160,9 @@ export function PowerProgress() {
               </div>
               <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
                 <div
-                  className={`h-full ${getStatusColor(overallPercent)} transition-all duration-500`}
+                  className={`h-full ${getStatusColor(
+                    overallPercent
+                  )} transition-all duration-500`}
                   style={{ width: `${overallPercent}%` }}
                 />
               </div>
@@ -192,17 +223,19 @@ export function PowerProgress() {
                         {muni.municipality}
                       </h3>
                       <div className="flex items-center gap-2">
-                        <span className={`text-2xl font-bold ${
-                          muni.percent_energized === 100
-                            ? "text-green-600"
-                            : muni.percent_energized >= 75
-                            ? "text-lime-600"
-                            : muni.percent_energized >= 50
-                            ? "text-yellow-600"
-                            : muni.percent_energized >= 25
-                            ? "text-orange-600"
-                            : "text-red-600"
-                        }`}>
+                        <span
+                          className={`text-2xl font-bold ${
+                            muni.percent_energized === 100
+                              ? "text-green-600"
+                              : muni.percent_energized >= 75
+                              ? "text-lime-600"
+                              : muni.percent_energized >= 50
+                              ? "text-yellow-600"
+                              : muni.percent_energized >= 25
+                              ? "text-orange-600"
+                              : "text-red-600"
+                          }`}
+                        >
                           {muni.percent_energized}%
                         </span>
                         <TrendingUp className="w-5 h-5 text-gray-400" />
@@ -212,7 +245,9 @@ export function PowerProgress() {
                     {/* Progress Bar */}
                     <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                       <div
-                        className={`h-full ${getStatusColor(muni.percent_energized)} transition-all duration-500`}
+                        className={`h-full ${getStatusColor(
+                          muni.percent_energized
+                        )} transition-all duration-500`}
                         style={{ width: `${muni.percent_energized}%` }}
                       />
                     </div>
@@ -223,7 +258,8 @@ export function PowerProgress() {
                         {getStatusLabel(muni.percent_energized)}
                       </p>
                       <p className="text-xs text-gray-600">
-                        {muni.energized_barangays} / {muni.total_barangays} barangays energized
+                        {muni.energized_barangays} / {muni.total_barangays}{" "}
+                        barangays energized
                       </p>
                     </div>
 
@@ -252,7 +288,8 @@ export function PowerProgress() {
                     {/* Last Updated */}
                     {muni.last_updated && (
                       <p className="text-xs text-gray-500">
-                        Last updated: {new Date(muni.last_updated).toLocaleString()}
+                        Last updated:{" "}
+                        {new Date(muni.last_updated).toLocaleString()}
                       </p>
                     )}
                   </div>
