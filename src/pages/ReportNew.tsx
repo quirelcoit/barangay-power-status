@@ -61,6 +61,16 @@ export function ReportNew() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("🔵 handleSubmit called");
+    console.log("📋 Current form state:", {
+      category,
+      barangayId,
+      description,
+      contactHint,
+      photoFile: photoFile ? "✅ File present" : "❌ No file",
+      location: location ? "✅ GPS ready" : "❌ No GPS",
+      loading,
+    });
 
     // Prevent double-submit
     if (loading) {
