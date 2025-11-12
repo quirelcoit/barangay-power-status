@@ -131,14 +131,55 @@ export function UpdateEditor() {
             {/* Headline */}
             <div className="space-y-2">
               <label htmlFor="headline" className="font-medium text-gray-700">
-                Headline *
+                Headline * (or select from common options)
               </label>
+              
+              {/* Common Headlines Dropdown */}
+              <div className="mb-3">
+                <select
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setHeadline(e.target.value);
+                    }
+                  }}
+                  defaultValue=""
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-power-500 bg-white text-sm"
+                >
+                  <option value="">📝 Select a common headline...</option>
+                  <optgroup label="Power Restoration">
+                    <option>Power restored - all systems normal</option>
+                    <option>Partial power restored - still working on full restoration</option>
+                    <option>Crew working on restoration - ETA 2 hours</option>
+                    <option>Power line repair in progress</option>
+                  </optgroup>
+                  <optgroup label="Outages & Issues">
+                    <option>Power outage reported - investigating</option>
+                    <option>Transformer down - replacement scheduled</option>
+                    <option>Fallen tree blocking power lines</option>
+                    <option>Broken utility pole under repair</option>
+                    <option>Heavy wind damage to power infrastructure</option>
+                  </optgroup>
+                  <optgroup label="Updates">
+                    <option>Crew mobilized to affected area</option>
+                    <option>Repair work expected to complete today</option>
+                    <option>Waiting for equipment delivery</option>
+                    <option>Weather delays power restoration</option>
+                  </optgroup>
+                  <optgroup label="Hazard Alerts">
+                    <option>Do not approach downed power lines</option>
+                    <option>High voltage equipment exposed - stay clear</option>
+                    <option>Electrical fire hazard in area</option>
+                  </optgroup>
+                </select>
+              </div>
+
+              {/* Custom Headline Input */}
               <input
                 id="headline"
                 type="text"
                 value={headline}
                 onChange={(e) => setHeadline(e.target.value)}
-                placeholder="E.g., Crew mobilized to restore power on Main Street"
+                placeholder="Or type custom headline..."
                 maxLength={100}
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-power-500"
