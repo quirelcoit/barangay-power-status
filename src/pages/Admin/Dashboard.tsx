@@ -10,6 +10,7 @@ interface Report {
   barangay_name?: string;
   category: string;
   description: string | null;
+  contact_hint: string | null;
   status: string;
   created_at: string;
   lat: number | null;
@@ -63,6 +64,7 @@ export function Dashboard() {
           barangay_id,
           category,
           description,
+          contact_hint,
           status,
           created_at,
           lat,
@@ -211,6 +213,11 @@ export function Dashboard() {
                     {report.description && (
                       <p className="text-sm text-gray-700 mt-2">
                         {report.description}
+                      </p>
+                    )}
+                    {report.contact_hint && (
+                      <p className="text-xs text-gray-600 mt-2 bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                        📞 Contact: {report.contact_hint}
                       </p>
                     )}
                     {report.lat && report.lng && (

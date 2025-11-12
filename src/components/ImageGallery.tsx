@@ -12,6 +12,7 @@ interface Photo {
   report?: {
     category: string;
     description: string | null;
+    contact_hint: string | null;
     barangay_id: string | null;
     custom_location: string | null;
     lat: number | null;
@@ -352,6 +353,18 @@ export function ImageGallery({ isOpen, onClose }: ImageGalleryProps) {
                       </p>
                       <p className="text-sm text-gray-700 bg-white p-2 rounded border">
                         "{currentPhoto.report.description}"
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Contact Hint */}
+                  {currentPhoto.report?.contact_hint && (
+                    <div>
+                      <p className="text-xs font-semibold text-gray-600 mb-1">
+                        📞 Contact:
+                      </p>
+                      <p className="text-sm text-gray-700 bg-blue-50 p-2 rounded border border-blue-200">
+                        {currentPhoto.report.contact_hint}
                       </p>
                     </div>
                   )}

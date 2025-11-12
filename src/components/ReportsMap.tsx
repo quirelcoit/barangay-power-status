@@ -11,6 +11,7 @@ interface Report {
   lng: number;
   category: string;
   description: string | null;
+  contact_hint: string | null;
   barangay_id: string | null;
   custom_location: string | null;
   created_at: string;
@@ -431,6 +432,18 @@ export function ReportsMap() {
                         </div>
                       )}
 
+                      {/* Contact Hint if available */}
+                      {report.contact_hint && (
+                        <div className="mb-3">
+                          <p className="text-xs font-semibold text-gray-600 mb-1">
+                            📞 Contact:
+                          </p>
+                          <p className="text-sm text-gray-700 bg-blue-50 p-2 rounded border border-blue-200">
+                            {report.contact_hint}
+                          </p>
+                        </div>
+                      )}
+
                       {/* Timestamp */}
                       <div className="text-xs text-gray-500 border-t border-gray-200 pt-2 mb-2">
                         <p>🕐 {new Date(report.created_at).toLocaleString()}</p>
@@ -560,6 +573,12 @@ export function ReportsMap() {
                       {report.description && (
                         <p className="text-xs text-gray-700 bg-gray-50 p-2 rounded mb-2 line-clamp-2">
                           "{report.description}"
+                        </p>
+                      )}
+
+                      {report.contact_hint && (
+                        <p className="text-xs text-gray-600 bg-blue-50 p-2 rounded mb-2 border border-blue-200">
+                          📞 {report.contact_hint}
                         </p>
                       )}
 

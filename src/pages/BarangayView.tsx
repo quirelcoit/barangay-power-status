@@ -17,6 +17,7 @@ interface Report {
   id: string;
   category: string;
   description: string | null;
+  contact_hint: string | null;
   lat: number | null;
   lng: number | null;
   created_at: string;
@@ -196,6 +197,11 @@ export function BarangayView() {
                         {report.description && (
                           <p className="text-sm text-gray-700">
                             {report.description}
+                          </p>
+                        )}
+                        {report.contact_hint && (
+                          <p className="text-xs text-gray-600 bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                            📞 Contact: {report.contact_hint}
                           </p>
                         )}
                         {report.lat && report.lng && (
