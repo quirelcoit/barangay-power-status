@@ -60,23 +60,11 @@ export function ReportNew() {
     setCustomLocation(custom);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("🔵 handleSubmit called");
-    console.log("📋 Current form state:", {
-      category,
-      barangayId,
-      description,
-      contactHint,
-      photoFile: photoFile ? "✅ File present" : "❌ No file",
-      location: location ? "✅ GPS ready" : "❌ No GPS",
-      loading,
-    });
-    console.log("🔍 Stack trace:", new Error().stack);
+  const handleSubmit = async (e?: any) => {
+    if (e) e.preventDefault();
 
     // Prevent double-submit
     if (loading) {
-      console.log("⚠️ Submit already in progress, ignoring duplicate click");
       return;
     }
 
@@ -279,10 +267,7 @@ export function ReportNew() {
         </div>
 
         <Card padding="lg">
-          <form 
-            onSubmit={handleSubmit}
-            className="space-y-6"
-          >
+          <div className="space-y-6">
             {/* Safety Warning */}
             <div className="bg-danger-50 border border-danger-200 p-4 rounded-lg flex gap-3 text-danger-800">
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -392,7 +377,10 @@ export function ReportNew() {
 
             {/* Submit */}
             <button
-              type="submit"
+              onClick={async (e) => {
+                e.preventDefault();
+                await handleSubmit(e as any);
+              }}
               disabled={
                 loading ||
                 !category ||
@@ -403,7 +391,7 @@ export function ReportNew() {
             >
               {loading ? "Getting location and submitting..." : "Submit Report"}
             </button>
-          </form>
+          </div>
         </Card>
 
         <p className="mt-4 text-sm text-gray-600 text-center">
