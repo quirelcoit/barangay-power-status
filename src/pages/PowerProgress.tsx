@@ -9,6 +9,7 @@ interface MunicipalityStatus {
   partial_barangays: number;
   no_power_barangays: number;
   percent_energized: number;
+  as_of_time: string;
   last_updated: string;
 }
 
@@ -25,12 +26,12 @@ const MUNICIPALITY_ORDER = [
 
 // Define correct total barangays for each municipality (must match PowerUpdate.tsx)
 const MUNICIPALITY_TOTALS: { [key: string]: number } = {
-  "DIFFUN": 33,
-  "CABARROGUIS": 17,
-  "SAGUDAY": 9,
-  "MADDELA": 32,
-  "AGLIPAY": 25,
-  "NAGTIPUNAN": 16,
+  DIFFUN: 33,
+  CABARROGUIS: 17,
+  SAGUDAY: 9,
+  MADDELA: 32,
+  AGLIPAY: 25,
+  NAGTIPUNAN: 16,
   "SAN AGUSTIN, ISABELA": 18,
 };
 
@@ -79,7 +80,7 @@ export function PowerProgress() {
       const allMunicipalities = MUNICIPALITY_ORDER.map((municipality) => {
         const existing = dataMap.get(municipality);
         const totalBgy = MUNICIPALITY_TOTALS[municipality] || 0;
-        
+
         if (existing) {
           // Use existing data but ensure total_barangays is correct
           return {
@@ -87,7 +88,7 @@ export function PowerProgress() {
             total_barangays: totalBgy,
           };
         }
-        
+
         // Return default data with correct total barangays
         return {
           municipality,
@@ -96,18 +97,29 @@ export function PowerProgress() {
           partial_barangays: 0,
           no_power_barangays: 0,
           percent_energized: 0,
+          as_of_time: null,
           last_updated: new Date().toISOString(),
         };
       });
 
       setMunicipalities(allMunicipalities);
 
-      // Get latest timestamp from all records (or use current time if no data)
+      // Get latest as_of_time from all records that have it
       if (data && data.length > 0) {
-        const latestTimestamp = new Date(
-          Math.max(...data.map((d) => new Date(d.last_updated).getTime()))
-        ).toISOString();
-        setLatestTimestamp(latestTimestamp);
+        const asOfTimes = data
+          .filter((d) => d.as_of_time)
+          .map((d) => new Date(d.as_of_time).getTime());
+        
+        if (asOfTimes.length > 0) {
+          const latestAsOfTime = new Date(Math.max(...asOfTimes)).toISOString();
+          setLatestTimestamp(latestAsOfTime);
+        } else {
+          // Fallback to updated_at if as_of_time is not set
+          const latestTimestamp = new Date(
+            Math.max(...data.map((d) => new Date(d.last_updated).getTime()))
+          ).toISOString();
+          setLatestTimestamp(latestTimestamp);
+        }
       }
     } catch (err) {
       addToast(
@@ -150,47 +162,51 @@ export function PowerProgress() {
         </div>
 
         {/* Summary Cards */}
-        {municipalities.length > 0 && (() => {
-          const totalBgy = municipalities.reduce(
-            (sum, m) => sum + m.total_barangays,
-            0
-          );
-          const energizedBgy = municipalities.reduce(
-            (sum, m) => sum + m.energized_barangays,
-            0
-          );
-          const partialBgy = municipalities.reduce(
-            (sum, m) => sum + m.partial_barangays,
-            0
-          );
-          const noPowerBgy = municipalities.reduce(
-            (sum, m) => sum + m.no_power_barangays,
-            0
-          );
-          // Use exact same calculation as QUIRELCO FRANCHISE AREA row for consistency
-          const overallPercent = totalBgy > 0 ? (energizedBgy / totalBgy) * 100 : 0;
+        {municipalities.length > 0 &&
+          (() => {
+            const totalBgy = municipalities.reduce(
+              (sum, m) => sum + m.total_barangays,
+              0
+            );
+            const energizedBgy = municipalities.reduce(
+              (sum, m) => sum + m.energized_barangays,
+              0
+            );
+            const partialBgy = municipalities.reduce(
+              (sum, m) => sum + m.partial_barangays,
+              0
+            );
+            const noPowerBgy = municipalities.reduce(
+              (sum, m) => sum + m.no_power_barangays,
+              0
+            );
+            // Use exact same calculation as QUIRELCO FRANCHISE AREA row for consistency
+            const overallPercent =
+              totalBgy > 0 ? (energizedBgy / totalBgy) * 100 : 0;
 
-          return (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-              <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-lg shadow">
-                <div className="text-2xl font-bold">{energizedBgy}</div>
-                <div className="text-sm opacity-90">Energized</div>
+            return (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+                <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-lg shadow">
+                  <div className="text-2xl font-bold">{energizedBgy}</div>
+                  <div className="text-sm opacity-90">Energized</div>
+                </div>
+                <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white p-4 rounded-lg shadow">
+                  <div className="text-2xl font-bold">{partialBgy}</div>
+                  <div className="text-sm opacity-90">Partial Power</div>
+                </div>
+                <div className="bg-gradient-to-br from-red-500 to-red-600 text-white p-4 rounded-lg shadow">
+                  <div className="text-2xl font-bold">{noPowerBgy}</div>
+                  <div className="text-sm opacity-90">No Power</div>
+                </div>
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-lg shadow">
+                  <div className="text-2xl font-bold">
+                    {overallPercent.toFixed(2)}%
+                  </div>
+                  <div className="text-sm opacity-90">Overall</div>
+                </div>
               </div>
-              <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white p-4 rounded-lg shadow">
-                <div className="text-2xl font-bold">{partialBgy}</div>
-                <div className="text-sm opacity-90">Partial Power</div>
-              </div>
-              <div className="bg-gradient-to-br from-red-500 to-red-600 text-white p-4 rounded-lg shadow">
-                <div className="text-2xl font-bold">{noPowerBgy}</div>
-                <div className="text-sm opacity-90">No Power</div>
-              </div>
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-lg shadow">
-                <div className="text-2xl font-bold">{overallPercent.toFixed(2)}%</div>
-                <div className="text-sm opacity-90">Overall</div>
-              </div>
-            </div>
-          );
-        })()}
+            );
+          })()}
 
         {/* Table */}
         <div className="overflow-x-auto bg-white rounded-lg shadow">
@@ -331,7 +347,9 @@ export function PowerProgress() {
 
                       return (
                         <div className="space-y-1">
-                          <div className={`text-center font-bold text-lg ${percentColor}`}>
+                          <div
+                            className={`text-center font-bold text-lg ${percentColor}`}
+                          >
                             {totalPercent.toFixed(2)}%
                           </div>
                           <div className="w-full bg-gray-300 rounded-full h-2.5 overflow-hidden">

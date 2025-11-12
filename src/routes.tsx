@@ -21,10 +21,10 @@ export function AppRoutes() {
     <Router>
       <Navbar />
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<PowerProgress />} />
+        <Route path="/home" element={<Home />} />
         <Route path="/report" element={<ReportNew />} />
         <Route path="/barangay/:barangayId" element={<BarangayView />} />
-        <Route path="/progress" element={<PowerProgress />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/callback" element={<AdminCallback />} />
         <Route path="/admin/dashboard" element={<Dashboard />} />

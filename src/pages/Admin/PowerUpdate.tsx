@@ -31,6 +31,9 @@ export function PowerUpdate() {
   const [updates, setUpdates] = useState<{
     [key: string]: { energized: number; remarks: string; photo: File | null };
   }>({});
+  const [asOfTime, setAsOfTime] = useState<string>(
+    new Date().toISOString().slice(0, 16)
+  );
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -163,6 +166,7 @@ export function PowerUpdate() {
             photo_url: photoUrl,
             updated_by: session?.session?.user?.id,
             is_published: true,
+            as_of_time: asOfTime,
           },
         ]);
 
@@ -242,12 +246,27 @@ export function PowerUpdate() {
         {/* Form */}
         <form onSubmit={handleSubmit}>
           <div className="bg-white rounded-lg shadow overflow-hidden">
-            {/* Instructions */}
-            <div className="p-6 bg-blue-50 border-b border-blue-200">
+            {/* Instructions & Date/Time Picker */}
+            <div className="p-6 bg-blue-50 border-b border-blue-200 space-y-4">
               <p className="text-sm text-blue-900">
                 ℹ️ Enter the number of energized barangays for each
                 municipality. Leave blank or zero to skip.
               </p>
+              <div>
+                <label
+                  htmlFor="as_of_time"
+                  className="block text-sm font-semibold text-blue-900 mb-2"
+                >
+                  Report As Of Date & Time
+                </label>
+                <input
+                  id="as_of_time"
+                  type="datetime-local"
+                  value={asOfTime}
+                  onChange={(e) => setAsOfTime(e.target.value)}
+                  className="w-full sm:w-64 px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                />
+              </div>
             </div>
 
             {/* Table */}
@@ -337,7 +356,10 @@ export function PowerUpdate() {
                   <tr className="bg-gray-200 border-t-2 border-gray-300 font-bold">
                     <td className="px-6 py-4 text-gray-900">TOTAL</td>
                     <td className="px-6 py-4 text-center text-gray-900">
-                      {MUNICIPALITIES.reduce((sum, m) => sum + m.totalBarangays, 0)}
+                      {MUNICIPALITIES.reduce(
+                        (sum, m) => sum + m.totalBarangays,
+                        0
+                      )}
                     </td>
                     <td className="px-6 py-4 text-center text-gray-900">
                       {MUNICIPALITIES.reduce(

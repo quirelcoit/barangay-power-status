@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS public.municipality_updates (
   photo_url text,
   updated_by uuid references auth.users(id),
   is_published boolean default true,
+  as_of_time timestamptz,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -51,6 +52,7 @@ WITH ranked_updates AS (
     energized_barangays,
     partial_barangays,
     no_power_barangays,
+    as_of_time,
     updated_at,
     ROW_NUMBER() OVER (PARTITION BY municipality ORDER BY updated_at DESC, id DESC) as rn
   FROM public.municipality_updates
@@ -63,6 +65,7 @@ SELECT
   partial_barangays,
   no_power_barangays,
   ROUND((energized_barangays::numeric / total_barangays) * 100, 2) as percent_energized,
+  as_of_time,
   updated_at as last_updated
 FROM ranked_updates
 WHERE rn = 1
