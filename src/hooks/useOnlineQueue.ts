@@ -35,14 +35,26 @@ export function useOnlineQueue() {
           const fileName = `${Date.now()}-${Math.random()
             .toString(36)
             .substr(2, 9)}.jpg`;
+          
+          // Convert base64 data URL to Blob
+          const base64Data = report.photoBase64.split(',')[1] || report.photoBase64;
+          const binaryString = atob(base64Data);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          const photoBlob = new Blob([bytes], { type: 'image/jpeg' });
+          
           const { error: uploadError } = await supabase.storage
             .from("report-photos")
-            .upload(fileName, new Blob([report.photoBase64]), {
+            .upload(fileName, photoBlob, {
               contentType: "image/jpeg",
             });
 
           if (!uploadError) {
             photoPath = fileName;
+          } else {
+            console.error("❌ Photo upload failed during sync:", uploadError);
           }
         }
 

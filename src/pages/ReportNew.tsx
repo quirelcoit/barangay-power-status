@@ -146,19 +146,24 @@ export function ReportNew() {
             .toString(36)
             .substr(2, 9)}.jpg`;
 
+          console.log("📤 Uploading photo:", fileName);
           const { error: uploadError } = await supabase.storage
             .from("report-photos")
             .upload(fileName, photoFile, {
               contentType: "image/jpeg",
             });
 
-          if (!uploadError) {
+          if (uploadError) {
+            console.error("❌ Photo upload failed:", uploadError);
+          } else {
+            console.log("✅ Photo uploaded successfully");
             await supabase.from("report_photos").insert([
               {
                 report_id: insertedReport[0].id,
                 storage_path: fileName,
               },
             ]);
+            console.log("✅ Photo record created in database");
           }
         }
 

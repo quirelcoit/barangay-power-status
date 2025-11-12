@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { Card } from "./Card";
+import { useToast } from "./Toast";
 
 interface Photo {
   id: string;
@@ -47,6 +48,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export function ImageGallery({ isOpen, onClose }: ImageGalleryProps) {
+  const { addToast } = useToast();
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -88,6 +90,8 @@ export function ImageGallery({ isOpen, onClose }: ImageGalleryProps) {
         )
         .order("created_at", { ascending: false });
 
+      console.log("📸 Gallery query result:", { photosData, photosError });
+
       if (photosError) throw photosError;
 
       // Generate signed URLs for photos
@@ -121,8 +125,10 @@ export function ImageGallery({ isOpen, onClose }: ImageGalleryProps) {
         total: photosWithUrls.length,
         byCategory,
       });
+      console.log("✅ Photos loaded successfully:", photosWithUrls.length);
     } catch (err) {
-      console.error("Failed to load photos:", err);
+      console.error("❌ Failed to load photos:", err);
+      addToast("Failed to load photos", "error");
     } finally {
       setLoading(false);
     }
