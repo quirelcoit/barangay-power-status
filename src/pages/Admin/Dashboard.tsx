@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
-import { Card, StatusBadge, useToast } from "../../components";
+import { Card, StatusBadge, useToast, ImageGallery } from "../../components";
 import { Check, X, LogOut } from "lucide-react";
 
 interface Report {
@@ -36,6 +36,7 @@ export function Dashboard() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
 
   useEffect(() => {
     async function checkAuth() {
@@ -136,6 +137,12 @@ export function Dashboard() {
               className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
             >
               📍 View Map
+            </button>
+            <button
+              onClick={() => setIsGalleryOpen(true)}
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm sm:text-base"
+            >
+              📸 Photos
             </button>
             <button
               onClick={handleLogout}
@@ -278,6 +285,11 @@ export function Dashboard() {
           </button>
         </div>
       </div>
+
+      {/* Image Gallery Modal */}
+      {isGalleryOpen && (
+        <ImageGallery isOpen={isGalleryOpen} onClose={() => setIsGalleryOpen(false)} />
+      )}
     </div>
   );
 }
