@@ -40,6 +40,10 @@ CREATE INDEX IF NOT EXISTS idx_municipality_updates_published
 ON public.municipality_updates(is_published) 
 WHERE is_published = true;
 
+-- Add as_of_time column if it doesn't exist
+ALTER TABLE public.municipality_updates 
+ADD COLUMN IF NOT EXISTS as_of_time timestamptz;
+
 -- Create municipality_status view for dashboard (get LATEST update per municipality only)
 DROP VIEW IF EXISTS public.municipality_status;
 
