@@ -5,7 +5,8 @@ export interface QueuedReport {
   customLocation?: string;
   category: string;
   description: string;
-  contactHint?: string;
+  contactName?: string;
+  contactNumber?: string;
   lat?: number;
   lng?: number;
   photoFile?: File;

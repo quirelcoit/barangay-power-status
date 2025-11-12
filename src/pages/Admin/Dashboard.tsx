@@ -10,7 +10,8 @@ interface Report {
   barangay_name?: string;
   category: string;
   description: string | null;
-  contact_hint: string | null;
+  contact_name: string | null;
+  contact_number: string | null;
   status: string;
   created_at: string;
   lat: number | null;
@@ -64,7 +65,8 @@ export function Dashboard() {
           barangay_id,
           category,
           description,
-          contact_hint,
+          contact_name,
+          contact_number,
           status,
           created_at,
           lat,
@@ -215,10 +217,16 @@ export function Dashboard() {
                         {report.description}
                       </p>
                     )}
-                    {report.contact_hint && (
-                      <p className="text-xs text-gray-600 mt-2 bg-blue-50 px-2 py-1 rounded border border-blue-200">
-                        📞 Contact: {report.contact_hint}
-                      </p>
+                    {(report.contact_name || report.contact_number) && (
+                      <div className="text-xs text-gray-600 mt-2 bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                        <p className="font-semibold text-blue-900 mb-1">📞 Contact Info (Admin Only):</p>
+                        {report.contact_name && (
+                          <p>Name: {report.contact_name}</p>
+                        )}
+                        {report.contact_number && (
+                          <p>Number: {report.contact_number}</p>
+                        )}
+                      </div>
                     )}
                     {report.lat && report.lng && (
                       <p className="text-xs text-gray-500 mt-2 font-mono">

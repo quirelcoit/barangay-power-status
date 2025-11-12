@@ -47,7 +47,8 @@ export function ReportNew() {
   const [barangayId, setBarangayId] = useState<string>("");
   const [customLocation, setCustomLocation] = useState<string | undefined>();
   const [description, setDescription] = useState("");
-  const [contactHint, setContactHint] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [contactNumber, setContactNumber] = useState("");
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
     null
   );
@@ -122,7 +123,8 @@ export function ReportNew() {
         const reportData: Record<string, unknown> = {
           category,
           description: description || null,
-          contact_hint: contactHint || null,
+          contact_name: contactName || null,
+          contact_number: contactNumber || null,
           lat: finalLocation.lat,
           lng: finalLocation.lng,
           turnstile_ok: true,
@@ -197,7 +199,8 @@ export function ReportNew() {
           customLocation: isCustomLocation ? customLocation : undefined,
           category,
           description: description || "",
-          contactHint: contactHint || "",
+          contactName: contactName || "",
+          contactNumber: contactNumber || "",
           lat: finalLocation.lat,
           lng: finalLocation.lng,
           photoBase64,
@@ -215,7 +218,8 @@ export function ReportNew() {
 
       // Reset ONLY optional fields - keep required fields for next report
       setDescription("");
-      setContactHint("");
+      setContactName("");
+      setContactNumber("");
       setPhotoFile(null);
       // Keep: category, barangayId, customLocation, location for easy re-submit
     } catch (err) {
@@ -357,22 +361,46 @@ export function ReportNew() {
 
             {/* Contact Hint */}
             <div className="space-y-2">
-              <label htmlFor="contact" className="font-medium text-gray-700">
+              <label className="font-medium text-gray-700">
                 Contact Information (optional)
               </label>
-              <input
-                id="contact"
-                type="text"
-                value={contactHint}
-                onChange={(e) => setContactHint(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
-                placeholder="Name: Juan Dela Cruz, Contact: 09171234567"
-                maxLength={100}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-power-500"
-              />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 mb-2">
                 🔒 Only visible to admin staff for follow-up. Not shown publicly.
               </p>
+              
+              <div className="space-y-3">
+                <div>
+                  <label htmlFor="contactName" className="text-sm text-gray-600">
+                    Name
+                  </label>
+                  <input
+                    id="contactName"
+                    type="text"
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
+                    placeholder="E.g., Juan Dela Cruz"
+                    maxLength={100}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-power-500"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="contactNumber" className="text-sm text-gray-600">
+                    Contact Number
+                  </label>
+                  <input
+                    id="contactNumber"
+                    type="tel"
+                    value={contactNumber}
+                    onChange={(e) => setContactNumber(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
+                    placeholder="E.g., 09171234567"
+                    maxLength={20}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-power-500"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Submit */}
