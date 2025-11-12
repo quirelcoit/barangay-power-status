@@ -222,31 +222,31 @@ export function PowerUpdate() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
+    <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4">
         {/* Header */}
-        <div className="mb-8 flex items-center gap-2">
+        <div className="mb-6 sm:mb-8 flex items-center gap-2">
           <button
             onClick={() => navigate("/admin")}
             className="p-2 hover:bg-gray-200 rounded-lg transition"
           >
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-3xl font-bold">
-            Power Status Update - All Municipalities
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
+            Power Status Update
           </h1>
         </div>
 
         {/* Success Message */}
         {submitted && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="mb-6 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
             <div className="flex items-center gap-3">
-              <Check size={24} className="text-green-600" />
+              <Check size={20} className="text-green-600 flex-shrink-0" />
               <div>
-                <p className="font-semibold text-green-900">
+                <p className="font-semibold text-green-900 text-sm sm:text-base">
                   Updates Submitted
                 </p>
-                <p className="text-sm text-green-700">
+                <p className="text-xs sm:text-sm text-green-700">
                   All power status updates have been successfully recorded.
                 </p>
               </div>
@@ -258,15 +258,14 @@ export function PowerUpdate() {
         <form onSubmit={handleSubmit}>
           <div className="bg-white rounded-lg shadow overflow-hidden">
             {/* Instructions & Date/Time Picker */}
-            <div className="p-6 bg-blue-50 border-b border-blue-200 space-y-4">
-              <p className="text-sm text-blue-900">
-                ℹ️ Enter the number of energized barangays for each
-                municipality. Leave blank or zero to skip.
+            <div className="p-3 sm:p-6 bg-blue-50 border-b border-blue-200 space-y-3 sm:space-y-4">
+              <p className="text-xs sm:text-sm text-blue-900">
+                ℹ️ Enter the number of energized barangays for each municipality. Leave blank or zero to skip.
               </p>
               <div>
                 <label
                   htmlFor="as_of_time"
-                  className="block text-sm font-semibold text-blue-900 mb-2"
+                  className="block text-xs sm:text-sm font-semibold text-blue-900 mb-2"
                 >
                   Report As Of Date & Time
                 </label>
@@ -285,17 +284,17 @@ export function PowerUpdate() {
               <table className="w-full">
                 <thead>
                   <tr className="bg-gray-100 border-b-2 border-gray-300">
-                    <th className="px-6 py-4 text-left font-bold text-gray-900">
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-bold text-gray-900 text-xs sm:text-base">
                       Municipality / Town
                     </th>
-                    <th className="px-6 py-4 text-center font-bold text-gray-900">
-                      Total Barangays
+                    <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
+                      Total
                     </th>
-                    <th className="px-6 py-4 text-center font-bold text-gray-900">
-                      Energized Barangays *
+                    <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
+                      Energized *
                     </th>
-                    <th className="px-6 py-4 text-center font-bold text-green-600">
-                      Percentage
+                    <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-green-600 text-xs sm:text-base">
+                      %
                     </th>
                   </tr>
                 </thead>
@@ -313,13 +312,13 @@ export function PowerUpdate() {
                         key={muni.value}
                         className={`${bgColor} border-b border-gray-200`}
                       >
-                        <td className="px-6 py-4 font-semibold text-gray-900">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-900 text-xs sm:text-base">
                           {muni.label}
                         </td>
-                        <td className="px-6 py-4 text-center font-semibold text-gray-900">
+                        <td className="px-2 sm:px-6 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base">
                           {muni.totalBarangays}
                         </td>
-                        <td className="px-6 py-4 text-center">
+                        <td className="px-2 sm:px-6 py-3 sm:py-4 text-center">
                           <input
                             type="number"
                             min="0"
@@ -346,7 +345,7 @@ export function PowerUpdate() {
                           />
                         </td>
                         <td
-                          className={`px-6 py-4 text-center font-bold text-lg ${
+                          className={`px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-lg ${
                             parseFloat(percentage) === 100
                               ? "text-green-600 bg-green-50"
                               : parseFloat(percentage) >= 75

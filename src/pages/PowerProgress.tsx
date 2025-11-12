@@ -140,22 +140,22 @@ export function PowerProgress() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
+    <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4">
         {/* Header with Image and Title */}
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+        <div className="mb-6 sm:mb-8 text-center">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">
             POWER RESTORATION PROGRESS
           </h1>
-          <p className="text-lg font-semibold text-gray-800 mb-1">
+          <p className="text-base sm:text-lg font-semibold text-gray-800 mb-1">
             SUPER TYPHOON "UWAN"
           </p>
           {latestTimestamp && (
-            <p className="text-lg font-bold text-blue-600 mb-4">
+            <p className="text-sm sm:text-base font-bold text-blue-600 mb-4">
               As of {formatTimestamp(latestTimestamp)}
             </p>
           )}
-          <p className="text-sm text-gray-700">
+          <p className="text-xs sm:text-sm text-gray-700">
             Latest update of Quirelco's power restoration per Municipality/Town
             within the franchise area.
           </p>
@@ -185,45 +185,46 @@ export function PowerProgress() {
               totalBgy > 0 ? (energizedBgy / totalBgy) * 100 : 0;
 
             return (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-                <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-lg shadow">
-                  <div className="text-2xl font-bold">{energizedBgy}</div>
-                  <div className="text-sm opacity-90">Energized</div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-8">
+                <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-3 sm:p-4 rounded-lg shadow">
+                  <div className="text-xl sm:text-2xl font-bold">{energizedBgy}</div>
+                  <div className="text-xs sm:text-sm opacity-90">Energized</div>
                 </div>
-                <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white p-4 rounded-lg shadow">
-                  <div className="text-2xl font-bold">{partialBgy}</div>
-                  <div className="text-sm opacity-90">Partial Power</div>
+                <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white p-3 sm:p-4 rounded-lg shadow">
+                  <div className="text-xl sm:text-2xl font-bold">{partialBgy}</div>
+                  <div className="text-xs sm:text-sm opacity-90">Partial Power</div>
                 </div>
-                <div className="bg-gradient-to-br from-red-500 to-red-600 text-white p-4 rounded-lg shadow">
-                  <div className="text-2xl font-bold">{noPowerBgy}</div>
-                  <div className="text-sm opacity-90">No Power</div>
+                <div className="bg-gradient-to-br from-red-500 to-red-600 text-white p-3 sm:p-4 rounded-lg shadow">
+                  <div className="text-xl sm:text-2xl font-bold">{noPowerBgy}</div>
+                  <div className="text-xs sm:text-sm opacity-90">No Power</div>
                 </div>
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-lg shadow">
-                  <div className="text-2xl font-bold">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-3 sm:p-4 rounded-lg shadow">
+                  <div className="text-xl sm:text-2xl font-bold">
                     {overallPercent.toFixed(2)}%
                   </div>
-                  <div className="text-sm opacity-90">Overall</div>
+                  <div className="text-xs sm:text-sm opacity-90">Overall</div>
                 </div>
               </div>
             );
           })()}
 
-        {/* Table */}
-        <div className="overflow-x-auto bg-white rounded-lg shadow">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-100 border-b-2 border-gray-300">
-                <th className="px-6 py-4 text-left font-bold text-gray-900">
+        {/* Table - Mobile optimized */}
+        <div className="bg-white rounded-lg shadow overflow-hidden mb-6 sm:mb-8">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-100 border-b-2 border-gray-300">
+                <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-bold text-gray-900 text-xs sm:text-base">
                   Municipality / Town
                 </th>
-                <th className="px-6 py-4 text-center font-bold text-gray-900">
-                  Total Barangays
+                <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
+                  Total
                 </th>
-                <th className="px-6 py-4 text-center font-bold text-gray-900">
-                  Energized Barangays
+                <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
+                  Energized
                 </th>
-                <th className="px-6 py-4 text-center font-bold text-green-600">
-                  Percentage
+                <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-green-600 text-xs sm:text-base">
+                  %
                 </th>
               </tr>
             </thead>
@@ -232,7 +233,7 @@ export function PowerProgress() {
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-6 py-8 text-center text-gray-600"
+                    className="px-3 sm:px-6 py-6 sm:py-8 text-center text-gray-600 text-sm"
                   >
                     No data available
                   </td>
@@ -256,19 +257,19 @@ export function PowerProgress() {
                       key={muni.municipality}
                       className={`${bgColor} border-b border-gray-200 hover:bg-blue-50 transition`}
                     >
-                      <td className="px-6 py-4 font-semibold text-gray-900">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-900 text-xs sm:text-base">
                         {muni.municipality.toUpperCase()}
                       </td>
-                      <td className="px-6 py-4 text-center font-semibold text-gray-900">
+                      <td className="px-2 sm:px-6 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base">
                         {muni.total_barangays}
                       </td>
-                      <td className="px-6 py-4 text-center font-semibold text-gray-900">
+                      <td className="px-2 sm:px-6 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base">
                         {muni.energized_barangays}
                       </td>
-                      <td className={`px-6 py-4`}>
+                      <td className={`px-2 sm:px-6 py-3 sm:py-4`}>
                         <div className="space-y-1">
                           <div
-                            className={`text-center font-bold text-lg ${percentColor}`}
+                            className={`text-center font-bold text-xs sm:text-lg ${percentColor}`}
                           >
                             {muni.percent_energized.toFixed(2)}%
                           </div>
@@ -297,22 +298,22 @@ export function PowerProgress() {
               {/* Franchise Total Row */}
               {municipalities.length > 0 && (
                 <tr className="bg-gray-200 border-t-2 border-gray-300 font-bold">
-                  <td className="px-6 py-4 text-gray-900">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-900 text-xs sm:text-base">
                     QUIRELCO FRANCHISE AREA
                   </td>
-                  <td className="px-6 py-4 text-center text-gray-900">
+                  <td className="px-2 sm:px-6 py-3 sm:py-4 text-center text-gray-900 text-xs sm:text-base">
                     {municipalities.reduce(
                       (sum, m) => sum + m.total_barangays,
                       0
                     )}
                   </td>
-                  <td className="px-6 py-4 text-center text-gray-900">
+                  <td className="px-2 sm:px-6 py-3 sm:py-4 text-center text-gray-900 text-xs sm:text-base">
                     {municipalities.reduce(
                       (sum, m) => sum + m.energized_barangays,
                       0
                     )}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-2 sm:px-6 py-3 sm:py-4">
                     {(() => {
                       const totalBgy = municipalities.reduce(
                         (sum, m) => sum + m.total_barangays,
@@ -348,7 +349,7 @@ export function PowerProgress() {
                       return (
                         <div className="space-y-1">
                           <div
-                            className={`text-center font-bold text-lg ${percentColor}`}
+                            className={`text-center font-bold text-xs sm:text-lg ${percentColor}`}
                           >
                             {totalPercent.toFixed(2)}%
                           </div>
@@ -366,22 +367,23 @@ export function PowerProgress() {
               )}
             </tbody>
           </table>
+            </div>
         </div>
 
         {/* Legend */}
-        <div className="mt-8 p-4 bg-white rounded-lg shadow">
-          <h3 className="font-bold text-gray-900 mb-3">LEGEND</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="mt-6 sm:mt-8 p-3 sm:p-4 bg-white rounded-lg shadow mb-4">
+          <h3 className="font-bold text-gray-900 mb-3 text-sm sm:text-base">LEGEND</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-green-500 rounded"></div>
-              <span className="text-sm text-gray-700">ENERGIZED</span>
+              <div className="w-5 h-5 sm:w-6 sm:h-6 bg-green-500 rounded flex-shrink-0"></div>
+              <span className="text-xs sm:text-sm text-gray-700">ENERGIZED</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-lime-500 rounded"></div>
-              <span className="text-sm text-gray-700">75% - 99%</span>
+              <div className="w-5 h-5 sm:w-6 sm:h-6 bg-lime-500 rounded flex-shrink-0"></div>
+              <span className="text-xs sm:text-sm text-gray-700">75% - 99%</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-yellow-500 rounded"></div>
+              <div className="w-5 h-5 sm:w-6 sm:h-6 bg-yellow-500 rounded flex-shrink-0"></div>
               <span className="text-sm text-gray-700">50% - 74%</span>
             </div>
             <div className="flex items-center gap-2">
