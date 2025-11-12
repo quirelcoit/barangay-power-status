@@ -110,12 +110,18 @@ export function ReportNew() {
           reportData.barangay_id = actualBarangayId;
         }
 
+        console.log("📤 Submitting report data:", reportData);
+
         const { data: insertedReport, error: reportError } = await supabase
           .from("reports")
           .insert([reportData])
           .select();
 
-        if (reportError) throw reportError;
+        if (reportError) {
+          console.error("❌ Supabase error:", reportError);
+          throw reportError;
+        }
+        console.log("✅ Report inserted:", insertedReport);
 
         if (photoFile && insertedReport && insertedReport.length > 0) {
           const fileName = `${Date.now()}-${Math.random()
