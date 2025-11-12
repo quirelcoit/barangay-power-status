@@ -31,15 +31,22 @@ export function PowerUpdate() {
   const [updates, setUpdates] = useState<{
     [key: string]: { energized: number; remarks: string; photo: File | null };
   }>({});
-  const [asOfTime, setAsOfTime] = useState<string>(
-    new Date().toISOString().slice(0, 16)
-  );
+  const [asOfTime, setAsOfTime] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
+    // Initialize asOfTime with current local time in datetime-local format
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const date = String(now.getDate()).padStart(2, "0");
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    setAsOfTime(`${year}-${month}-${date}T${hours}:${minutes}`);
+    
     checkAdmin();
   }, []);
 
@@ -118,6 +125,10 @@ export function PowerUpdate() {
     try {
       const { data: session } = await supabase.auth.getSession();
 
+      // Convert local datetime-local to ISO string with timezone
+      // datetime-local value is "YYYY-MM-DDTHH:mm", convert to ISO with timezone
+      const asOfDateTime = new Date(`${asOfTime}:00`).toISOString();
+
       // Process each municipality that has updates
       for (const muni of MUNICIPALITIES) {
         const update = updates[muni.value];
@@ -166,7 +177,7 @@ export function PowerUpdate() {
             photo_url: photoUrl,
             updated_by: session?.session?.user?.id,
             is_published: true,
-            as_of_time: asOfTime,
+            as_of_time: asOfDateTime,
           },
         ]);
 

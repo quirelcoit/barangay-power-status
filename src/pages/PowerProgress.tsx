@@ -109,7 +109,7 @@ export function PowerProgress() {
         const asOfTimes = data
           .filter((d) => d.as_of_time)
           .map((d) => new Date(d.as_of_time).getTime());
-        
+
         if (asOfTimes.length > 0) {
           const latestAsOfTime = new Date(Math.max(...asOfTimes)).toISOString();
           setLatestTimestamp(latestAsOfTime);
