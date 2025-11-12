@@ -62,6 +62,12 @@ export function ReportNew() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Prevent double-submit
+    if (loading) {
+      console.log("⚠️ Submit already in progress, ignoring duplicate click");
+      return;
+    }
+
     // Check if valid barangay selected
     const isCustomLocation = barangayId.startsWith("__CUSTOM__:");
     const actualBarangayId = isCustomLocation
@@ -155,15 +161,22 @@ export function ReportNew() {
 
           if (uploadError) {
             console.error("❌ Photo upload failed:", uploadError);
+            addToast("⚠️ Photo upload failed, but report was saved", "info");
           } else {
             console.log("✅ Photo uploaded successfully");
-            await supabase.from("report_photos").insert([
+            const { error: photoRecordError } = await supabase.from("report_photos").insert([
               {
                 report_id: insertedReport[0].id,
                 storage_path: fileName,
               },
             ]);
-            console.log("✅ Photo record created in database");
+            
+            if (photoRecordError) {
+              console.error("❌ Failed to create photo record:", photoRecordError);
+              addToast("⚠️ Photo saved to storage but database record failed", "info");
+            } else {
+              console.log("✅ Photo record created in database");
+            }
           }
         }
 

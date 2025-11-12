@@ -64,6 +64,7 @@ export function useOnlineQueue() {
           .insert([
             {
               barangay_id: report.barangayId,
+              custom_location: report.customLocation,
               category: report.category,
               description: report.description,
               contact_hint: report.contactHint,
