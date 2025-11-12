@@ -3,7 +3,6 @@ import { supabase } from "../lib/supabase";
 import {
   Card,
   MunicipalityBarangayPicker,
-  GPSChip,
   PhotoCapture,
   useToast,
 } from "../components";
@@ -78,39 +77,25 @@ export function ReportNew() {
     setLoading(true);
 
     try {
-      // Auto-capture GPS if not already set
+      // Capture location (GPS with fallback methods)
       let finalLocation = location;
       if (!finalLocation) {
-        addToast("📍 Requesting GPS location...", "info");
+        addToast("📍 Requesting location...", "info");
         try {
-          finalLocation = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(
-              (pos) => {
-                resolve({
-                  lat: pos.coords.latitude,
-                  lng: pos.coords.longitude,
-                });
-              },
-              (err) => {
-                reject(new Error(`GPS error: ${err.message}`));
-              },
-              { timeout: 10000, maximumAge: 0 }
-            );
-          });
+          const { getCurrentLocation } = await import("../lib/geo");
+          finalLocation = await getCurrentLocation();
           setLocation(finalLocation);
-          addToast("📍 GPS location captured!", "success");
-        } catch (gpsError) {
-          addToast(
-            `Failed to get GPS location. Please enable location services and try again.`,
-            "error"
-          );
+          addToast("✅ Location acquired!", "success");
+        } catch (locError) {
+          const errorMsg = locError instanceof Error ? locError.message : "Unknown error";
+          addToast(errorMsg, "error");
           setLoading(false);
           return;
         }
       }
 
       if (!finalLocation) {
-        addToast("GPS location is required to submit a report", "error");
+        addToast("Unable to determine location. Please try again.", "error");
         setLoading(false);
         return;
       }
@@ -292,22 +277,25 @@ export function ReportNew() {
               onChange={handleBarangayChange}
             />
 
-            {/* Location */}
+            {/* Location Info */}
             <div className="space-y-2">
-              <GPSChip onLocation={(lat, lng) => setLocation({ lat, lng })} />
-              {location ? (
+              <label className="font-medium text-gray-700">Location *</label>
+              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 text-sm">
+                <span className="text-xl">📍</span>
+                <div>
+                  <p className="font-medium">GPS will be captured on submit</p>
+                  <p className="text-xs mt-1">
+                    When you click "Submit Report", we'll request your GPS location.
+                    Make sure GPS is enabled on your phone for accurate coordinates.
+                    If GPS unavailable, we'll use your internet connection.
+                  </p>
+                </div>
+              </div>
+              {location && (
                 <div className="flex items-center gap-2 p-2 bg-power-50 border border-power-200 rounded-lg">
                   <div className="w-2 h-2 bg-power-600 rounded-full"></div>
                   <span className="text-sm text-power-700 font-medium">
-                    ✅ GPS acquired ({location.lat.toFixed(4)},{" "}
-                    {location.lng.toFixed(4)})
-                  </span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <div className="w-2 h-2 bg-yellow-600 rounded-full animate-pulse"></div>
-                  <span className="text-sm text-yellow-700 font-medium">
-                    📍 GPS location required to submit
+                    ✅ Location ready: ({location.lat.toFixed(4)}, {location.lng.toFixed(4)})
                   </span>
                 </div>
               )}
@@ -362,12 +350,11 @@ export function ReportNew() {
                 loading ||
                 !category ||
                 !barangayId ||
-                !location ||
                 (barangayId.startsWith("__CUSTOM__:") && !customLocation)
               }
               className="w-full px-4 py-3 bg-power-600 text-white rounded-lg font-medium hover:bg-power-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Submitting..." : "Submit Report"}
+              {loading ? "Getting location and submitting..." : "Submit Report"}
             </button>
           </form>
         </Card>

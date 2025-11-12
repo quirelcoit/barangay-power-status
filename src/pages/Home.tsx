@@ -22,6 +22,9 @@ export function Home() {
   const [filtered, setFiltered] = useState<BarangayWithUpdate[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "no_power" | "partial" | "energized">("all");
+  const [municipalityFilter, setMunicipalityFilter] = useState<string>("all");
+  const [municipalities, setMunicipalities] = useState<string[]>([]);
 
   useEffect(() => {
     async function loadData() {
@@ -54,6 +57,13 @@ export function Home() {
         }));
 
         setBarangays(barangaysWithUpdates);
+        
+        // Extract unique municipalities
+        const uniqueMunicipalities = Array.from(
+          new Set(barangaysWithUpdates.map((b) => b.municipality))
+        ).sort();
+        setMunicipalities(uniqueMunicipalities);
+        
         setFiltered(barangaysWithUpdates);
       } catch (err) {
         console.error("Failed to load barangays:", err);
@@ -65,16 +75,40 @@ export function Home() {
     loadData();
   }, []);
 
+  // Apply filters when any filter changes
+  useEffect(() => {
+    applyFilters(search, statusFilter, municipalityFilter);
+  }, [statusFilter, municipalityFilter]);
+
   const handleSearch = (query: string) => {
     setSearch(query);
-    const q = query.toLowerCase();
-    setFiltered(
-      barangays.filter(
+    applyFilters(query, statusFilter, municipalityFilter);
+  };
+
+  const applyFilters = (searchQuery: string, status: string, municipality: string) => {
+    let result = barangays;
+
+    // Search filter
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
         (b) =>
           b.name.toLowerCase().includes(q) ||
           b.municipality.toLowerCase().includes(q)
-      )
-    );
+      );
+    }
+
+    // Status filter
+    if (status !== "all") {
+      result = result.filter((b) => b.latestUpdate?.power_status === status);
+    }
+
+    // Municipality filter
+    if (municipality !== "all") {
+      result = result.filter((b) => b.municipality === municipality);
+    }
+
+    setFiltered(result);
   };
 
   const formatTime = (dateString: string) => {
@@ -113,7 +147,46 @@ export function Home() {
           </p>
         </Card>
 
-        {/* Barangay List */}
+        {/* Filters */}
+        <Card className="mb-8" padding="lg">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Status Filter */}
+            <div className="space-y-2">
+              <label className="font-medium text-gray-700 text-sm">
+                Filter by Status
+              </label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-power-500 text-sm"
+              >
+                <option value="all">All Status</option>
+                <option value="no_power">⚠️ NO POWER</option>
+                <option value="partial">⚡ PARTIAL</option>
+                <option value="energized">✓ ENERGIZED</option>
+              </select>
+            </div>
+
+            {/* Municipality Filter */}
+            <div className="space-y-2">
+              <label className="font-medium text-gray-700 text-sm">
+                Filter by Municipality
+              </label>
+              <select
+                value={municipalityFilter}
+                onChange={(e) => setMunicipalityFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-power-500 text-sm"
+              >
+                <option value="all">All Municipalities</option>
+                {municipalities.map((mun) => (
+                  <option key={mun} value={mun}>
+                    {mun}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </Card>
         {loading ? (
           <div className="text-center py-12">
             <p className="text-gray-600">Loading barangays...</p>

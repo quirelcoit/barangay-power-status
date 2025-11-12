@@ -1,7 +1,33 @@
 /**
- * Get current location using Geolocation API
+ * Get current location using Geolocation API with fallback methods
  */
-export function getCurrentLocation(): Promise<{ lat: number; lng: number }> {
+export async function getCurrentLocation(): Promise<{ lat: number; lng: number }> {
+  // Try GPS first (most accurate)
+  try {
+    const gpsLocation = await getGPSLocation();
+    return gpsLocation;
+  } catch (gpsError) {
+    console.warn("GPS failed, trying IP geolocation:", gpsError);
+  }
+
+  // Fallback to IP geolocation
+  try {
+    const ipLocation = await getIPGeolocation();
+    return ipLocation;
+  } catch (ipError) {
+    console.warn("IP geolocation failed:", ipError);
+  }
+
+  // If all else fails, throw error
+  throw new Error(
+    "Unable to get location. Please enable GPS and try again, or ensure an active internet connection."
+  );
+}
+
+/**
+ * Get precise location using GPS (browser Geolocation API)
+ */
+function getGPSLocation(): Promise<{ lat: number; lng: number }> {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
       reject(new Error("Geolocation is not supported by this browser"));
@@ -16,7 +42,22 @@ export function getCurrentLocation(): Promise<{ lat: number; lng: number }> {
         });
       },
       (error) => {
-        reject(new Error(`Geolocation error: ${error.message}`));
+        let errorMsg = "Unknown geolocation error";
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMsg =
+              "Location permission denied. Please enable GPS in your phone settings.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMsg =
+              "Location unavailable. Ensure GPS is enabled and you have a clear view of the sky.";
+            break;
+          case error.TIMEOUT:
+            errorMsg =
+              "Location request timed out. Please try again with GPS enabled.";
+            break;
+        }
+        reject(new Error(errorMsg));
       },
       {
         enableHighAccuracy: true,
@@ -25,6 +66,33 @@ export function getCurrentLocation(): Promise<{ lat: number; lng: number }> {
       }
     );
   });
+}
+
+/**
+ * Get approximate location from IP address (50-100km accuracy)
+ * Uses free IP geolocation service
+ */
+async function getIPGeolocation(): Promise<{ lat: number; lng: number }> {
+  try {
+    const response = await fetch("https://ipapi.co/json/", {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) throw new Error("IP geolocation service unavailable");
+
+    const data = await response.json();
+    if (!data.latitude || !data.longitude) {
+      throw new Error("Invalid IP geolocation response");
+    }
+
+    return {
+      lat: parseFloat(data.latitude),
+      lng: parseFloat(data.longitude),
+    };
+  } catch (err) {
+    throw new Error(
+      `IP geolocation failed: ${err instanceof Error ? err.message : "Unknown error"}`
+    );
+  }
 }
 
 /**
