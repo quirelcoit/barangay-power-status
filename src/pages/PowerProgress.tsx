@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useToast } from "../components";
-import { RefreshCw } from "lucide-react";
 
 interface MunicipalityStatus {
   municipality: string;
@@ -12,6 +11,17 @@ interface MunicipalityStatus {
   percent_energized: number;
   last_updated: string;
 }
+
+// Define the correct order of municipalities as shown in the dashboard
+const MUNICIPALITY_ORDER = [
+  "DIFFUN",
+  "CABARROGUIS",
+  "SAGUDAY",
+  "MADDELA",
+  "AGLIPAY",
+  "NAGTIPUNAN",
+  "SAN AGUSTIN, ISABELA",
+];
 
 const formatTimestamp = (dateString: string): string => {
   const date = new Date(dateString);
@@ -36,11 +46,7 @@ export function PowerProgress() {
 
   useEffect(() => {
     loadMunicipalityStatus();
-
-    // Auto-refresh every 2 minutes
-    const interval = setInterval(loadMunicipalityStatus, 120000);
-
-    return () => clearInterval(interval);
+    // Removed auto-refresh: data only updates when staff submits changes
   }, []);
 
   const loadMunicipalityStatus = async () => {
@@ -49,14 +55,32 @@ export function PowerProgress() {
 
       const { data, error } = await supabase
         .from("municipality_status")
-        .select("*")
-        .order("municipality");
+        .select("*");
 
       if (error) throw error;
 
-      setMunicipalities(data || []);
+      // Create a map of existing data
+      const dataMap = new Map(
+        (data || []).map((m) => [m.municipality.toUpperCase(), m])
+      );
 
-      // Get latest timestamp from all records
+      // Ensure all municipalities are displayed, even if no data exists
+      const allMunicipalities = MUNICIPALITY_ORDER.map((municipality) => {
+        const existing = dataMap.get(municipality);
+        return existing || {
+          municipality,
+          total_barangays: 0,
+          energized_barangays: 0,
+          partial_barangays: 0,
+          no_power_barangays: 0,
+          percent_energized: 0,
+          last_updated: new Date().toISOString(),
+        };
+      });
+
+      setMunicipalities(allMunicipalities);
+
+      // Get latest timestamp from all records (or use current time if no data)
       if (data && data.length > 0) {
         const latestTimestamp = new Date(
           Math.max(...data.map((d) => new Date(d.last_updated).getTime()))
@@ -324,12 +348,6 @@ export function PowerProgress() {
               <span className="text-sm text-gray-700">UNENERGIZED</span>
             </div>
           </div>
-        </div>
-
-        {/* Refresh Info */}
-        <div className="mt-6 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800 flex items-center gap-2">
-          <RefreshCw size={16} />
-          <p>Data auto-refreshes every 2 minutes</p>
         </div>
       </div>
     </div>
