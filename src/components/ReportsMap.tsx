@@ -185,6 +185,22 @@ export function ReportsMap() {
     ? reports 
     : reports.filter((r) => r.category === selectedCategory);
 
+  // Calculate map center based on filtered reports or default to Quirino
+  const getMapCenter = (): [number, number] => {
+    if (filteredReports.length === 0) {
+      // No reports - default to Quirino Province center
+      return [12.5, 121.5];
+    }
+
+    // Calculate average latitude and longitude from filtered reports
+    const avgLat =
+      filteredReports.reduce((sum, r) => sum + r.lat, 0) / filteredReports.length;
+    const avgLng =
+      filteredReports.reduce((sum, r) => sum + r.lng, 0) / filteredReports.length;
+
+    return [avgLat, avgLng];
+  };
+
   if (loading) {
     return (
       <div className="w-full h-screen flex items-center justify-center bg-gray-50">
@@ -266,7 +282,7 @@ export function ReportsMap() {
                   <button
                     key={category}
                     onClick={() => setSelectedCategory(category)}
-                    className={`flex items-center gap-2 text-sm px-3 py-2 rounded-lg transition-all ${
+                    className={`flex items-center gap-2 text-xs sm:text-sm px-2 sm:px-3 py-2 rounded-lg transition-all whitespace-nowrap ${
                       isSelected
                         ? "text-white border-2 border-opacity-100"
                         : "bg-gray-100 text-gray-900 border-2 border-transparent hover:bg-gray-200"
@@ -275,10 +291,13 @@ export function ReportsMap() {
                     title={info.label}
                   >
                     <div
-                      className="w-4 h-4 rounded-full flex-shrink-0"
+                      className="w-3 h-3 sm:w-4 sm:h-4 rounded-full flex-shrink-0"
                       style={{ backgroundColor: info.color, opacity: isSelected ? 0.3 : 1 }}
                     />
-                    <span className="font-semibold whitespace-nowrap">{count}</span>
+                    <span className="font-semibold">{count}</span>
+                    <span className="hidden sm:inline text-xs font-medium">
+                      {info.label.split(" ")[0]}
+                    </span>
                   </button>
                 );
               })}
@@ -327,9 +346,10 @@ export function ReportsMap() {
             </div>
           ) : (
             <MapContainer
-              center={[12.5, 121.5] as L.LatLngExpression}
+              center={getMapCenter() as L.LatLngExpression}
               zoom={10}
               style={{ width: "100%", height: "100%" }}
+              key={`map-${selectedCategory}`}
             >
               <TileLayer
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
