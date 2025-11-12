@@ -123,23 +123,23 @@ export function Dashboard() {
     <div className="min-h-screen bg-gray-50 py-6">
       <div className="max-w-6xl mx-auto px-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
               Admin Dashboard
             </h1>
-            {user && <p className="text-gray-600 text-sm">{user.email}</p>}
+            {user && <p className="text-sm text-gray-600">{user.email}</p>}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             <button
               onClick={() => navigate("/admin/map")}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
             >
               📍 View Map
             </button>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-danger-600 text-white rounded-lg hover:bg-danger-700 transition-colors"
+              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-danger-600 text-white rounded-lg hover:bg-danger-700 transition-colors text-sm sm:text-base"
             >
               <LogOut className="w-4 h-4" />
               Logout
@@ -217,13 +217,13 @@ export function Dashboard() {
                   </div>
 
                   {/* Actions */}
-                  <div className="ml-4 flex gap-2">
+                  <div className="ml-0 sm:ml-4 mt-3 sm:mt-0 flex flex-wrap gap-1 sm:gap-2">
                     {report.status === "new" && (
                       <button
                         onClick={() => handleStatusChange(report.id, "triaged")}
-                        className="flex items-center gap-1 px-3 py-1 bg-power-100 text-power-700 rounded hover:bg-power-200 text-sm"
+                        className="flex items-center gap-1 px-2 sm:px-3 py-1 bg-power-100 text-power-700 rounded hover:bg-power-200 text-xs sm:text-sm"
                       >
-                        <Check className="w-4 h-4" />
+                        <Check className="w-3 h-3 sm:w-4 sm:h-4" />
                         Triage
                       </button>
                     )}
@@ -232,7 +232,7 @@ export function Dashboard() {
                         onClick={() =>
                           handleStatusChange(report.id, "in_progress")
                         }
-                        className="flex items-center gap-1 px-3 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 text-sm"
+                        className="flex items-center gap-1 px-2 sm:px-3 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 text-xs sm:text-sm"
                       >
                         Progress
                       </button>
@@ -242,17 +242,17 @@ export function Dashboard() {
                         onClick={() =>
                           handleStatusChange(report.id, "resolved")
                         }
-                        className="flex items-center gap-1 px-3 py-1 bg-power-100 text-power-700 rounded hover:bg-power-200 text-sm"
+                        className="flex items-center gap-1 px-2 sm:px-3 py-1 bg-power-100 text-power-700 rounded hover:bg-power-200 text-xs sm:text-sm"
                       >
-                        <Check className="w-4 h-4" />
+                        <Check className="w-3 h-3 sm:w-4 sm:h-4" />
                         Done
                       </button>
                     )}
                     <button
                       onClick={() => handleStatusChange(report.id, "rejected")}
-                      className="flex items-center gap-1 px-3 py-1 bg-danger-100 text-danger-700 rounded hover:bg-danger-200 text-sm"
+                      className="flex items-center gap-1 px-2 sm:px-3 py-1 bg-danger-100 text-danger-700 rounded hover:bg-danger-200 text-xs sm:text-sm"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3 h-3 sm:w-4 sm:h-4" />
                       Reject
                     </button>
                   </div>

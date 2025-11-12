@@ -87,10 +87,10 @@ export function Home() {
       <div className="max-w-4xl mx-auto px-4">
         {/* Hero */}
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
             Barangay Power Status
           </h1>
-          <p className="text-gray-600">
+          <p className="text-sm sm:text-base text-gray-600">
             Stay informed about power outages and hazard reports in your
             barangay
           </p>

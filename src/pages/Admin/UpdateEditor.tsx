@@ -83,7 +83,7 @@ export function UpdateEditor() {
         </button>
 
         <Card padding="lg">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">
             Post Barangay Update
           </h1>
 
