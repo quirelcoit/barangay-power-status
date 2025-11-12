@@ -162,14 +162,11 @@ export function ReportNew() {
       // Show success message but DON'T redirect - let user submit another report
       addToast("Report submitted successfully!", "success");
       
-      // Reset form for next report
-      setCategory("");
-      setBarangayId("");
-      setCustomLocation(undefined);
+      // Reset ONLY optional fields - keep required fields for next report
       setDescription("");
       setContactHint("");
       setPhotoFile(null);
-      setLocation(null);
+      // Keep: category, barangayId, customLocation, location for easy re-submit
     } catch (err) {
       console.error("Failed to submit report:", err);
       addToast(
