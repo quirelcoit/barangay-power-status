@@ -72,6 +72,7 @@ export function ReportsMap() {
   });
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [showReportsList, setShowReportsList] = useState(false);
+  const [listCategoryFilter, setListCategoryFilter] = useState<string>("all");
 
   useEffect(() => {
     checkAdmin();
@@ -185,6 +186,11 @@ export function ReportsMap() {
     ? reports 
     : reports.filter((r) => r.category === selectedCategory);
 
+  // Filter reports for list panel (separate from map filter)
+  const listFilteredReports = listCategoryFilter === "all"
+    ? reports
+    : reports.filter((r) => r.category === listCategoryFilter);
+
   // Calculate map center based on filtered reports or default to Quirino
   const getMapCenter = (): [number, number] => {
     if (filteredReports.length === 0) {
@@ -282,7 +288,7 @@ export function ReportsMap() {
                   <button
                     key={category}
                     onClick={() => setSelectedCategory(category)}
-                    className={`flex items-center gap-2 text-xs sm:text-sm px-2 sm:px-3 py-2 rounded-lg transition-all whitespace-nowrap ${
+                    className={`flex items-center gap-1.5 text-xs px-2 py-2 rounded-lg transition-all flex-wrap justify-center ${
                       isSelected
                         ? "text-white border-2 border-opacity-100"
                         : "bg-gray-100 text-gray-900 border-2 border-transparent hover:bg-gray-200"
@@ -291,11 +297,11 @@ export function ReportsMap() {
                     title={info.label}
                   >
                     <div
-                      className="w-3 h-3 sm:w-4 sm:h-4 rounded-full flex-shrink-0"
+                      className="w-3 h-3 rounded-full flex-shrink-0"
                       style={{ backgroundColor: info.color, opacity: isSelected ? 0.3 : 1 }}
                     />
-                    <span className="font-semibold">{count}</span>
-                    <span className="hidden sm:inline text-xs font-medium">
+                    <span className="font-bold">{count}</span>
+                    <span className="text-xs font-medium leading-tight">
                       {info.label.split(" ")[0]}
                     </span>
                   </button>
@@ -412,7 +418,7 @@ export function ReportsMap() {
           <div className="w-full sm:w-96 bg-white border-l border-gray-200 shadow-lg flex flex-col overflow-hidden">
             {/* Panel Header */}
             <div className="border-b border-gray-200 p-4 bg-gray-50">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-bold text-gray-900">📋 Reports List</h2>
                 <button
                   onClick={() => setShowReportsList(false)}
@@ -421,22 +427,62 @@ export function ReportsMap() {
                   ×
                 </button>
               </div>
-              <p className="text-sm text-gray-600">
-                {selectedCategory === "all"
-                  ? `All ${filteredReports.length} reports`
-                  : `${filteredReports.length} ${CATEGORY_COLORS[selectedCategory]?.label || selectedCategory}`}
+
+              {/* Category Filter for List */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-gray-600">Filter by Category:</label>
+                <div className="flex flex-wrap gap-1">
+                  <button
+                    onClick={() => setListCategoryFilter("all")}
+                    className={`text-xs px-2 py-1 rounded transition-all ${
+                      listCategoryFilter === "all"
+                        ? "bg-power-600 text-white font-semibold"
+                        : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                    }`}
+                  >
+                    All ({reports.length})
+                  </button>
+                  {Object.entries(CATEGORY_COLORS).map(([category, info]) => {
+                    const count = stats.byCategory[category] || 0;
+                    return (
+                      <button
+                        key={category}
+                        onClick={() => setListCategoryFilter(category)}
+                        className={`text-xs px-2 py-1 rounded transition-all flex items-center gap-1 ${
+                          listCategoryFilter === category
+                            ? "text-white font-semibold"
+                            : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                        }`}
+                        style={
+                          listCategoryFilter === category
+                            ? { backgroundColor: info.color }
+                            : {}
+                        }
+                      >
+                        <span className="text-xs">{info.label.split(" ")[0]}</span>
+                        <span className="font-bold">({count})</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <p className="text-sm text-gray-600 mt-3 pt-3 border-t border-gray-200">
+                {listCategoryFilter === "all"
+                  ? `All ${listFilteredReports.length} reports`
+                  : `${listFilteredReports.length} ${CATEGORY_COLORS[listCategoryFilter]?.label || listCategoryFilter}`}
               </p>
             </div>
 
             {/* Reports List */}
             <div className="flex-1 overflow-y-auto">
-              {filteredReports.length === 0 ? (
+              {listFilteredReports.length === 0 ? (
                 <div className="flex items-center justify-center h-full p-4 text-center">
                   <p className="text-gray-500">No reports found</p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-200">
-                  {filteredReports.map((report) => (
+                  {listFilteredReports.map((report) => (
                     <div key={report.id} className="p-4 hover:bg-gray-50 transition-colors">
                       <div className="mb-2">
                         <div className="flex items-center gap-2 mb-1">
