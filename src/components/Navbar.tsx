@@ -27,6 +27,12 @@ export function Navbar() {
         </Link>
         <div className="flex gap-2">
           <Link
+            to="/progress"
+            className="px-3 py-2 sm:py-2.5 bg-amber-600 text-white rounded-lg text-xs sm:text-sm hover:bg-amber-700 transition-colors hidden sm:block min-h-10"
+          >
+            ⚡ Power Status
+          </Link>
+          <Link
             to="/report"
             className="px-3 py-2 sm:py-2.5 bg-power-600 text-white rounded-lg text-xs sm:text-sm hover:bg-power-700 transition-colors min-h-10"
           >
