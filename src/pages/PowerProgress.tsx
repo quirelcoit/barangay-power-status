@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { Card, useToast } from "../components";
-import { TrendingUp, AlertCircle, Zap } from "lucide-react";
+import { useToast } from "../components";
+import { RefreshCw } from "lucide-react";
 
 interface MunicipalityStatus {
   municipality: string;
@@ -32,12 +32,6 @@ export function PowerProgress() {
     []
   );
   const [loading, setLoading] = useState(true);
-  const [totalStats, setTotalStats] = useState({
-    total: 0,
-    energized: 0,
-    partial: 0,
-    no_power: 0,
-  });
   const [latestTimestamp, setLatestTimestamp] = useState<string>("");
 
   useEffect(() => {
@@ -69,19 +63,6 @@ export function PowerProgress() {
         ).toISOString();
         setLatestTimestamp(latestTimestamp);
       }
-
-      // Calculate totals
-      const totals = (data || []).reduce(
-        (acc, m) => ({
-          total: acc.total + m.total_barangays,
-          energized: acc.energized + m.energized_barangays,
-          partial: acc.partial + m.partial_barangays,
-          no_power: acc.no_power + m.no_power_barangays,
-        }),
-        { total: 0, energized: 0, partial: 0, no_power: 0 }
-      );
-
-      setTotalStats(totals);
     } catch (err) {
       addToast(
         err instanceof Error ? err.message : "Failed to load status",
@@ -92,22 +73,6 @@ export function PowerProgress() {
     }
   };
 
-  const getStatusColor = (percent: number): string => {
-    if (percent === 100) return "bg-green-500";
-    if (percent >= 75) return "bg-lime-500";
-    if (percent >= 50) return "bg-yellow-500";
-    if (percent >= 25) return "bg-orange-500";
-    return "bg-red-500";
-  };
-
-  const getStatusLabel = (percent: number): string => {
-    if (percent === 100) return "✅ Fully Energized";
-    if (percent >= 75) return "🟢 Mostly Energized";
-    if (percent >= 50) return "🟡 Partially Energized";
-    if (percent >= 25) return "🟠 Mostly No Power";
-    return "🔴 No Power";
-  };
-
   if (loading && municipalities.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -116,192 +81,143 @@ export function PowerProgress() {
     );
   }
 
-  const overallPercent =
-    totalStats.total > 0
-      ? Math.round((totalStats.energized / totalStats.total) * 100)
-      : 0;
-
   return (
-    <div className="min-h-screen bg-gray-50 py-6">
+    <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4">
-        {/* Header with "As of" timestamp */}
-        <div className="mb-8">
+        {/* Header with Image and Title */}
+        <div className="mb-8 text-center">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-            ⚡ Power Restoration Progress
+            POWER RESTORATION PROGRESS
           </h1>
+          <p className="text-lg font-semibold text-gray-800 mb-1">
+            SUPER TYPHOON "UWAN"
+          </p>
           {latestTimestamp && (
-            <p className="text-lg font-semibold text-blue-600 mb-2">
+            <p className="text-lg font-bold text-blue-600 mb-4">
               As of {formatTimestamp(latestTimestamp)}
             </p>
           )}
-          <p className="text-sm sm:text-base text-gray-600">
-            Real-time power restoration progress across municipalities
+          <p className="text-sm text-gray-700">
+            Latest update of Quirelco's power restoration per Municipality/Town within the franchise area.
           </p>
         </div>
 
-        {/* Overall Summary */}
-        <Card className="mb-8" padding="lg">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">
-                Franchise-Wide Status
-              </h2>
-              <Zap className="w-6 h-6 text-yellow-500" />
-            </div>
+        {/* Table */}
+        <div className="overflow-x-auto bg-white rounded-lg shadow">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-100 border-b-2 border-gray-300">
+                <th className="px-6 py-4 text-left font-bold text-gray-900">
+                  Municipality / Town
+                </th>
+                <th className="px-6 py-4 text-center font-bold text-gray-900">
+                  Total Barangays
+                </th>
+                <th className="px-6 py-4 text-center font-bold text-gray-900">
+                  Energized Barangays
+                </th>
+                <th className="px-6 py-4 text-center font-bold text-green-600">
+                  Percentage
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {municipalities.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-8 text-center text-gray-600">
+                    No data available
+                  </td>
+                </tr>
+              ) : (
+                municipalities.map((muni, idx) => {
+                  const bgColor = idx % 2 === 0 ? "bg-white" : "bg-gray-50";
+                  const percentColor =
+                    muni.percent_energized === 100
+                      ? "text-green-600 bg-green-50"
+                      : muni.percent_energized >= 75
+                      ? "text-lime-600 bg-lime-50"
+                      : muni.percent_energized >= 50
+                      ? "text-yellow-600 bg-yellow-50"
+                      : muni.percent_energized >= 25
+                      ? "text-orange-600 bg-orange-50"
+                      : "text-red-600 bg-red-50";
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-gray-700">
-                  Overall Progress
-                </span>
-                <span className="text-2xl font-bold text-green-600">
-                  {overallPercent}%
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-                <div
-                  className={`h-full ${getStatusColor(
-                    overallPercent
-                  )} transition-all duration-500`}
-                  style={{ width: `${overallPercent}%` }}
-                />
-              </div>
-              <p className="text-sm text-gray-600 mt-2">
-                {totalStats.energized} / {totalStats.total} barangays energized
-              </p>
-            </div>
+                  return (
+                    <tr
+                      key={muni.municipality}
+                      className={`${bgColor} border-b border-gray-200 hover:bg-blue-50 transition`}
+                    >
+                      <td className="px-6 py-4 font-semibold text-gray-900">
+                        {muni.municipality.toUpperCase()}
+                      </td>
+                      <td className="px-6 py-4 text-center font-semibold text-gray-900">
+                        {muni.total_barangays}
+                      </td>
+                      <td className="px-6 py-4 text-center font-semibold text-gray-900">
+                        {muni.energized_barangays}
+                      </td>
+                      <td className={`px-6 py-4 text-center font-bold text-lg ${percentColor}`}>
+                        {muni.percent_energized}%
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+              {/* Franchise Total Row */}
+              {municipalities.length > 0 && (
+                <tr className="bg-gray-200 border-t-2 border-gray-300 font-bold">
+                  <td className="px-6 py-4 text-gray-900">
+                    QUIRELCO FRANCHISE AREA
+                  </td>
+                  <td className="px-6 py-4 text-center text-gray-900">
+                    {municipalities.reduce((sum, m) => sum + m.total_barangays, 0)}
+                  </td>
+                  <td className="px-6 py-4 text-center text-gray-900">
+                    {municipalities.reduce((sum, m) => sum + m.energized_barangays, 0)}
+                  </td>
+                  <td className="px-6 py-4 text-center text-green-600 text-lg">
+                    {municipalities.length > 0
+                      ? Math.round(
+                          (municipalities.reduce((sum, m) => sum + m.energized_barangays, 0) /
+                            municipalities.reduce((sum, m) => sum + m.total_barangays, 0)) *
+                            100
+                        )
+                      : 0}
+                    %
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
-              <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                <p className="text-xs text-gray-600">Energized</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {totalStats.energized}
-                </p>
-              </div>
-              <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-                <p className="text-xs text-gray-600">Partial</p>
-                <p className="text-2xl font-bold text-yellow-600">
-                  {totalStats.partial}
-                </p>
-              </div>
-              <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-                <p className="text-xs text-gray-600">No Power</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {totalStats.no_power}
-                </p>
-              </div>
-              <div className="bg-gray-100 p-3 rounded-lg border border-gray-300">
-                <p className="text-xs text-gray-600">Total</p>
-                <p className="text-2xl font-bold text-gray-700">
-                  {totalStats.total}
-                </p>
-              </div>
+        {/* Legend */}
+        <div className="mt-8 p-4 bg-white rounded-lg shadow">
+          <h3 className="font-bold text-gray-900 mb-3">LEGEND</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-green-500 rounded"></div>
+              <span className="text-sm text-gray-700">ENERGIZED</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-lime-500 rounded"></div>
+              <span className="text-sm text-gray-700">75% - 99%</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-yellow-500 rounded"></div>
+              <span className="text-sm text-gray-700">50% - 74%</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-red-500 rounded"></div>
+              <span className="text-sm text-gray-700">UNENERGIZED</span>
             </div>
           </div>
-        </Card>
-
-        {/* Municipalities */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">
-            By Municipality
-          </h2>
-
-          {municipalities.length === 0 ? (
-            <Card padding="lg" className="text-center">
-              <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600">No municipalities found</p>
-            </Card>
-          ) : (
-            <div className="grid gap-4">
-              {municipalities.map((muni) => (
-                <Card key={muni.municipality} padding="md">
-                  <div className="space-y-3">
-                    {/* Municipality Name & Percent */}
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-bold text-lg text-gray-900">
-                        {muni.municipality}
-                      </h3>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`text-2xl font-bold ${
-                            muni.percent_energized === 100
-                              ? "text-green-600"
-                              : muni.percent_energized >= 75
-                              ? "text-lime-600"
-                              : muni.percent_energized >= 50
-                              ? "text-yellow-600"
-                              : muni.percent_energized >= 25
-                              ? "text-orange-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          {muni.percent_energized}%
-                        </span>
-                        <TrendingUp className="w-5 h-5 text-gray-400" />
-                      </div>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                      <div
-                        className={`h-full ${getStatusColor(
-                          muni.percent_energized
-                        )} transition-all duration-500`}
-                        style={{ width: `${muni.percent_energized}%` }}
-                      />
-                    </div>
-
-                    {/* Status Label & Barangay Count */}
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-gray-700">
-                        {getStatusLabel(muni.percent_energized)}
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        {muni.energized_barangays} / {muni.total_barangays}{" "}
-                        barangays energized
-                      </p>
-                    </div>
-
-                    {/* Breakdown */}
-                    <div className="grid grid-cols-3 gap-2 text-xs">
-                      <div className="bg-green-50 p-2 rounded border border-green-200">
-                        <p className="text-green-700 font-semibold">
-                          {muni.energized_barangays}
-                        </p>
-                        <p className="text-green-600 text-xs">Energized</p>
-                      </div>
-                      <div className="bg-yellow-50 p-2 rounded border border-yellow-200">
-                        <p className="text-yellow-700 font-semibold">
-                          {muni.partial_barangays}
-                        </p>
-                        <p className="text-yellow-600 text-xs">Partial</p>
-                      </div>
-                      <div className="bg-red-50 p-2 rounded border border-red-200">
-                        <p className="text-red-700 font-semibold">
-                          {muni.no_power_barangays}
-                        </p>
-                        <p className="text-red-600 text-xs">No Power</p>
-                      </div>
-                    </div>
-
-                    {/* Last Updated */}
-                    {muni.last_updated && (
-                      <p className="text-xs text-gray-500">
-                        Last updated:{" "}
-                        {new Date(muni.last_updated).toLocaleString()}
-                      </p>
-                    )}
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Refresh Info */}
-        <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
-          <p>🔄 Data auto-refreshes every 2 minutes</p>
+        <div className="mt-6 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800 flex items-center gap-2">
+          <RefreshCw size={16} />
+          <p>Data auto-refreshes every 2 minutes</p>
         </div>
       </div>
     </div>

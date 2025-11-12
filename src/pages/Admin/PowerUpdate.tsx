@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
-import { Card, useToast, PhotoCapture } from "../../components";
+import { useToast, PhotoCapture } from "../../components";
 import { ArrowLeft, Check } from "lucide-react";
 
 interface Municipality {
@@ -17,7 +17,11 @@ const MUNICIPALITIES: Municipality[] = [
   { value: "maddela", label: "Maddela", totalBarangays: 32 },
   { value: "aglipay", label: "Aglipay", totalBarangays: 25 },
   { value: "nagtipunan", label: "Nagtipunan", totalBarangays: 16 },
-  { value: "san_agustin_isabela", label: "San Agustin, Isabela", totalBarangays: 18 },
+  {
+    value: "san_agustin_isabela",
+    label: "San Agustin, Isabela",
+    totalBarangays: 18,
+  },
 ];
 
 export function PowerUpdate() {
@@ -114,12 +118,13 @@ export function PowerUpdate() {
           const fileName = `${Date.now()}-${Math.random()
             .toString(36)
             .substring(7)}.jpg`;
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from("report-photos")
-            .upload(fileName, photoFile, {
-              cacheControl: "3600",
-              upsert: false,
-            });
+          const { data: uploadData, error: uploadError } =
+            await supabase.storage
+              .from("report-photos")
+              .upload(fileName, photoFile, {
+                cacheControl: "3600",
+                upsert: false,
+              });
 
           if (uploadError) throw uploadError;
 
@@ -184,10 +189,10 @@ export function PowerUpdate() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
-        <div className="mb-6 flex items-center gap-2">
+        <div className="mb-8 flex items-center gap-2">
           <button
             onClick={() => navigate("/admin")}
             className="p-2 hover:bg-gray-200 rounded-lg transition"
@@ -197,39 +202,35 @@ export function PowerUpdate() {
           <h1 className="text-3xl font-bold">Power Status Update</h1>
         </div>
 
-        {/* Success message */}
+        {/* Success Message */}
         {submitted && (
-          <Card
-            className="mb-6 bg-green-50 border-green-200"
-            padding="md"
-          >
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
             <div className="flex items-center gap-3">
               <Check size={24} className="text-green-600" />
               <div>
                 <p className="font-semibold text-green-900">Update Recorded</p>
                 <p className="text-sm text-green-700">
-                  The power status has been successfully updated. Consumers will
-                  see this in the Power Progress dashboard.
+                  The power status has been successfully updated.
                 </p>
               </div>
             </div>
-          </Card>
+          </div>
         )}
 
         {/* Form */}
         <form onSubmit={handleSubmit}>
-          <Card padding="lg">
+          <div className="bg-white rounded-lg shadow">
             {/* Municipality Selection */}
-            <div className="mb-6">
-              <label className="block text-sm font-semibold mb-2">
-                Municipality / City
+            <div className="p-6 border-b border-gray-200">
+              <label className="block text-sm font-semibold mb-3">
+                Select Municipality / Town
               </label>
               <select
                 value={municipality}
                 onChange={(e) => handleMunicipalityChange(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Select a municipality...</option>
+                <option value="">-- Choose a municipality --</option>
                 {MUNICIPALITIES.map((muni) => (
                   <option key={muni.value} value={muni.value}>
                     {muni.label}
@@ -238,128 +239,115 @@ export function PowerUpdate() {
               </select>
             </div>
 
-            {/* Power Status Grid */}
+            {/* Data Input Section */}
             {municipality && (
               <>
-                <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <h3 className="font-semibold mb-4 text-blue-900">
-                    Power Status
+                {/* Input Table */}
+                <div className="p-6 border-b border-gray-200">
+                  <h3 className="font-semibold text-gray-900 mb-4">
+                    Enter Power Status Data
                   </h3>
 
-                  {/* Total Barangays (Read-only) */}
-                  <div className="mb-4">
-                    <label className="block text-sm font-semibold mb-2">
-                      Total Barangays
-                    </label>
-                    <input
-                      type="number"
-                      value={totalBarangays}
-                      disabled
-                      className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-600"
-                    />
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="px-4 py-3 text-left font-semibold text-gray-900 border border-gray-300">
+                            Municipality
+                          </th>
+                          <th className="px-4 py-3 text-center font-semibold text-gray-900 border border-gray-300">
+                            Total Barangays
+                          </th>
+                          <th className="px-4 py-3 text-center font-semibold text-gray-900 border border-gray-300">
+                            Energized Barangays *
+                          </th>
+                          <th className="px-4 py-3 text-center font-semibold text-green-600 border border-gray-300">
+                            Percentage
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="px-4 py-3 font-semibold text-gray-900 border border-gray-300">
+                            {MUNICIPALITIES.find((m) => m.value === municipality)
+                              ?.label || municipality}
+                          </td>
+                          <td className="px-4 py-3 text-center font-semibold text-gray-900 border border-gray-300">
+                            {totalBarangays}
+                          </td>
+                          <td className="px-4 py-3 text-center border border-gray-300">
+                            <input
+                              type="number"
+                              min="0"
+                              max={totalBarangays}
+                              value={energizedBarangays}
+                              onChange={(e) =>
+                                setEnergizedBarangays(
+                                  Math.max(0, parseInt(e.target.value) || 0)
+                                )
+                              }
+                              className="w-20 mx-auto px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
+                              autoFocus
+                            />
+                          </td>
+                          <td className="px-4 py-3 text-center font-bold text-lg text-green-600 border border-gray-300">
+                            {calculatePercentage()}%
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
 
-                  {/* Energized Barangays */}
-                  <div className="mb-4">
-                    <label className="block text-sm font-semibold mb-2">
-                      🟢 Energized Barangays
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max={totalBarangays}
-                      value={energizedBarangays}
-                      onChange={(e) =>
-                        setEnergizedBarangays(Math.max(0, parseInt(e.target.value) || 0))
-                      }
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                    />
-                  </div>
-
-                  {/* Partial Barangays */}
-                  <div className="mb-4">
-                    <label className="block text-sm font-semibold mb-2">
-                      🟡 Partial Power Barangays
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max={totalBarangays}
-                      value={partialBarangays}
-                      onChange={(e) =>
-                        setPartialBarangays(Math.max(0, parseInt(e.target.value) || 0))
-                      }
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                    />
-                  </div>
-
-                  {/* No Power (Calculated) */}
-                  <div className="mb-4">
-                    <label className="block text-sm font-semibold mb-2">
-                      🔴 No Power Barangays
-                    </label>
-                    <input
-                      type="number"
-                      value={calculateNopower()}
-                      disabled
-                      className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-600"
-                    />
-                  </div>
-
-                  {/* Percentage */}
-                  <div className="pt-4 border-t border-blue-200">
-                    <p className="text-sm text-gray-600 mb-2">
-                      Overall Energization Rate:
-                    </p>
-                    <p className="text-4xl font-bold text-green-600">
-                      {calculatePercentage()}%
-                    </p>
-                  </div>
-                </div>
-
-                {/* Remarks */}
-                <div className="mb-6">
-                  <label className="block text-sm font-semibold mb-2">
-                    Remarks (Optional)
-                  </label>
-                  <textarea
-                    value={remarks}
-                    onChange={(e) =>
-                      setRemarks(e.target.value.substring(0, 500))
-                    }
-                    maxLength={500}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows={4}
-                    placeholder="Any additional notes about the power restoration progress..."
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    {remarks.length}/500 characters
+                  <p className="text-xs text-gray-600 mt-3">
+                    * Enter the number of energized barangays. Percentage will calculate automatically.
                   </p>
                 </div>
 
-                {/* Photo Upload */}
-                <div className="mb-6">
-                  <label className="block text-sm font-semibold mb-2">
-                    Photo (Optional)
-                  </label>
-                  <PhotoCapture
-                    onPhotoSelect={setPhotoFile}
-                  />
-                </div>
+                {/* Remarks & Photo */}
+                <div className="p-6">
+                  {/* Remarks */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold mb-2 text-gray-900">
+                      Remarks (Optional)
+                    </label>
+                    <textarea
+                      value={remarks}
+                      onChange={(e) =>
+                        setRemarks(e.target.value.substring(0, 500))
+                      }
+                      maxLength={500}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      rows={3}
+                      placeholder="Additional notes about power restoration..."
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {remarks.length}/500 characters
+                    </p>
+                  </div>
 
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 rounded-lg transition"
-                >
-                  {loading ? "⏳ Updating..." : "📤 Submit Update"}
-                </button>
+                  {/* Photo Upload */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold mb-2 text-gray-900">
+                      Photo (Optional)
+                    </label>
+                    <PhotoCapture onPhotoSelect={setPhotoFile} />
+                  </div>
+
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 rounded-lg transition"
+                  >
+                    {loading ? "⏳ Submitting..." : "✅ Submit Update"}
+                  </button>
+                </div>
               </>
             )}
-          </Card>
+          </div>
         </form>
       </div>
     </div>
   );
 }
+

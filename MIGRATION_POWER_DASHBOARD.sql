@@ -40,7 +40,9 @@ ON public.municipality_updates(is_published)
 WHERE is_published = true;
 
 -- Create municipality_status view for dashboard (get latest update per municipality)
-CREATE OR REPLACE VIEW public.municipality_status AS
+DROP VIEW IF EXISTS public.municipality_status;
+
+CREATE VIEW public.municipality_status AS
 SELECT
   municipality,
   total_barangays,
