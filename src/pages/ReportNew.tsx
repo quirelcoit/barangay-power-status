@@ -358,7 +358,7 @@ export function ReportNew() {
             {/* Contact Hint */}
             <div className="space-y-2">
               <label htmlFor="contact" className="font-medium text-gray-700">
-                Contact Hint (optional, e.g., first name)
+                Contact Information (optional)
               </label>
               <input
                 id="contact"
@@ -366,12 +366,12 @@ export function ReportNew() {
                 value={contactHint}
                 onChange={(e) => setContactHint(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
-                placeholder="E.g., Juan"
-                maxLength={50}
+                placeholder="Name: Juan Dela Cruz, Contact: 09171234567"
+                maxLength={100}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-power-500"
               />
               <p className="text-xs text-gray-500">
-                We do not store personal information
+                🔒 Only visible to admin staff for follow-up. Not shown publicly.
               </p>
             </div>
 

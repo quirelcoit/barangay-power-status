@@ -199,11 +199,6 @@ export function BarangayView() {
                             {report.description}
                           </p>
                         )}
-                        {report.contact_hint && (
-                          <p className="text-xs text-gray-600 bg-blue-50 px-2 py-1 rounded border border-blue-200">
-                            📞 Contact: {report.contact_hint}
-                          </p>
-                        )}
                         {report.lat && report.lng && (
                           <p className="text-xs text-gray-600 font-mono">
                             📍 {report.lat.toFixed(4)}, {report.lng.toFixed(4)}

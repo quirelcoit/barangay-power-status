@@ -357,18 +357,6 @@ export function ImageGallery({ isOpen, onClose }: ImageGalleryProps) {
                     </div>
                   )}
 
-                  {/* Contact Hint */}
-                  {currentPhoto.report?.contact_hint && (
-                    <div>
-                      <p className="text-xs font-semibold text-gray-600 mb-1">
-                        📞 Contact:
-                      </p>
-                      <p className="text-sm text-gray-700 bg-blue-50 p-2 rounded border border-blue-200">
-                        {currentPhoto.report.contact_hint}
-                      </p>
-                    </div>
-                  )}
-
                   {/* Date */}
                   <div>
                     <p className="text-xs font-semibold text-gray-600 mb-1">
