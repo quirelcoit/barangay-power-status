@@ -70,6 +70,8 @@ export function ReportsMap() {
     total: 0,
     byCategory: {} as Record<string, number>,
   });
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [showReportsList, setShowReportsList] = useState(false);
 
   useEffect(() => {
     checkAdmin();
@@ -178,6 +180,11 @@ export function ReportsMap() {
     return "Unknown Location";
   };
 
+  // Filter reports by selected category
+  const filteredReports = selectedCategory === "all" 
+    ? reports 
+    : reports.filter((r) => r.category === selectedCategory);
+
   if (loading) {
     return (
       <div className="w-full h-screen flex items-center justify-center bg-gray-50">
@@ -215,34 +222,67 @@ export function ReportsMap() {
               <h1 className="text-2xl font-bold text-gray-900">📍 Hazard Reports Map</h1>
               <p className="text-gray-600 text-sm mt-1">See all reported power hazards on the map</p>
             </div>
-            <button
-              onClick={loadReports}
-              disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            >
-              <span className={loading ? "animate-spin" : ""}>🔄</span>
-              Refresh
-            </button>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={() => setShowReportsList(!showReportsList)}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm"
+              >
+                <span>📋</span>
+                {showReportsList ? "Hide List" : "View List"}
+              </button>
+              <button
+                onClick={loadReports}
+                disabled={loading}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              >
+                <span className={loading ? "animate-spin" : ""}>🔄</span>
+                Refresh
+              </button>
+            </div>
           </div>
 
-          {/* Legend - Simple and Clear */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 mt-4 pt-4 border-t border-gray-200">
-            {Object.entries(CATEGORY_COLORS).map(([category, info]) => {
-              const count = stats.byCategory[category] || 0;
-              return (
-                <div key={category} className="flex items-center gap-2 text-sm">
-                  <div
-                    className="w-6 h-6 rounded-full border-2 border-white flex-shrink-0"
-                    style={{ backgroundColor: info.color }}
+          {/* Legend - Clickable Category Filter */}
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <p className="text-xs font-semibold text-gray-600 mb-2">Filter by Category:</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
+              {/* All button */}
+              <button
+                onClick={() => setSelectedCategory("all")}
+                className={`flex items-center gap-2 text-sm px-3 py-2 rounded-lg transition-all ${
+                  selectedCategory === "all"
+                    ? "bg-power-600 text-white border-2 border-power-700"
+                    : "bg-gray-100 text-gray-900 border-2 border-transparent hover:bg-gray-200"
+                }`}
+              >
+                <span className="text-lg">📊</span>
+                <span className="font-semibold">All ({stats.total})</span>
+              </button>
+
+              {/* Category buttons */}
+              {Object.entries(CATEGORY_COLORS).map(([category, info]) => {
+                const count = stats.byCategory[category] || 0;
+                const isSelected = selectedCategory === category;
+                return (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`flex items-center gap-2 text-sm px-3 py-2 rounded-lg transition-all ${
+                      isSelected
+                        ? "text-white border-2 border-opacity-100"
+                        : "bg-gray-100 text-gray-900 border-2 border-transparent hover:bg-gray-200"
+                    }`}
+                    style={isSelected ? { backgroundColor: info.color, borderColor: info.color } : {}}
                     title={info.label}
-                  />
-                  <div className="min-w-0">
-                    <div className="font-semibold text-gray-900">{count}</div>
-                    <div className="text-xs text-gray-600 truncate">{info.label}</div>
-                  </div>
-                </div>
-              );
-            })}
+                  >
+                    <div
+                      className="w-4 h-4 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: info.color, opacity: isSelected ? 0.3 : 1 }}
+                    />
+                    <span className="font-semibold whitespace-nowrap">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Total Reports */}
@@ -259,83 +299,164 @@ export function ReportsMap() {
         </div>
       </div>
 
-      {/* Map Container */}
-      <div className="flex-1 relative">
-        {reports.length === 0 ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
-            <div className="text-center max-w-md mx-auto px-4">
-              <AlertCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">No reports yet</h3>
-              <p className="text-gray-600 mb-6">
-                Help us keep Quirino Province safe! Submit your first hazard report.
-              </p>
-              <a
-                href="/#/report"
-                className="inline-block px-6 py-3 bg-power-600 text-white rounded-lg hover:bg-power-700 transition-colors font-semibold"
-              >
-                🚩 Report a Hazard Now
-              </a>
+      {/* Map + List Container */}
+      <div className="flex-1 relative flex overflow-hidden">
+        {/* Map Section */}
+        <div className="flex-1 relative">
+          {reports.length === 0 ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+              <div className="text-center max-w-md mx-auto px-4">
+                <AlertCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-gray-900 mb-2">No reports yet</h3>
+                <p className="text-gray-600 mb-6">
+                  Help us keep Quirino Province safe! Submit your first hazard report.
+                </p>
+                <a
+                  href="/#/report"
+                  className="inline-block px-6 py-3 bg-power-600 text-white rounded-lg hover:bg-power-700 transition-colors font-semibold"
+                >
+                  🚩 Report a Hazard Now
+                </a>
+              </div>
             </div>
-          </div>
-        ) : (
-          <MapContainer
-            center={[12.5, 121.5] as L.LatLngExpression}
-            zoom={10}
-            style={{ width: "100%", height: "100%" }}
-          >
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            />
+          ) : filteredReports.length === 0 ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
+              <div className="text-center">
+                <p className="text-gray-600 font-semibold">No reports found for selected category</p>
+              </div>
+            </div>
+          ) : (
+            <MapContainer
+              center={[12.5, 121.5] as L.LatLngExpression}
+              zoom={10}
+              style={{ width: "100%", height: "100%" }}
+            >
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              />
 
-            {reports.map((report) => (
-              <Marker
-                key={report.id}
-                position={[report.lat, report.lng] as L.LatLngExpression}
-                icon={createMarkerIcon(report.category)}
-              >
-                <Popup className="leaflet-popup-simple">
-                  <div className="w-72 p-2">
-                    {/* Title */}
-                    <h3 className="font-bold text-lg text-gray-900 mb-2">
-                      {CATEGORY_COLORS[report.category]?.label || report.category}
-                    </h3>
+              {filteredReports.map((report) => (
+                <Marker
+                  key={report.id}
+                  position={[report.lat, report.lng] as L.LatLngExpression}
+                  icon={createMarkerIcon(report.category)}
+                >
+                  <Popup className="leaflet-popup-simple">
+                    <div className="w-72 p-2">
+                      {/* Title */}
+                      <h3 className="font-bold text-lg text-gray-900 mb-2">
+                        {CATEGORY_COLORS[report.category]?.label || report.category}
+                      </h3>
 
-                    {/* Location - prominent */}
-                    <div className="mb-3 p-2 bg-blue-50 border-l-4 border-blue-500 rounded">
-                      <p className="text-sm font-semibold text-gray-900">📍 {getLocationName(report)}</p>
+                      {/* Location - prominent */}
+                      <div className="mb-3 p-2 bg-blue-50 border-l-4 border-blue-500 rounded">
+                        <p className="text-sm font-semibold text-gray-900">📍 {getLocationName(report)}</p>
+                      </div>
+
+                      {/* Description if available */}
+                      {report.description && (
+                        <div className="mb-3">
+                          <p className="text-xs font-semibold text-gray-600 mb-1">Description:</p>
+                          <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
+                            "{report.description}"
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Timestamp */}
+                      <div className="text-xs text-gray-500 border-t border-gray-200 pt-2 mb-2">
+                        <p>🕐 {new Date(report.created_at).toLocaleString()}</p>
+                      </div>
+
+                      {/* Delete Button - Admin only */}
+                      {isAdmin && (
+                        <button
+                          onClick={() => deleteReport(report.id)}
+                          className="w-full mt-2 px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded hover:bg-red-100 transition-colors text-sm font-semibold flex items-center justify-center gap-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete Report
+                        </button>
+                      )}
                     </div>
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+          )}
+        </div>
 
-                    {/* Description if available */}
-                    {report.description && (
-                      <div className="mb-3">
-                        <p className="text-xs font-semibold text-gray-600 mb-1">Description:</p>
-                        <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
-                          "{report.description}"
+        {/* Reports List Side Panel */}
+        {showReportsList && (
+          <div className="w-full sm:w-96 bg-white border-l border-gray-200 shadow-lg flex flex-col overflow-hidden">
+            {/* Panel Header */}
+            <div className="border-b border-gray-200 p-4 bg-gray-50">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-lg font-bold text-gray-900">📋 Reports List</h2>
+                <button
+                  onClick={() => setShowReportsList(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+              <p className="text-sm text-gray-600">
+                {selectedCategory === "all"
+                  ? `All ${filteredReports.length} reports`
+                  : `${filteredReports.length} ${CATEGORY_COLORS[selectedCategory]?.label || selectedCategory}`}
+              </p>
+            </div>
+
+            {/* Reports List */}
+            <div className="flex-1 overflow-y-auto">
+              {filteredReports.length === 0 ? (
+                <div className="flex items-center justify-center h-full p-4 text-center">
+                  <p className="text-gray-500">No reports found</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-200">
+                  {filteredReports.map((report) => (
+                    <div key={report.id} className="p-4 hover:bg-gray-50 transition-colors">
+                      <div className="mb-2">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div
+                            className="w-3 h-3 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: CATEGORY_COLORS[report.category]?.color || "#8b5cf6" }}
+                          />
+                          <h4 className="font-semibold text-sm text-gray-900">
+                            {CATEGORY_COLORS[report.category]?.label || report.category}
+                          </h4>
+                        </div>
+                        <p className="text-xs text-gray-600">
+                          📍 {getLocationName(report)}
                         </p>
                       </div>
-                    )}
 
-                    {/* Timestamp */}
-                    <div className="text-xs text-gray-500 border-t border-gray-200 pt-2 mb-2">
-                      <p>🕐 {new Date(report.created_at).toLocaleString()}</p>
+                      {report.description && (
+                        <p className="text-xs text-gray-700 bg-gray-50 p-2 rounded mb-2 line-clamp-2">
+                          "{report.description}"
+                        </p>
+                      )}
+
+                      <p className="text-xs text-gray-500 mb-3">
+                        {new Date(report.created_at).toLocaleString()}
+                      </p>
+
+                      {isAdmin && (
+                        <button
+                          onClick={() => deleteReport(report.id)}
+                          className="w-full text-xs px-2 py-1.5 bg-red-50 text-red-700 border border-red-200 rounded hover:bg-red-100 transition-colors font-semibold"
+                        >
+                          🗑️ Delete
+                        </button>
+                      )}
                     </div>
-
-                    {/* Delete Button - Admin only */}
-                    {isAdmin && (
-                      <button
-                        onClick={() => deleteReport(report.id)}
-                        className="w-full mt-2 px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded hover:bg-red-100 transition-colors text-sm font-semibold flex items-center justify-center gap-2"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Delete Report
-                      </button>
-                    )}
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-          </MapContainer>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>
