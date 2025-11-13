@@ -509,7 +509,8 @@ export function PowerUpdate() {
                               type="number"
                               min="0"
                               max={muni.totalBarangays}
-                              value={energized}
+                              value={energized === 0 ? "" : energized}
+                              placeholder="0"
                               onChange={(e) => {
                                 const val = Math.max(
                                   0,
@@ -529,6 +530,28 @@ export function PowerUpdate() {
                                         ?.energizedHouseholds || 0,
                                   },
                                 });
+                              }}
+                              onFocus={(e) => {
+                                // Clear the field on focus for better UX
+                                if (energized === 0) {
+                                  e.target.value = "";
+                                }
+                              }}
+                              onBlur={(e) => {
+                                // Reset to 0 if empty on blur
+                                if (e.target.value === "") {
+                                  setUpdates({
+                                    ...updates,
+                                    [muni.value]: {
+                                      energized: 0,
+                                      remarks: updates[muni.value]?.remarks || "",
+                                      photo: updates[muni.value]?.photo || null,
+                                      energizedHouseholds:
+                                        updates[muni.value]
+                                          ?.energizedHouseholds || 0,
+                                    },
+                                  });
+                                }
                               }}
                               className="w-16 sm:w-20 mx-auto px-2 sm:px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-sm sm:text-base"
                             />
@@ -698,7 +721,8 @@ export function PowerUpdate() {
                               type="number"
                               min="0"
                               max={totalHH}
-                              value={energizedHH}
+                              value={energizedHH === 0 ? "" : energizedHH}
+                              placeholder="0"
                               onChange={(e) => {
                                 const val = Math.max(
                                   0,
@@ -714,6 +738,24 @@ export function PowerUpdate() {
                                     energizedHouseholds: val,
                                   },
                                 });
+                              }}
+                              onFocus={(e) => {
+                                // Clear the field on focus for better UX
+                                if (energizedHH === 0) {
+                                  e.target.value = "";
+                                }
+                              }}
+                              onBlur={(e) => {
+                                // Reset to 0 if empty on blur
+                                if (e.target.value === "") {
+                                  setUpdates({
+                                    ...updates,
+                                    [muni.value]: {
+                                      ...updates[muni.value],
+                                      energizedHouseholds: 0,
+                                    },
+                                  });
+                                }
                               }}
                               className="w-16 sm:w-20 mx-auto px-2 sm:px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-sm sm:text-base"
                             />
