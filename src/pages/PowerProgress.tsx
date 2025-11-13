@@ -509,16 +509,13 @@ export function PowerProgress() {
                             Municipality / Town
                           </th>
                           <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
-                            Total HH
+                            Total
                           </th>
                           <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
-                            Energized HH
+                            Energized
                           </th>
                           <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-green-600 text-xs sm:text-base">
                             %
-                          </th>
-                          <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
-                            Progress
                           </th>
                         </tr>
                       </thead>
@@ -556,10 +553,10 @@ export function PowerProgress() {
                           return (
                             <tr
                               key={household.municipality}
-                              className={`${bgColor} border-b border-gray-200`}
+                              className={`${bgColor} border-b border-gray-200 hover:bg-blue-50 transition`}
                             >
                               <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-900 text-xs sm:text-base">
-                                {household.municipality}
+                                {household.municipality.toUpperCase()}
                               </td>
                               <td className="px-2 sm:px-6 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base">
                                 {household.total_households.toLocaleString()}
@@ -567,14 +564,14 @@ export function PowerProgress() {
                               <td className="px-2 sm:px-6 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base">
                                 {household.energized_households.toLocaleString()}
                               </td>
-                              <td
-                                className={`px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-lg ${percentColor}`}
-                              >
-                                {percentage}%
-                              </td>
-                              <td className="px-2 sm:px-6 py-3 sm:py-4">
+                              <td className={`px-2 sm:px-6 py-3 sm:py-4`}>
                                 <div className="space-y-1">
-                                  <div className="w-full bg-gray-300 rounded-full h-2 overflow-hidden">
+                                  <div
+                                    className={`text-center font-bold text-xs sm:text-lg ${percentColor}`}
+                                  >
+                                    {percentage}%
+                                  </div>
+                                  <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                                     <div
                                       className={`h-full ${barColor} transition-all duration-500`}
                                       style={{
@@ -588,46 +585,34 @@ export function PowerProgress() {
                           );
                         })}
                         {/* Total Row */}
-                        <tr className="bg-gray-200 border-t-2 border-gray-300 font-bold">
-                          <td className="px-6 py-4 text-gray-900">
+                        <tr className="bg-gray-300 border-t-2 border-gray-400 font-bold">
+                          <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-900 text-xs sm:text-base">
                             QUIRELCO FRANCHISE AREA
                           </td>
-                          <td className="px-6 py-4 text-center text-gray-900">
+                          <td className="px-2 sm:px-6 py-3 sm:py-4 text-center text-gray-900 text-xs sm:text-base">
                             {totalHH.toLocaleString()}
                           </td>
-                          <td className="px-6 py-4 text-center text-gray-900">
+                          <td className="px-2 sm:px-6 py-3 sm:py-4 text-center text-gray-900 text-xs sm:text-base">
                             {energizedHH.toLocaleString()}
                           </td>
-                          <td className="px-6 py-4 text-center font-bold text-lg">
-                            {(() => {
-                              const totalPercent =
-                                totalHH > 0
-                                  ? ((energizedHH / totalHH) * 100).toFixed(2)
-                                  : (0).toFixed(2);
-                              let percentColor = "text-red-600";
-                              if (parseFloat(totalPercent) === 100) {
-                                percentColor =
-                                  "text-green-600 bg-green-50 px-2 py-1 rounded";
-                              } else if (parseFloat(totalPercent) >= 75) {
-                                percentColor = "text-lime-600";
-                              } else if (parseFloat(totalPercent) >= 50) {
-                                percentColor = "text-yellow-600";
-                              } else if (parseFloat(totalPercent) > 0) {
-                                percentColor = "text-orange-600";
-                              } else {
-                                percentColor = "text-gray-400";
-                              }
-
-                              return (
-                                <span className={percentColor}>
-                                  {totalPercent}%
-                                </span>
-                              );
-                            })()}
-                          </td>
-                          <td className="px-6 py-4">
+                          <td className={`px-2 sm:px-6 py-3 sm:py-4`}>
                             <div className="space-y-1">
-                              <div className="w-full bg-gray-300 rounded-full h-2.5 overflow-hidden">
+                              <div
+                                className={`text-center font-bold text-xs sm:text-lg ${
+                                  overallPercent === 100
+                                    ? "text-green-600"
+                                    : overallPercent >= 75
+                                    ? "text-lime-600"
+                                    : overallPercent >= 50
+                                    ? "text-yellow-600"
+                                    : overallPercent > 0
+                                    ? "text-orange-600"
+                                    : "text-gray-400"
+                                }`}
+                              >
+                                {overallPercent}%
+                              </div>
+                              <div className="w-full bg-gray-400 rounded-full h-2 overflow-hidden">
                                 <div
                                   className={`h-full ${
                                     overallPercent === 100

@@ -62,7 +62,7 @@ export function PowerUpdate() {
             photo: null,
           };
         }
-        console.log("Restored form data from localStorage:", restored);
+        console.log("✅ Restored form data from localStorage:", restored);
         return restored;
       }
     } catch (e) {
@@ -70,6 +70,9 @@ export function PowerUpdate() {
     }
     return {};
   });
+  const [hasRestoredFromStorage] = useState(
+    localStorage.getItem("powerUpdateFormData") !== null
+  );
   const [asOfTime, setAsOfTime] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -136,8 +139,10 @@ export function PowerUpdate() {
 
       setIsAdmin(true);
 
-      // Fetch latest municipality data to pre-populate form
-      await loadLatestData();
+      // Only load latest data if we didn't restore from localStorage
+      if (!hasRestoredFromStorage) {
+        await loadLatestData();
+      }
       setInitialized(true);
     } catch (err) {
       console.error("Auth check failed:", err);
