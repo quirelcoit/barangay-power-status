@@ -301,7 +301,8 @@ export function PowerProgress() {
             );
           })()}
 
-        {/* Table - Mobile optimized */}
+        {/* Barangay Table - Mobile optimized */}
+        {activeTab === "barangay" && (
         <div className="bg-white rounded-lg shadow overflow-hidden mb-6 sm:mb-8">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -462,6 +463,7 @@ export function PowerProgress() {
             </table>
           </div>
         </div>
+        )}
 
         {/* Household View */}
         {activeTab === "household" && households.length > 0 &&
