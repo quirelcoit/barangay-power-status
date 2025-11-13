@@ -22,12 +22,6 @@ interface HouseholdStatus {
   updated_at: string;
 }
 
-interface Barangay {
-  id: string;
-  name: string;
-  municipality: string;
-}
-
 interface BarangayStatus {
   barangay_id: string;
   barangay_name: string;
@@ -223,7 +217,7 @@ export function PowerProgress() {
 
   const loadBarangays = async () => {
     try {
-      const { data: barangays, error } = await supabase
+      const { error } = await supabase
         .from("barangays")
         .select("id, name, municipality");
 
