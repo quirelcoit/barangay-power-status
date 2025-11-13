@@ -140,21 +140,20 @@ export function Dashboard() {
               onClick={() => navigate("/admin/power-update")}
               className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs sm:text-sm font-medium whitespace-nowrap"
             >
-              ⚡ 
-              <span>Power Update</span>
+              ⚡<span>Power Update</span>
             </button>
             <button
               onClick={() => navigate("/admin/map")}
               className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm font-medium whitespace-nowrap"
             >
-              📍 
+              📍
               <span>View Map</span>
             </button>
             <button
               onClick={() => setIsGalleryOpen(true)}
               className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-xs sm:text-sm font-medium whitespace-nowrap"
             >
-              📸 
+              📸
               <span>Photos</span>
             </button>
             <button

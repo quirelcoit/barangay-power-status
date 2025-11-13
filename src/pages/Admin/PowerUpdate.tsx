@@ -29,7 +29,13 @@ export function PowerUpdate() {
   const { addToast } = useToast();
 
   const [updates, setUpdates] = useState<{
-    [key: string]: { energized: number; remarks: string; photo: File | null };
+    [key: string]: { 
+      energized: number; 
+      remarks: string; 
+      photo: File | null;
+      totalHouseholds: number;
+      energizedHouseholds: number;
+    };
   }>({});
   const [asOfTime, setAsOfTime] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -98,6 +104,8 @@ export function PowerUpdate() {
           energized: latest?.energized_barangays || 0,
           remarks: latest?.remarks || "",
           photo: null,
+          totalHouseholds: 0,
+          energizedHouseholds: 0,
         };
       });
 
@@ -182,6 +190,25 @@ export function PowerUpdate() {
         ]);
 
         if (error) throw error;
+
+        // Insert household update if household data is provided
+        if (update.totalHouseholds > 0) {
+          const { error: hhError } = await supabase
+            .from("household_updates")
+            .insert([
+              {
+                municipality: muni.label,
+                total_households: update.totalHouseholds,
+                energized_households: update.energizedHouseholds,
+                remarks: update.remarks || null,
+                updated_by: session?.session?.user?.id,
+                is_published: true,
+                as_of_time: asOfDateTime,
+              },
+            ]);
+
+          if (hhError) throw hhError;
+        }
       }
 
       setSubmitted(true);
@@ -339,6 +366,8 @@ export function PowerUpdate() {
                                   energized: val,
                                   remarks: updates[muni.value]?.remarks || "",
                                   photo: updates[muni.value]?.photo || null,
+                                  totalHouseholds: updates[muni.value]?.totalHouseholds || 0,
+                                  energizedHouseholds: updates[muni.value]?.energizedHouseholds || 0,
                                 },
                               });
                             }}
@@ -414,6 +443,183 @@ export function PowerUpdate() {
                   </tr>
                 </tbody>
               </table>
+            </div>
+
+            {/* Household Data Section */}
+            <div className="mt-8 border-t-2 border-gray-300">
+              <div className="p-3 sm:p-6 bg-blue-50 border-b border-blue-200">
+                <h2 className="text-lg sm:text-2xl font-bold text-gray-900 mb-2">
+                  Household Connection Status
+                </h2>
+                <p className="text-xs sm:text-sm text-blue-900">
+                  ℹ️ Enter household data (optional). If provided, households data will be recorded alongside barangay data.
+                </p>
+              </div>
+
+              {/* Household Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-100 border-b-2 border-gray-300">
+                      <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-bold text-gray-900 text-xs sm:text-base">
+                        Municipality / Town
+                      </th>
+                      <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
+                        Total HH *
+                      </th>
+                      <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
+                        Energized HH *
+                      </th>
+                      <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-green-600 text-xs sm:text-base">
+                        %
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {MUNICIPALITIES.map((muni, idx) => {
+                      const bgColor = idx % 2 === 0 ? "bg-white" : "bg-gray-50";
+                      const totalHH = updates[muni.value]?.totalHouseholds || 0;
+                      const energizedHH =
+                        updates[muni.value]?.energizedHouseholds || 0;
+                      const percentage =
+                        totalHH > 0
+                          ? ((energizedHH / totalHH) * 100).toFixed(2)
+                          : (0).toFixed(2);
+
+                      return (
+                        <tr
+                          key={`hh-${muni.value}`}
+                          className={`${bgColor} border-b border-gray-200`}
+                        >
+                          <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-900 text-xs sm:text-base">
+                            {muni.label}
+                          </td>
+                          <td className="px-2 sm:px-6 py-3 sm:py-4 text-center">
+                            <input
+                              type="number"
+                              min="0"
+                              value={totalHH}
+                              onChange={(e) => {
+                                const val = Math.max(0, parseInt(e.target.value) || 0);
+                                setUpdates({
+                                  ...updates,
+                                  [muni.value]: {
+                                    ...updates[muni.value],
+                                    totalHouseholds: val,
+                                  },
+                                });
+                              }}
+                              className="w-16 sm:w-20 mx-auto px-2 sm:px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-sm sm:text-base"
+                              placeholder="0"
+                            />
+                          </td>
+                          <td className="px-2 sm:px-6 py-3 sm:py-4 text-center">
+                            <input
+                              type="number"
+                              min="0"
+                              max={totalHH || undefined}
+                              value={energizedHH}
+                              onChange={(e) => {
+                                const val = Math.max(
+                                  0,
+                                  Math.min(
+                                    totalHH || Infinity,
+                                    parseInt(e.target.value) || 0
+                                  )
+                                );
+                                setUpdates({
+                                  ...updates,
+                                  [muni.value]: {
+                                    ...updates[muni.value],
+                                    energizedHouseholds: val,
+                                  },
+                                });
+                              }}
+                              className="w-16 sm:w-20 mx-auto px-2 sm:px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-sm sm:text-base"
+                              placeholder="0"
+                            />
+                          </td>
+                          <td
+                            className={`px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-lg ${
+                              parseFloat(percentage) === 100
+                                ? "text-green-600 bg-green-50"
+                                : parseFloat(percentage) >= 75
+                                ? "text-lime-600"
+                                : parseFloat(percentage) >= 50
+                                ? "text-yellow-600"
+                                : parseFloat(percentage) > 0
+                                ? "text-orange-600"
+                                : "text-gray-400"
+                            }`}
+                          >
+                            {percentage}%
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {/* Total Row for Households */}
+                    <tr className="bg-gray-200 border-t-2 border-gray-300 font-bold">
+                      <td className="px-6 py-4 text-gray-900">TOTAL</td>
+                      <td className="px-6 py-4 text-center text-gray-900">
+                        {MUNICIPALITIES.reduce(
+                          (sum, m) =>
+                            sum + (updates[m.value]?.totalHouseholds || 0),
+                          0
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-center text-gray-900">
+                        {MUNICIPALITIES.reduce(
+                          (sum, m) =>
+                            sum + (updates[m.value]?.energizedHouseholds || 0),
+                          0
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-center font-bold text-lg">
+                        {(() => {
+                          const totalHH = MUNICIPALITIES.reduce(
+                            (sum, m) =>
+                              sum + (updates[m.value]?.totalHouseholds || 0),
+                            0
+                          );
+                          const energizedHH = MUNICIPALITIES.reduce(
+                            (sum, m) =>
+                              sum +
+                              (updates[m.value]?.energizedHouseholds || 0),
+                            0
+                          );
+                          const totalPercent =
+                            totalHH > 0
+                              ? ((energizedHH / totalHH) * 100).toFixed(2)
+                              : (0).toFixed(2);
+                          return (
+                            <span
+                              className={
+                                parseFloat(totalPercent) === 100
+                                  ? "text-green-600 bg-green-50 px-2 py-1 rounded"
+                                  : parseFloat(totalPercent) >= 75
+                                  ? "text-lime-600"
+                                  : parseFloat(totalPercent) >= 50
+                                  ? "text-yellow-600"
+                                  : parseFloat(totalPercent) > 0
+                                  ? "text-orange-600"
+                                  : "text-gray-400"
+                              }
+                            >
+                              {totalPercent}%
+                            </span>
+                          );
+                        })()}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="p-3 sm:p-6 bg-gray-50 border-t border-gray-200">
+                <p className="text-xs sm:text-xs text-gray-600">
+                  * Optional: Total Households and Energized Households. Leave blank if not available.
+                </p>
+              </div>
             </div>
 
             {/* Notes & Submit */}
