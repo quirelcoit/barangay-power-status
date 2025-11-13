@@ -140,26 +140,30 @@ export function Dashboard() {
               onClick={() => navigate("/admin/power-update")}
               className="flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs sm:text-sm md:text-base whitespace-nowrap"
             >
-              ⚡ <span className="hidden sm:inline">Power Update</span><span className="sm:hidden">Update</span>
+              ⚡ <span className="hidden sm:inline">Power Update</span>
+              <span className="sm:hidden">Update</span>
             </button>
             <button
               onClick={() => navigate("/admin/map")}
               className="flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm md:text-base whitespace-nowrap"
             >
-              📍 <span className="hidden sm:inline">View Map</span><span className="sm:hidden">Map</span>
+              📍 <span className="hidden sm:inline">View Map</span>
+              <span className="sm:hidden">Map</span>
             </button>
             <button
               onClick={() => setIsGalleryOpen(true)}
               className="flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-xs sm:text-sm md:text-base whitespace-nowrap"
             >
-              📸 <span className="hidden sm:inline">Photos</span><span className="sm:hidden">Photo</span>
+              📸 <span className="hidden sm:inline">Photos</span>
+              <span className="sm:hidden">Photo</span>
             </button>
             <button
               onClick={handleLogout}
               className="flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-danger-600 text-white rounded-lg hover:bg-danger-700 transition-colors text-xs sm:text-sm md:text-base whitespace-nowrap"
             >
               <LogOut className="w-3 h-3 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Logout</span><span className="sm:hidden">Out</span>
+              <span className="hidden sm:inline">Logout</span>
+              <span className="sm:hidden">Out</span>
             </button>
           </div>
         </div>
@@ -198,7 +202,7 @@ export function Dashboard() {
           <div className="space-y-4">
             {activeTabReports.map((report) => (
               <Card key={report.id} padding="md">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 sm:gap-0">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
                       <h3 className="font-semibold text-gray-900">
@@ -248,7 +252,7 @@ export function Dashboard() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:ml-4 sm:flex-shrink-0">
+                  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:flex-shrink-0">
                     {report.status === "new" && (
                       <button
                         onClick={() => handleStatusChange(report.id, "triaged")}

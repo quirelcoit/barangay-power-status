@@ -46,7 +46,7 @@ export function PowerUpdate() {
     const hours = String(now.getHours()).padStart(2, "0");
     const minutes = String(now.getMinutes()).padStart(2, "0");
     setAsOfTime(`${year}-${month}-${date}T${hours}:${minutes}`);
-    
+
     checkAdmin();
   }, []);
 
@@ -260,7 +260,8 @@ export function PowerUpdate() {
             {/* Instructions & Date/Time Picker */}
             <div className="p-3 sm:p-6 bg-blue-50 border-b border-blue-200 space-y-3 sm:space-y-4">
               <p className="text-xs sm:text-sm text-blue-900">
-                ℹ️ Enter the number of energized barangays for each municipality. Leave blank or zero to skip.
+                ℹ️ Enter the number of energized barangays for each
+                municipality. Leave blank or zero to skip.
               </p>
               <div>
                 <label
@@ -418,7 +419,8 @@ export function PowerUpdate() {
             {/* Notes & Submit */}
             <div className="p-3 sm:p-6 bg-gray-50 border-t border-gray-200">
               <p className="text-xs sm:text-xs text-gray-600 mb-3 sm:mb-4 leading-relaxed">
-                * Percentage calculates automatically. Leave energized barangays empty or zero to skip that municipality.
+                * Percentage calculates automatically. Leave energized barangays
+                empty or zero to skip that municipality.
               </p>
 
               {/* Submit Button */}
