@@ -287,7 +287,28 @@ export function ReportsMap() {
             <p className="text-xs font-semibold text-gray-600 mb-2">
               Filter by Category:
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
+            
+            {/* Mobile: Dropdown */}
+            <div className="md:hidden mb-3">
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-power-600"
+              >
+                <option value="all">📊 All ({stats.total})</option>
+                {Object.entries(CATEGORY_COLORS).map(([category, info]) => {
+                  const count = stats.byCategory[category] || 0;
+                  return (
+                    <option key={category} value={category}>
+                      {info.label} ({count})
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            {/* Desktop: Grid buttons */}
+            <div className="hidden md:grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
               {/* All button */}
               <button
                 onClick={() => setSelectedCategory("all")}
