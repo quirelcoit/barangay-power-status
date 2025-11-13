@@ -38,12 +38,14 @@ const HOUSEHOLD_TOTALS: { [key: string]: number } = {
 export function PowerUpdate() {
   const navigate = useNavigate();
   const { addToast } = useToast();
-  const [activeTab, setActiveTab] = useState<"barangay" | "household">("barangay");
+  const [activeTab, setActiveTab] = useState<"barangay" | "household">(
+    "barangay"
+  );
 
   const [updates, setUpdates] = useState<{
-    [key: string]: { 
-      energized: number; 
-      remarks: string; 
+    [key: string]: {
+      energized: number;
+      remarks: string;
       photo: File | null;
       energizedHouseholds: number;
     };
@@ -71,7 +73,17 @@ export function PowerUpdate() {
   useEffect(() => {
     if (Object.keys(updates).length > 0) {
       try {
-        localStorage.setItem("powerUpdateFormData", JSON.stringify(updates));
+        // Create a copy without File objects (photos can't be serialized)
+        const serializableUpdates: { [key: string]: any } = {};
+        for (const [key, value] of Object.entries(updates)) {
+          serializableUpdates[key] = {
+            energized: value.energized,
+            remarks: value.remarks,
+            energizedHouseholds: value.energizedHouseholds,
+            // Exclude photo field since File objects can't be serialized
+          };
+        }
+        localStorage.setItem("powerUpdateFormData", JSON.stringify(serializableUpdates));
       } catch (e) {
         console.warn("Could not save form data to localStorage:", e);
       }
@@ -116,8 +128,16 @@ export function PowerUpdate() {
       const savedUpdates = localStorage.getItem("powerUpdateFormData");
       if (savedUpdates) {
         try {
-          const parsedUpdates = JSON.parse(savedUpdates);
-          setUpdates(parsedUpdates);
+          const parsedUpdates = JSON.parse(savedUpdates) as { [key: string]: any };
+          // Restore photo field as null since it was excluded from serialization
+          const restoredUpdates: { [key: string]: any } = {};
+          for (const [key, value] of Object.entries(parsedUpdates)) {
+            restoredUpdates[key] = {
+              ...(value as any),
+              photo: null,
+            };
+          }
+          setUpdates(restoredUpdates);
           return;
         } catch (e) {
           console.warn("Could not parse saved form data:", e);
@@ -335,7 +355,9 @@ export function PowerUpdate() {
     } catch (err) {
       console.error("Household submission error:", err);
       addToast(
-        err instanceof Error ? err.message : "Failed to update household status",
+        err instanceof Error
+          ? err.message
+          : "Failed to update household status",
         "error"
       );
     } finally {
@@ -418,370 +440,376 @@ export function PowerUpdate() {
 
         {/* Barangay Form */}
         {activeTab === "barangay" && (
-        <form onSubmit={handleSubmit}>
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            {/* Instructions & Date/Time Picker */}
-            <div className="p-3 sm:p-6 bg-blue-50 border-b border-blue-200 space-y-3 sm:space-y-4">
-              <p className="text-xs sm:text-sm text-blue-900">
-                ℹ️ Enter the number of energized barangays for each
-                municipality. Leave blank or zero to skip.
-              </p>
-              <div>
-                <label
-                  htmlFor="as_of_time"
-                  className="block text-xs sm:text-sm font-semibold text-blue-900 mb-2"
-                >
-                  Report As Of Date & Time
-                </label>
-                <input
-                  id="as_of_time"
-                  type="datetime-local"
-                  value={asOfTime}
-                  onChange={(e) => setAsOfTime(e.target.value)}
-                  className="w-full sm:w-64 px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                />
+          <form onSubmit={handleSubmit}>
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              {/* Instructions & Date/Time Picker */}
+              <div className="p-3 sm:p-6 bg-blue-50 border-b border-blue-200 space-y-3 sm:space-y-4">
+                <p className="text-xs sm:text-sm text-blue-900">
+                  ℹ️ Enter the number of energized barangays for each
+                  municipality. Leave blank or zero to skip.
+                </p>
+                <div>
+                  <label
+                    htmlFor="as_of_time"
+                    className="block text-xs sm:text-sm font-semibold text-blue-900 mb-2"
+                  >
+                    Report As Of Date & Time
+                  </label>
+                  <input
+                    id="as_of_time"
+                    type="datetime-local"
+                    value={asOfTime}
+                    onChange={(e) => setAsOfTime(e.target.value)}
+                    className="w-full sm:w-64 px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-100 border-b-2 border-gray-300">
-                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-bold text-gray-900 text-xs sm:text-base">
-                      Municipality / Town
-                    </th>
-                    <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
-                      Total
-                    </th>
-                    <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
-                      Energized *
-                    </th>
-                    <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-green-600 text-xs sm:text-base">
-                      %
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {MUNICIPALITIES.map((muni, idx) => {
-                    const bgColor = idx % 2 === 0 ? "bg-white" : "bg-gray-50";
-                    const energized = updates[muni.value]?.energized || 0;
-                    const percentage =
-                      energized > 0
-                        ? ((energized / muni.totalBarangays) * 100).toFixed(2)
-                        : (0).toFixed(2);
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-100 border-b-2 border-gray-300">
+                      <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-bold text-gray-900 text-xs sm:text-base">
+                        Municipality / Town
+                      </th>
+                      <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
+                        Total
+                      </th>
+                      <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
+                        Energized *
+                      </th>
+                      <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-green-600 text-xs sm:text-base">
+                        %
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {MUNICIPALITIES.map((muni, idx) => {
+                      const bgColor = idx % 2 === 0 ? "bg-white" : "bg-gray-50";
+                      const energized = updates[muni.value]?.energized || 0;
+                      const percentage =
+                        energized > 0
+                          ? ((energized / muni.totalBarangays) * 100).toFixed(2)
+                          : (0).toFixed(2);
 
-                    return (
-                      <tr
-                        key={muni.value}
-                        className={`${bgColor} border-b border-gray-200`}
-                      >
-                        <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-900 text-xs sm:text-base">
-                          {muni.label}
-                        </td>
-                        <td className="px-2 sm:px-6 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base">
-                          {muni.totalBarangays}
-                        </td>
-                        <td className="px-2 sm:px-6 py-3 sm:py-4 text-center">
-                          <input
-                            type="number"
-                            min="0"
-                            max={muni.totalBarangays}
-                            value={energized}
-                            onChange={(e) => {
-                              const val = Math.max(
-                                0,
-                                Math.min(
-                                  muni.totalBarangays,
-                                  parseInt(e.target.value) || 0
-                                )
-                              );
-                              setUpdates({
-                                ...updates,
-                                [muni.value]: {
-                                  energized: val,
-                                  remarks: updates[muni.value]?.remarks || "",
-                                  photo: updates[muni.value]?.photo || null,
-                                  energizedHouseholds: updates[muni.value]?.energizedHouseholds || 0,
-                                },
-                              });
-                            }}
-                            className="w-16 sm:w-20 mx-auto px-2 sm:px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-sm sm:text-base"
-                          />
-                        </td>
-                        <td
-                          className={`px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-lg ${
-                            parseFloat(percentage) === 100
-                              ? "text-green-600 bg-green-50"
-                              : parseFloat(percentage) >= 75
-                              ? "text-lime-600"
-                              : parseFloat(percentage) >= 50
-                              ? "text-yellow-600"
-                              : parseFloat(percentage) > 0
-                              ? "text-orange-600"
-                              : "text-gray-400"
-                          }`}
+                      return (
+                        <tr
+                          key={muni.value}
+                          className={`${bgColor} border-b border-gray-200`}
                         >
-                          {percentage}%
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {/* Total Row */}
-                  <tr className="bg-gray-200 border-t-2 border-gray-300 font-bold">
-                    <td className="px-6 py-4 text-gray-900">TOTAL</td>
-                    <td className="px-6 py-4 text-center text-gray-900">
-                      {MUNICIPALITIES.reduce(
-                        (sum, m) => sum + m.totalBarangays,
-                        0
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-center text-gray-900">
-                      {MUNICIPALITIES.reduce(
-                        (sum, m) => sum + (updates[m.value]?.energized || 0),
-                        0
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-center font-bold text-lg">
-                      {(() => {
-                        const totalBgy = MUNICIPALITIES.reduce(
-                          (sum, m) => sum + m.totalBarangays,
-                          0
-                        );
-                        const energizedBgy = MUNICIPALITIES.reduce(
-                          (sum, m) => sum + (updates[m.value]?.energized || 0),
-                          0
-                        );
-                        const totalPercent =
-                          totalBgy > 0
-                            ? ((energizedBgy / totalBgy) * 100).toFixed(2)
-                            : (0).toFixed(2);
-                        return (
-                          <span
-                            className={
-                              parseFloat(totalPercent) === 100
-                                ? "text-green-600 bg-green-50 px-2 py-1 rounded"
-                                : parseFloat(totalPercent) >= 75
+                          <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-900 text-xs sm:text-base">
+                            {muni.label}
+                          </td>
+                          <td className="px-2 sm:px-6 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base">
+                            {muni.totalBarangays}
+                          </td>
+                          <td className="px-2 sm:px-6 py-3 sm:py-4 text-center">
+                            <input
+                              type="number"
+                              min="0"
+                              max={muni.totalBarangays}
+                              value={energized}
+                              onChange={(e) => {
+                                const val = Math.max(
+                                  0,
+                                  Math.min(
+                                    muni.totalBarangays,
+                                    parseInt(e.target.value) || 0
+                                  )
+                                );
+                                setUpdates({
+                                  ...updates,
+                                  [muni.value]: {
+                                    energized: val,
+                                    remarks: updates[muni.value]?.remarks || "",
+                                    photo: updates[muni.value]?.photo || null,
+                                    energizedHouseholds:
+                                      updates[muni.value]
+                                        ?.energizedHouseholds || 0,
+                                  },
+                                });
+                              }}
+                              className="w-16 sm:w-20 mx-auto px-2 sm:px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-sm sm:text-base"
+                            />
+                          </td>
+                          <td
+                            className={`px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-lg ${
+                              parseFloat(percentage) === 100
+                                ? "text-green-600 bg-green-50"
+                                : parseFloat(percentage) >= 75
                                 ? "text-lime-600"
-                                : parseFloat(totalPercent) >= 50
+                                : parseFloat(percentage) >= 50
                                 ? "text-yellow-600"
-                                : parseFloat(totalPercent) > 0
+                                : parseFloat(percentage) > 0
                                 ? "text-orange-600"
                                 : "text-gray-400"
-                            }
+                            }`}
                           >
-                            {totalPercent}%
-                          </span>
-                        );
-                      })()}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                            {percentage}%
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {/* Total Row */}
+                    <tr className="bg-gray-200 border-t-2 border-gray-300 font-bold">
+                      <td className="px-6 py-4 text-gray-900">TOTAL</td>
+                      <td className="px-6 py-4 text-center text-gray-900">
+                        {MUNICIPALITIES.reduce(
+                          (sum, m) => sum + m.totalBarangays,
+                          0
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-center text-gray-900">
+                        {MUNICIPALITIES.reduce(
+                          (sum, m) => sum + (updates[m.value]?.energized || 0),
+                          0
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-center font-bold text-lg">
+                        {(() => {
+                          const totalBgy = MUNICIPALITIES.reduce(
+                            (sum, m) => sum + m.totalBarangays,
+                            0
+                          );
+                          const energizedBgy = MUNICIPALITIES.reduce(
+                            (sum, m) =>
+                              sum + (updates[m.value]?.energized || 0),
+                            0
+                          );
+                          const totalPercent =
+                            totalBgy > 0
+                              ? ((energizedBgy / totalBgy) * 100).toFixed(2)
+                              : (0).toFixed(2);
+                          return (
+                            <span
+                              className={
+                                parseFloat(totalPercent) === 100
+                                  ? "text-green-600 bg-green-50 px-2 py-1 rounded"
+                                  : parseFloat(totalPercent) >= 75
+                                  ? "text-lime-600"
+                                  : parseFloat(totalPercent) >= 50
+                                  ? "text-yellow-600"
+                                  : parseFloat(totalPercent) > 0
+                                  ? "text-orange-600"
+                                  : "text-gray-400"
+                              }
+                            >
+                              {totalPercent}%
+                            </span>
+                          );
+                        })()}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
 
-            {/* Notes & Submit */}
-            <div className="p-3 sm:p-6 bg-gray-50 border-t border-gray-200">
-              <p className="text-xs sm:text-xs text-gray-600 mb-3 sm:mb-4 leading-relaxed">
-                * Percentage calculates automatically. Leave energized barangays
-                empty or zero to skip that municipality.
-              </p>
+              {/* Notes & Submit */}
+              <div className="p-3 sm:p-6 bg-gray-50 border-t border-gray-200">
+                <p className="text-xs sm:text-xs text-gray-600 mb-3 sm:mb-4 leading-relaxed">
+                  * Percentage calculates automatically. Leave energized
+                  barangays empty or zero to skip that municipality.
+                </p>
 
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 sm:py-3 rounded-lg transition text-sm sm:text-base"
-              >
-                {loading ? "⏳ Submitting..." : "✅ Submit Barangay Updates"}
-              </button>
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 sm:py-3 rounded-lg transition text-sm sm:text-base"
+                >
+                  {loading ? "⏳ Submitting..." : "✅ Submit Barangay Updates"}
+                </button>
+              </div>
             </div>
-          </div>
-        </form>
+          </form>
         )}
 
         {/* Household Form */}
         {activeTab === "household" && (
-        <form onSubmit={handleSubmit}>
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            {/* Instructions & Date/Time Picker */}
-            <div className="p-3 sm:p-6 bg-blue-50 border-b border-blue-200 space-y-3 sm:space-y-4">
-              <p className="text-xs sm:text-sm text-blue-900">
-                ℹ️ Enter the number of energized households for each municipality. Leave blank or zero to skip.
-              </p>
-              <div>
-                <label
-                  htmlFor="as_of_time_hh"
-                  className="block text-xs sm:text-sm font-semibold text-blue-900 mb-2"
-                >
-                  Report As Of Date & Time
-                </label>
-                <input
-                  id="as_of_time_hh"
-                  type="datetime-local"
-                  value={asOfTime}
-                  onChange={(e) => setAsOfTime(e.target.value)}
-                  className="w-full sm:w-64 px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                />
+          <form onSubmit={handleSubmit}>
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              {/* Instructions & Date/Time Picker */}
+              <div className="p-3 sm:p-6 bg-blue-50 border-b border-blue-200 space-y-3 sm:space-y-4">
+                <p className="text-xs sm:text-sm text-blue-900">
+                  ℹ️ Enter the number of energized households for each
+                  municipality. Leave blank or zero to skip.
+                </p>
+                <div>
+                  <label
+                    htmlFor="as_of_time_hh"
+                    className="block text-xs sm:text-sm font-semibold text-blue-900 mb-2"
+                  >
+                    Report As Of Date & Time
+                  </label>
+                  <input
+                    id="as_of_time_hh"
+                    type="datetime-local"
+                    value={asOfTime}
+                    onChange={(e) => setAsOfTime(e.target.value)}
+                    className="w-full sm:w-64 px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* Household Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-100 border-b-2 border-gray-300">
-                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-bold text-gray-900 text-xs sm:text-base">
-                      Municipality / Town
-                    </th>
-                    <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
-                      Total HH
-                    </th>
-                    <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
-                      Energized HH *
-                    </th>
-                    <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-green-600 text-xs sm:text-base">
-                      %
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {MUNICIPALITIES.map((muni, idx) => {
-                    const bgColor = idx % 2 === 0 ? "bg-white" : "bg-gray-50";
-                    const totalHH = HOUSEHOLD_TOTALS[muni.value] || 0;
-                    const energizedHH = updates[muni.value]?.energizedHouseholds || 0;
-                    const percentage =
-                      totalHH > 0
-                        ? ((energizedHH / totalHH) * 100).toFixed(2)
-                        : (0).toFixed(2);
+              {/* Household Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-100 border-b-2 border-gray-300">
+                      <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-bold text-gray-900 text-xs sm:text-base">
+                        Municipality / Town
+                      </th>
+                      <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
+                        Total HH
+                      </th>
+                      <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
+                        Energized HH *
+                      </th>
+                      <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-green-600 text-xs sm:text-base">
+                        %
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {MUNICIPALITIES.map((muni, idx) => {
+                      const bgColor = idx % 2 === 0 ? "bg-white" : "bg-gray-50";
+                      const totalHH = HOUSEHOLD_TOTALS[muni.value] || 0;
+                      const energizedHH =
+                        updates[muni.value]?.energizedHouseholds || 0;
+                      const percentage =
+                        totalHH > 0
+                          ? ((energizedHH / totalHH) * 100).toFixed(2)
+                          : (0).toFixed(2);
 
-                    return (
-                      <tr
-                        key={`hh-${muni.value}`}
-                        className={`${bgColor} border-b border-gray-200`}
-                      >
-                        <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-900 text-xs sm:text-base">
-                          {muni.label}
-                        </td>
-                        <td className="px-2 sm:px-6 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base">
-                          {totalHH}
-                        </td>
-                        <td className="px-2 sm:px-6 py-3 sm:py-4 text-center">
-                          <input
-                            type="number"
-                            min="0"
-                            max={totalHH}
-                            value={energizedHH}
-                            onChange={(e) => {
-                              const val = Math.max(
-                                0,
-                                Math.min(
-                                  totalHH,
-                                  parseInt(e.target.value) || 0
-                                )
-                              );
-                              setUpdates({
-                                ...updates,
-                                [muni.value]: {
-                                  ...updates[muni.value],
-                                  energizedHouseholds: val,
-                                },
-                              });
-                            }}
-                            className="w-16 sm:w-20 mx-auto px-2 sm:px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-sm sm:text-base"
-                          />
-                        </td>
-                        <td
-                          className={`px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-lg ${
-                            parseFloat(percentage) === 100
-                              ? "text-green-600 bg-green-50"
-                              : parseFloat(percentage) >= 75
-                              ? "text-lime-600"
-                              : parseFloat(percentage) >= 50
-                              ? "text-yellow-600"
-                              : parseFloat(percentage) > 0
-                              ? "text-orange-600"
-                              : "text-gray-400"
-                          }`}
+                      return (
+                        <tr
+                          key={`hh-${muni.value}`}
+                          className={`${bgColor} border-b border-gray-200`}
                         >
-                          {percentage}%
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {/* Total Row for Households */}
-                  <tr className="bg-gray-200 border-t-2 border-gray-300 font-bold">
-                    <td className="px-6 py-4 text-gray-900">TOTAL</td>
-                    <td className="px-6 py-4 text-center text-gray-900">
-                      {MUNICIPALITIES.reduce(
-                        (sum, m) => sum + (HOUSEHOLD_TOTALS[m.value] || 0),
-                        0
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-center text-gray-900">
-                      {MUNICIPALITIES.reduce(
-                        (sum, m) =>
-                          sum + (updates[m.value]?.energizedHouseholds || 0),
-                        0
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-center font-bold text-lg">
-                      {(() => {
-                        const totalHH = MUNICIPALITIES.reduce(
+                          <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-900 text-xs sm:text-base">
+                            {muni.label}
+                          </td>
+                          <td className="px-2 sm:px-6 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base">
+                            {totalHH}
+                          </td>
+                          <td className="px-2 sm:px-6 py-3 sm:py-4 text-center">
+                            <input
+                              type="number"
+                              min="0"
+                              max={totalHH}
+                              value={energizedHH}
+                              onChange={(e) => {
+                                const val = Math.max(
+                                  0,
+                                  Math.min(
+                                    totalHH,
+                                    parseInt(e.target.value) || 0
+                                  )
+                                );
+                                setUpdates({
+                                  ...updates,
+                                  [muni.value]: {
+                                    ...updates[muni.value],
+                                    energizedHouseholds: val,
+                                  },
+                                });
+                              }}
+                              className="w-16 sm:w-20 mx-auto px-2 sm:px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-sm sm:text-base"
+                            />
+                          </td>
+                          <td
+                            className={`px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-lg ${
+                              parseFloat(percentage) === 100
+                                ? "text-green-600 bg-green-50"
+                                : parseFloat(percentage) >= 75
+                                ? "text-lime-600"
+                                : parseFloat(percentage) >= 50
+                                ? "text-yellow-600"
+                                : parseFloat(percentage) > 0
+                                ? "text-orange-600"
+                                : "text-gray-400"
+                            }`}
+                          >
+                            {percentage}%
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {/* Total Row for Households */}
+                    <tr className="bg-gray-200 border-t-2 border-gray-300 font-bold">
+                      <td className="px-6 py-4 text-gray-900">TOTAL</td>
+                      <td className="px-6 py-4 text-center text-gray-900">
+                        {MUNICIPALITIES.reduce(
                           (sum, m) => sum + (HOUSEHOLD_TOTALS[m.value] || 0),
                           0
-                        );
-                        const energizedHH = MUNICIPALITIES.reduce(
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-center text-gray-900">
+                        {MUNICIPALITIES.reduce(
                           (sum, m) =>
                             sum + (updates[m.value]?.energizedHouseholds || 0),
                           0
-                        );
-                        const totalPercent =
-                          totalHH > 0
-                            ? ((energizedHH / totalHH) * 100).toFixed(2)
-                            : (0).toFixed(2);
-                        return (
-                          <span
-                            className={
-                              parseFloat(totalPercent) === 100
-                                ? "text-green-600 bg-green-50 px-2 py-1 rounded"
-                                : parseFloat(totalPercent) >= 75
-                                ? "text-lime-600"
-                                : parseFloat(totalPercent) >= 50
-                                ? "text-yellow-600"
-                                : parseFloat(totalPercent) > 0
-                                ? "text-orange-600"
-                                : "text-gray-400"
-                            }
-                          >
-                            {totalPercent}%
-                          </span>
-                        );
-                      })()}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-center font-bold text-lg">
+                        {(() => {
+                          const totalHH = MUNICIPALITIES.reduce(
+                            (sum, m) => sum + (HOUSEHOLD_TOTALS[m.value] || 0),
+                            0
+                          );
+                          const energizedHH = MUNICIPALITIES.reduce(
+                            (sum, m) =>
+                              sum +
+                              (updates[m.value]?.energizedHouseholds || 0),
+                            0
+                          );
+                          const totalPercent =
+                            totalHH > 0
+                              ? ((energizedHH / totalHH) * 100).toFixed(2)
+                              : (0).toFixed(2);
+                          return (
+                            <span
+                              className={
+                                parseFloat(totalPercent) === 100
+                                  ? "text-green-600 bg-green-50 px-2 py-1 rounded"
+                                  : parseFloat(totalPercent) >= 75
+                                  ? "text-lime-600"
+                                  : parseFloat(totalPercent) >= 50
+                                  ? "text-yellow-600"
+                                  : parseFloat(totalPercent) > 0
+                                  ? "text-orange-600"
+                                  : "text-gray-400"
+                              }
+                            >
+                              {totalPercent}%
+                            </span>
+                          );
+                        })()}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
 
-            {/* Notes & Submit */}
-            <div className="p-3 sm:p-6 bg-gray-50 border-t border-gray-200">
-              <p className="text-xs sm:text-xs text-gray-600 mb-3 sm:mb-4 leading-relaxed">
-                * Percentage calculates automatically. Leave energized households
-                empty or zero to skip that municipality.
-              </p>
+              {/* Notes & Submit */}
+              <div className="p-3 sm:p-6 bg-gray-50 border-t border-gray-200">
+                <p className="text-xs sm:text-xs text-gray-600 mb-3 sm:mb-4 leading-relaxed">
+                  * Percentage calculates automatically. Leave energized
+                  households empty or zero to skip that municipality.
+                </p>
 
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 sm:py-3 rounded-lg transition text-sm sm:text-base"
-              >
-                {loading ? "⏳ Submitting..." : "✅ Submit Household Updates"}
-              </button>
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 sm:py-3 rounded-lg transition text-sm sm:text-base"
+                >
+                  {loading ? "⏳ Submitting..." : "✅ Submit Household Updates"}
+                </button>
+              </div>
             </div>
-          </div>
-        </form>
+          </form>
         )}
       </div>
     </div>
