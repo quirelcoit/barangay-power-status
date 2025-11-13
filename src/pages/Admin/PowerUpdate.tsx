@@ -49,7 +49,27 @@ export function PowerUpdate() {
       photo: File | null;
       energizedHouseholds: number;
     };
-  }>({});
+  }>(() => {
+    // Try to restore from localStorage on initial mount
+    try {
+      const saved = localStorage.getItem("powerUpdateFormData");
+      if (saved) {
+        const parsed = JSON.parse(saved) as { [key: string]: any };
+        const restored: { [key: string]: any } = {};
+        for (const [key, value] of Object.entries(parsed)) {
+          restored[key] = {
+            ...(value as any),
+            photo: null,
+          };
+        }
+        console.log("Restored form data from localStorage:", restored);
+        return restored;
+      }
+    } catch (e) {
+      console.warn("Could not restore from localStorage:", e);
+    }
+    return {};
+  });
   const [asOfTime, setAsOfTime] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -83,7 +103,10 @@ export function PowerUpdate() {
             // Exclude photo field since File objects can't be serialized
           };
         }
-        localStorage.setItem("powerUpdateFormData", JSON.stringify(serializableUpdates));
+        localStorage.setItem(
+          "powerUpdateFormData",
+          JSON.stringify(serializableUpdates)
+        );
       } catch (e) {
         console.warn("Could not save form data to localStorage:", e);
       }
@@ -128,7 +151,9 @@ export function PowerUpdate() {
       const savedUpdates = localStorage.getItem("powerUpdateFormData");
       if (savedUpdates) {
         try {
-          const parsedUpdates = JSON.parse(savedUpdates) as { [key: string]: any };
+          const parsedUpdates = JSON.parse(savedUpdates) as {
+            [key: string]: any;
+          };
           // Restore photo field as null since it was excluded from serialization
           const restoredUpdates: { [key: string]: any } = {};
           for (const [key, value] of Object.entries(parsedUpdates)) {
@@ -544,7 +569,8 @@ export function PowerUpdate() {
                                     ...updates,
                                     [muni.value]: {
                                       energized: 0,
-                                      remarks: updates[muni.value]?.remarks || "",
+                                      remarks:
+                                        updates[muni.value]?.remarks || "",
                                       photo: updates[muni.value]?.photo || null,
                                       energizedHouseholds:
                                         updates[muni.value]
