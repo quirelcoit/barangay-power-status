@@ -341,7 +341,7 @@ export function PowerUpdate() {
                                 },
                               });
                             }}
-                            className="w-20 mx-auto px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
+                            className="w-16 sm:w-20 mx-auto px-2 sm:px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-sm sm:text-base"
                           />
                         </td>
                         <td
@@ -416,17 +416,16 @@ export function PowerUpdate() {
             </div>
 
             {/* Notes & Submit */}
-            <div className="p-6 bg-gray-50 border-t border-gray-200">
-              <p className="text-xs text-gray-600 mb-4">
-                * Percentage calculates automatically. Leave energized barangays
-                empty or zero to skip that municipality.
+            <div className="p-3 sm:p-6 bg-gray-50 border-t border-gray-200">
+              <p className="text-xs sm:text-xs text-gray-600 mb-3 sm:mb-4 leading-relaxed">
+                * Percentage calculates automatically. Leave energized barangays empty or zero to skip that municipality.
               </p>
 
               {/* Submit Button */}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 rounded-lg transition"
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 sm:py-3 rounded-lg transition text-sm sm:text-base"
               >
                 {loading ? "⏳ Submitting..." : "✅ Submit All Updates"}
               </button>

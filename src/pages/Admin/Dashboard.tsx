@@ -135,31 +135,31 @@ export function Dashboard() {
             </h1>
             {user && <p className="text-sm text-gray-600">{user.email}</p>}
           </div>
-          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 w-full">
             <button
               onClick={() => navigate("/admin/power-update")}
-              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base"
+              className="flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs sm:text-sm md:text-base whitespace-nowrap"
             >
-              ⚡ Power Update
+              ⚡ <span className="hidden sm:inline">Power Update</span><span className="sm:hidden">Update</span>
             </button>
             <button
               onClick={() => navigate("/admin/map")}
-              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
+              className="flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm md:text-base whitespace-nowrap"
             >
-              📍 View Map
+              📍 <span className="hidden sm:inline">View Map</span><span className="sm:hidden">Map</span>
             </button>
             <button
               onClick={() => setIsGalleryOpen(true)}
-              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm sm:text-base"
+              className="flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-xs sm:text-sm md:text-base whitespace-nowrap"
             >
-              📸 Photos
+              📸 <span className="hidden sm:inline">Photos</span><span className="sm:hidden">Photo</span>
             </button>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-danger-600 text-white rounded-lg hover:bg-danger-700 transition-colors text-sm sm:text-base"
+              className="flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-danger-600 text-white rounded-lg hover:bg-danger-700 transition-colors text-xs sm:text-sm md:text-base whitespace-nowrap"
             >
-              <LogOut className="w-4 h-4" />
-              Logout
+              <LogOut className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Logout</span><span className="sm:hidden">Out</span>
             </button>
           </div>
         </div>
