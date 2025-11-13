@@ -278,22 +278,11 @@ export function PowerUpdate() {
         "success"
       );
 
+      // Keep form data in localStorage - user can see what they submitted
+      // Auto-hide success message after 3 seconds
       setTimeout(() => {
-        // Reset only barangay updates
-        const resetUpdates = { ...updates };
-        MUNICIPALITIES.forEach((muni) => {
-          resetUpdates[muni.value] = {
-            ...resetUpdates[muni.value],
-            energized: 0,
-            remarks: "",
-            photo: null,
-          };
-        });
-        setUpdates(resetUpdates);
-        // Clear localStorage after successful submission
-        localStorage.removeItem("powerUpdateFormData");
         setSubmitted(false);
-      }, 2000);
+      }, 3000);
     } catch (err) {
       console.error("Barangay submission error:", err);
       addToast(
@@ -355,21 +344,11 @@ export function PowerUpdate() {
         "success"
       );
 
+      // Keep form data in localStorage - user can see what they submitted
+      // Auto-hide success message after 3 seconds
       setTimeout(() => {
-        // Reset only household updates
-        const resetUpdates = { ...updates };
-        MUNICIPALITIES.forEach((muni) => {
-          resetUpdates[muni.value] = {
-            ...resetUpdates[muni.value],
-            energizedHouseholds: 0,
-            remarks: "",
-          };
-        });
-        setUpdates(resetUpdates);
-        // Clear localStorage after successful submission
-        localStorage.removeItem("powerUpdateFormData");
         setSubmitted(false);
-      }, 2000);
+      }, 3000);
     } catch (err) {
       console.error("Household submission error:", err);
       addToast(
@@ -753,7 +732,8 @@ export function PowerUpdate() {
                                 setUpdates({
                                   ...updates,
                                   [muni.value]: {
-                                    energized: updates[muni.value]?.energized || 0,
+                                    energized:
+                                      updates[muni.value]?.energized || 0,
                                     remarks: updates[muni.value]?.remarks || "",
                                     photo: updates[muni.value]?.photo || null,
                                     energizedHouseholds: val,
@@ -772,8 +752,10 @@ export function PowerUpdate() {
                                   setUpdates({
                                     ...updates,
                                     [muni.value]: {
-                                      energized: updates[muni.value]?.energized || 0,
-                                      remarks: updates[muni.value]?.remarks || "",
+                                      energized:
+                                        updates[muni.value]?.energized || 0,
+                                      remarks:
+                                        updates[muni.value]?.remarks || "",
                                       photo: updates[muni.value]?.photo || null,
                                       energizedHouseholds: 0,
                                     },
