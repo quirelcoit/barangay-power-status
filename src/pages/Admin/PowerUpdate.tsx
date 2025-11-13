@@ -162,32 +162,26 @@ export function PowerUpdate() {
             };
           }
           setUpdates(restoredUpdates);
+          console.log("✅ Loaded saved form data from localStorage");
           return;
         } catch (e) {
           console.warn("Could not parse saved form data:", e);
         }
       }
 
-      // If no saved data, fetch from database
-      const { data, error } = await supabase
-        .from("municipality_status")
-        .select("*")
-        .order("municipality");
-
-      if (error) throw error;
-
+      // If no saved data, initialize with empty values
       const newUpdates: { [key: string]: any } = {};
       MUNICIPALITIES.forEach((muni) => {
-        const latest = data?.find((d) => d.municipality === muni.label);
         newUpdates[muni.value] = {
-          energized: latest?.energized_barangays || 0,
-          remarks: latest?.remarks || "",
+          energized: 0,
+          remarks: "",
           photo: null,
-          energizedHouseholds: updates[muni.value]?.energizedHouseholds || 0,
+          energizedHouseholds: 0,
         };
       });
 
       setUpdates(newUpdates);
+      console.log("✅ Initialized empty form data");
     } catch (err) {
       console.warn("Could not load latest data:", err);
     }
@@ -759,7 +753,9 @@ export function PowerUpdate() {
                                 setUpdates({
                                   ...updates,
                                   [muni.value]: {
-                                    ...updates[muni.value],
+                                    energized: updates[muni.value]?.energized || 0,
+                                    remarks: updates[muni.value]?.remarks || "",
+                                    photo: updates[muni.value]?.photo || null,
                                     energizedHouseholds: val,
                                   },
                                 });
@@ -776,7 +772,9 @@ export function PowerUpdate() {
                                   setUpdates({
                                     ...updates,
                                     [muni.value]: {
-                                      ...updates[muni.value],
+                                      energized: updates[muni.value]?.energized || 0,
+                                      remarks: updates[muni.value]?.remarks || "",
+                                      photo: updates[muni.value]?.photo || null,
                                       energizedHouseholds: 0,
                                     },
                                   });
