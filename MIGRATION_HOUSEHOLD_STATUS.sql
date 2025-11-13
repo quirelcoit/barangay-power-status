@@ -40,21 +40,29 @@ ALTER TABLE household_updates ENABLE ROW LEVEL SECURITY;
 
 -- 4. Create RLS Policies for household_updates
 -- Public read policy (only published records)
+DROP POLICY IF EXISTS "Public can read published household updates" ON household_updates;
 CREATE POLICY "Public can read published household updates" ON household_updates
   FOR SELECT USING (is_published = TRUE);
 
 -- Staff insert policy
+DROP POLICY IF EXISTS "Staff can insert household updates" ON household_updates;
 CREATE POLICY "Staff can insert household updates" ON household_updates
   FOR INSERT 
   WITH CHECK (auth.role() = 'authenticated');
 
 -- Staff update policy (update own records or any record if admin)
+DROP POLICY IF EXISTS "Staff can update household updates" ON household_updates;
 CREATE POLICY "Staff can update household updates" ON household_updates
   FOR UPDATE 
   USING (auth.role() = 'authenticated')
   WITH CHECK (auth.role() = 'authenticated');
 
 -- 5. Create indexes for better query performance
+DROP INDEX IF EXISTS idx_household_updates_municipality;
 CREATE INDEX idx_household_updates_municipality ON household_updates(municipality);
+
+DROP INDEX IF EXISTS idx_household_updates_is_published;
 CREATE INDEX idx_household_updates_is_published ON household_updates(is_published);
+
+DROP INDEX IF EXISTS idx_household_updates_created_at;
 CREATE INDEX idx_household_updates_created_at ON household_updates(created_at DESC);
