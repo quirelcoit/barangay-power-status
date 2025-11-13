@@ -93,7 +93,6 @@ export function PowerProgress() {
   const [latestTimestamp, setLatestTimestamp] = useState<string>("");
   const [expandedMunicipality, setExpandedMunicipality] = useState<string | null>(null);
   const [barangayDetails, setBarangayDetails] = useState<Map<string, BarangayStatus[]>>(new Map());
-  const [barangayMap, setBarangayMap] = useState<Map<string, Barangay>>(new Map());
 
   useEffect(() => {
     loadBarangays();
@@ -229,11 +228,7 @@ export function PowerProgress() {
         .select("id, name, municipality");
 
       if (error) throw error;
-
-      if (barangays) {
-        const bMap = new Map(barangays.map((b) => [b.id, b]));
-        setBarangayMap(bMap);
-      }
+      // Barangays loaded - used in loadBarangayDetails
     } catch (err) {
       console.warn("Could not load barangays:", err);
     }
@@ -252,8 +247,6 @@ export function PowerProgress() {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        const update = data[0];
-        
         // Get all barangays for this municipality
         const { data: muniBarangays, error: bErr } = await supabase
           .from("barangays")
@@ -266,7 +259,6 @@ export function PowerProgress() {
           // For demo purposes, randomly mark some as energized
           // In production, you'd get this from a barangay_status table
           const energizedCount = municipalities.find(m => m.municipality.toUpperCase() === municipality.toUpperCase())?.energized_barangays || 0;
-          const shuffled = [...muniBarangays].sort(() => Math.random() - 0.5);
           
           const barangayStatuses: BarangayStatus[] = muniBarangays.map((b, idx) => ({
             barangay_id: b.id,
