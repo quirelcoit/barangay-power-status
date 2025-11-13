@@ -426,8 +426,8 @@ export function ReportsMap() {
                   position={[report.lat, report.lng] as L.LatLngExpression}
                   icon={createMarkerIcon(report.category)}
                 >
-                  <Popup 
-                    className="leaflet-popup-simple" 
+                  <Popup
+                    className="leaflet-popup-simple"
                     minWidth={280}
                     maxWidth={Math.min(window.innerWidth - 40, 500)}
                   >

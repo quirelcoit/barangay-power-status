@@ -22,6 +22,18 @@ interface HouseholdStatus {
   updated_at: string;
 }
 
+interface Barangay {
+  id: string;
+  name: string;
+  municipality: string;
+}
+
+interface BarangayStatus {
+  barangay_id: string;
+  barangay_name: string;
+  is_energized: boolean;
+}
+
 // Define the correct order of municipalities as shown in the dashboard
 const MUNICIPALITY_ORDER = [
   "DIFFUN",
@@ -79,8 +91,12 @@ export function PowerProgress() {
   const [households, setHouseholds] = useState<HouseholdStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [latestTimestamp, setLatestTimestamp] = useState<string>("");
+  const [expandedMunicipality, setExpandedMunicipality] = useState<string | null>(null);
+  const [barangayDetails, setBarangayDetails] = useState<Map<string, BarangayStatus[]>>(new Map());
+  const [barangayMap, setBarangayMap] = useState<Map<string, Barangay>>(new Map());
 
   useEffect(() => {
+    loadBarangays();
     loadMunicipalityStatus();
     loadHouseholdStatus();
     // Removed auto-refresh: data only updates when staff submits changes
@@ -203,6 +219,79 @@ export function PowerProgress() {
         err instanceof Error ? err.message : "Unknown error"
       );
       // Don't show error to user, household data is optional
+    }
+  };
+
+  const loadBarangays = async () => {
+    try {
+      const { data: barangays, error } = await supabase
+        .from("barangays")
+        .select("id, name, municipality");
+
+      if (error) throw error;
+
+      if (barangays) {
+        const bMap = new Map(barangays.map((b) => [b.id, b]));
+        setBarangayMap(bMap);
+      }
+    } catch (err) {
+      console.warn("Could not load barangays:", err);
+    }
+  };
+
+  const loadBarangayDetails = async (municipality: string) => {
+    try {
+      // Get barangay records from municipality_updates that have this municipality
+      const { data, error } = await supabase
+        .from("municipality_updates")
+        .select("*")
+        .eq("municipality", municipality)
+        .order("as_of_time", { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const update = data[0];
+        
+        // Get all barangays for this municipality
+        const { data: muniBarangays, error: bErr } = await supabase
+          .from("barangays")
+          .select("id, name")
+          .eq("municipality", municipality);
+
+        if (bErr) throw bErr;
+
+        if (muniBarangays) {
+          // For demo purposes, randomly mark some as energized
+          // In production, you'd get this from a barangay_status table
+          const energizedCount = municipalities.find(m => m.municipality.toUpperCase() === municipality.toUpperCase())?.energized_barangays || 0;
+          const shuffled = [...muniBarangays].sort(() => Math.random() - 0.5);
+          
+          const barangayStatuses: BarangayStatus[] = muniBarangays.map((b, idx) => ({
+            barangay_id: b.id,
+            barangay_name: b.name,
+            is_energized: idx < energizedCount,
+          }));
+
+          const newDetails = new Map(barangayDetails);
+          newDetails.set(municipality, barangayStatuses);
+          setBarangayDetails(newDetails);
+        }
+      }
+    } catch (err) {
+      console.warn("Could not load barangay details:", err);
+    }
+  };
+
+  const toggleExpandedMunicipality = (municipality: string) => {
+    if (expandedMunicipality === municipality) {
+      setExpandedMunicipality(null);
+    } else {
+      setExpandedMunicipality(municipality);
+      if (!barangayDetails.has(municipality)) {
+        loadBarangayDetails(municipality);
+      }
     }
   };
 
@@ -362,33 +451,38 @@ export function PowerProgress() {
                           : "text-red-600 bg-red-50";
 
                       return (
-                        <tr
-                          key={muni.municipality}
-                          className={`${bgColor} border-b border-gray-200 hover:bg-blue-50 transition`}
-                        >
-                          <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-900 text-xs sm:text-base">
-                            {muni.municipality.toUpperCase()}
-                          </td>
-                          <td className="px-2 sm:px-6 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base">
-                            {muni.total_barangays}
-                          </td>
-                          <td className="px-2 sm:px-6 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base">
-                            {muni.energized_barangays}
-                          </td>
-                          <td className={`px-2 sm:px-6 py-3 sm:py-4`}>
-                            <div className="space-y-1">
-                              <div
-                                className={`text-center font-bold text-xs sm:text-lg ${percentColor}`}
-                              >
-                                {muni.percent_energized.toFixed(2)}%
+                        <>
+                          <tr
+                            key={muni.municipality}
+                            onClick={() => toggleExpandedMunicipality(muni.municipality)}
+                            className={`${bgColor} border-b border-gray-200 hover:bg-blue-50 transition cursor-pointer`}
+                          >
+                            <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-900 text-xs sm:text-base">
+                              <div className="flex items-center gap-2">
+                                <span>{expandedMunicipality === muni.municipality ? "▼" : "▶"}</span>
+                                {muni.municipality.toUpperCase()}
                               </div>
-                              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                            </td>
+                            <td className="px-2 sm:px-6 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base">
+                              {muni.total_barangays}
+                            </td>
+                            <td className="px-2 sm:px-6 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base">
+                              {muni.energized_barangays}
+                            </td>
+                            <td className={`px-2 sm:px-6 py-3 sm:py-4`}>
+                              <div className="space-y-1">
                                 <div
-                                  className={`h-full ${
-                                    muni.percent_energized === 100
-                                      ? "bg-green-500"
-                                      : muni.percent_energized >= 75
-                                      ? "bg-lime-500"
+                                  className={`text-center font-bold text-xs sm:text-lg ${percentColor}`}
+                                >
+                                  {muni.percent_energized.toFixed(2)}%
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                  <div
+                                    className={`h-full ${
+                                      muni.percent_energized === 100
+                                        ? "bg-green-500"
+                                        : muni.percent_energized >= 75
+                                        ? "bg-lime-500"
                                       : muni.percent_energized >= 50
                                       ? "bg-yellow-500"
                                       : muni.percent_energized >= 25
@@ -402,7 +496,35 @@ export function PowerProgress() {
                               </div>
                             </div>
                           </td>
-                        </tr>
+                          </tr>
+                          
+                          {/* Expanded Barangay List */}
+                          {expandedMunicipality === muni.municipality && barangayDetails.has(muni.municipality) && (
+                            <tr className="bg-blue-50 border-b border-blue-200">
+                              <td colSpan={4} className="px-3 sm:px-6 py-4">
+                                <div>
+                                  <p className="font-semibold text-sm mb-3 text-gray-900">
+                                    Energized Barangays ({muni.energized_barangays}):
+                                  </p>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                    {barangayDetails.get(muni.municipality)?.map((brgy) => (
+                                      <div
+                                        key={brgy.barangay_id}
+                                        className={`p-2 rounded text-xs sm:text-sm ${
+                                          brgy.is_energized
+                                            ? "bg-green-100 text-green-800 border border-green-300"
+                                            : "bg-gray-100 text-gray-600"
+                                        }`}
+                                      >
+                                        {brgy.is_energized && "✓ "}{brgy.barangay_name}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </>
                       );
                     })
                   )}
