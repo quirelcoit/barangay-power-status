@@ -70,9 +70,6 @@ export function PowerUpdate() {
     }
     return {};
   });
-  const [hasRestoredFromStorage] = useState(
-    localStorage.getItem("powerUpdateFormData") !== null
-  );
   const [asOfTime, setAsOfTime] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -139,10 +136,7 @@ export function PowerUpdate() {
 
       setIsAdmin(true);
 
-      // Only load latest data if we didn't restore from localStorage
-      if (!hasRestoredFromStorage) {
-        await loadLatestData();
-      }
+      await loadLatestData();
       setInitialized(true);
     } catch (err) {
       console.error("Auth check failed:", err);
@@ -189,7 +183,7 @@ export function PowerUpdate() {
           energized: latest?.energized_barangays || 0,
           remarks: latest?.remarks || "",
           photo: null,
-          energizedHouseholds: 0,
+          energizedHouseholds: updates[muni.value]?.energizedHouseholds || 0,
         };
       });
 

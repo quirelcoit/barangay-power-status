@@ -495,7 +495,7 @@ export function PowerProgress() {
               0
             );
             const overallPercent =
-              totalHH > 0 ? (energizedHH / totalHH) * 100 : 0;
+              totalHH > 0 ? parseFloat(((energizedHH / totalHH) * 100).toFixed(2)) : 0;
 
             return (
               <>
