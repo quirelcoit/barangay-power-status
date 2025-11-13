@@ -45,7 +45,6 @@ export function PowerUpdate() {
       energized: number; 
       remarks: string; 
       photo: File | null;
-      totalHouseholds: number;
       energizedHouseholds: number;
     };
   }>({});
@@ -475,7 +474,6 @@ export function PowerUpdate() {
                                   energized: val,
                                   remarks: updates[muni.value]?.remarks || "",
                                   photo: updates[muni.value]?.photo || null,
-                                  totalHouseholds: updates[muni.value]?.totalHouseholds || 0,
                                   energizedHouseholds: updates[muni.value]?.energizedHouseholds || 0,
                                 },
                               });
