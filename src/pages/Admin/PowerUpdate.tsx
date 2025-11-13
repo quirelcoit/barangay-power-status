@@ -67,6 +67,17 @@ export function PowerUpdate() {
     checkAdmin();
   }, []);
 
+  // Save form data to localStorage whenever updates change
+  useEffect(() => {
+    if (Object.keys(updates).length > 0) {
+      try {
+        localStorage.setItem("powerUpdateFormData", JSON.stringify(updates));
+      } catch (e) {
+        console.warn("Could not save form data to localStorage:", e);
+      }
+    }
+  }, [updates]);
+
   const checkAdmin = async () => {
     try {
       const { data } = await supabase.auth.getSession();
@@ -101,6 +112,19 @@ export function PowerUpdate() {
 
   const loadLatestData = async () => {
     try {
+      // Check if there's saved form data in localStorage
+      const savedUpdates = localStorage.getItem("powerUpdateFormData");
+      if (savedUpdates) {
+        try {
+          const parsedUpdates = JSON.parse(savedUpdates);
+          setUpdates(parsedUpdates);
+          return;
+        } catch (e) {
+          console.warn("Could not parse saved form data:", e);
+        }
+      }
+
+      // If no saved data, fetch from database
       const { data, error } = await supabase
         .from("municipality_status")
         .select("*")
@@ -228,6 +252,8 @@ export function PowerUpdate() {
           };
         });
         setUpdates(resetUpdates);
+        // Clear localStorage after successful submission
+        localStorage.removeItem("powerUpdateFormData");
         setSubmitted(false);
       }, 2000);
     } catch (err) {
@@ -302,6 +328,8 @@ export function PowerUpdate() {
           };
         });
         setUpdates(resetUpdates);
+        // Clear localStorage after successful submission
+        localStorage.removeItem("powerUpdateFormData");
         setSubmitted(false);
       }, 2000);
     } catch (err) {
