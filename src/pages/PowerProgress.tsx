@@ -478,40 +478,6 @@ export function PowerProgress() {
 
             return (
               <>
-                {/* Household Summary Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-8">
-                  <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-3 sm:p-4 rounded-lg shadow">
-                    <div className="text-xl sm:text-2xl font-bold">
-                      {energizedHH.toLocaleString()}
-                    </div>
-                    <div className="text-xs sm:text-sm opacity-90">
-                      Energized
-                    </div>
-                  </div>
-                  <div className="bg-gradient-to-br from-red-500 to-red-600 text-white p-3 sm:p-4 rounded-lg shadow">
-                    <div className="text-xl sm:text-2xl font-bold">
-                      {(totalHH - energizedHH).toLocaleString()}
-                    </div>
-                    <div className="text-xs sm:text-sm opacity-90">
-                      Unenergized
-                    </div>
-                  </div>
-                  <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-3 sm:p-4 rounded-lg shadow">
-                    <div className="text-xl sm:text-2xl font-bold">
-                      {totalHH.toLocaleString()}
-                    </div>
-                    <div className="text-xs sm:text-sm opacity-90">Total</div>
-                  </div>
-                  <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-3 sm:p-4 rounded-lg shadow">
-                    <div className="text-xl sm:text-2xl font-bold">
-                      {overallPercent.toFixed(2)}%
-                    </div>
-                    <div className="text-xs sm:text-sm opacity-90">
-                      Overall
-                    </div>
-                  </div>
-                </div>
-
                 {/* Household Table */}
                 <div className="bg-white rounded-lg shadow overflow-hidden">
                   <div className="overflow-x-auto">
