@@ -249,11 +249,11 @@ export function Dashboard() {
                   </div>
 
                   {/* Actions */}
-                  <div className="ml-0 sm:ml-4 mt-3 sm:mt-0 grid grid-cols-2 sm:flex gap-1 sm:gap-2 w-full sm:w-auto">
+                  <div className="ml-0 sm:ml-4 mt-3 sm:mt-0 grid grid-cols-2 sm:inline-flex gap-1 sm:gap-2 w-full sm:w-auto">
                     {report.status === "new" && (
                       <button
                         onClick={() => handleStatusChange(report.id, "triaged")}
-                        className="flex items-center justify-center sm:justify-start gap-1 px-2 sm:px-3 py-2 sm:py-1 bg-power-100 text-power-700 rounded hover:bg-power-200 text-xs sm:text-sm flex-1 sm:flex-none"
+                        className="flex items-center justify-center sm:justify-start gap-1 px-2 sm:px-3 py-2 sm:py-1 bg-power-100 text-power-700 rounded hover:bg-power-200 text-xs sm:text-sm flex-1 sm:flex-initial whitespace-nowrap"
                       >
                         <Check className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                         <span className="hidden sm:inline">Triage</span><span className="sm:hidden">Tri</span>
@@ -264,7 +264,7 @@ export function Dashboard() {
                         onClick={() =>
                           handleStatusChange(report.id, "in_progress")
                         }
-                        className="flex items-center justify-center sm:justify-start gap-1 px-2 sm:px-3 py-2 sm:py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 text-xs sm:text-sm flex-1 sm:flex-none"
+                        className="flex items-center justify-center sm:justify-start gap-1 px-2 sm:px-3 py-2 sm:py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 text-xs sm:text-sm flex-1 sm:flex-initial whitespace-nowrap"
                       >
                         <span className="hidden sm:inline">Progress</span><span className="sm:hidden">Prog</span>
                       </button>
@@ -274,7 +274,7 @@ export function Dashboard() {
                         onClick={() =>
                           handleStatusChange(report.id, "resolved")
                         }
-                        className="flex items-center justify-center sm:justify-start gap-1 px-2 sm:px-3 py-2 sm:py-1 bg-power-100 text-power-700 rounded hover:bg-power-200 text-xs sm:text-sm flex-1 sm:flex-none"
+                        className="flex items-center justify-center sm:justify-start gap-1 px-2 sm:px-3 py-2 sm:py-1 bg-power-100 text-power-700 rounded hover:bg-power-200 text-xs sm:text-sm flex-1 sm:flex-initial whitespace-nowrap"
                       >
                         <Check className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                         <span className="hidden sm:inline">Done</span><span className="sm:hidden">Done</span>
@@ -282,7 +282,7 @@ export function Dashboard() {
                     )}
                     <button
                       onClick={() => handleStatusChange(report.id, "rejected")}
-                      className="flex items-center justify-center sm:justify-start gap-1 px-2 sm:px-3 py-2 sm:py-1 bg-danger-100 text-danger-700 rounded hover:bg-danger-200 text-xs sm:text-sm flex-1 sm:flex-none"
+                      className="flex items-center justify-center sm:justify-start gap-1 px-2 sm:px-3 py-2 sm:py-1 bg-danger-100 text-danger-700 rounded hover:bg-danger-200 text-xs sm:text-sm flex-1 sm:flex-initial whitespace-nowrap"
                     >
                       <X className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                       <span className="hidden sm:inline">Reject</span><span className="sm:hidden">Rej</span>
