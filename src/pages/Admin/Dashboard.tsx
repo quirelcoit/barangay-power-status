@@ -165,20 +165,22 @@ export function Dashboard() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 border-b border-gray-200">
+        <div className="flex gap-1 mb-6 border-b border-gray-200 overflow-x-auto">
           {TABS.map((tab) => {
             const count = reports.filter((r) => r.status === tab.status).length;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-3 font-medium transition-colors border-b-2 ${
+                className={`px-2 sm:px-4 py-2 sm:py-3 font-medium text-xs sm:text-base transition-colors border-b-2 whitespace-nowrap flex-shrink-0 ${
                   activeTab === tab.id
                     ? "border-power-600 text-power-600"
                     : "border-transparent text-gray-600 hover:text-gray-900"
                 }`}
               >
-                {tab.label} ({count})
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">{tab.label.substring(0, 3)}</span>
+                <span className="ml-1">({count})</span>
               </button>
             );
           })}
@@ -247,14 +249,14 @@ export function Dashboard() {
                   </div>
 
                   {/* Actions */}
-                  <div className="ml-0 sm:ml-4 mt-3 sm:mt-0 flex flex-wrap gap-1 sm:gap-2">
+                  <div className="ml-0 sm:ml-4 mt-3 sm:mt-0 grid grid-cols-2 sm:flex gap-1 sm:gap-2 w-full sm:w-auto">
                     {report.status === "new" && (
                       <button
                         onClick={() => handleStatusChange(report.id, "triaged")}
-                        className="flex items-center gap-1 px-2 sm:px-3 py-1 bg-power-100 text-power-700 rounded hover:bg-power-200 text-xs sm:text-sm"
+                        className="flex items-center justify-center gap-1 px-2 sm:px-3 py-2 sm:py-1 bg-power-100 text-power-700 rounded hover:bg-power-200 text-xs sm:text-sm flex-1 sm:flex-none"
                       >
-                        <Check className="w-3 h-3 sm:w-4 sm:h-4" />
-                        Triage
+                        <Check className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                        <span className="hidden sm:inline">Triage</span><span className="sm:hidden">Tri</span>
                       </button>
                     )}
                     {report.status !== "resolved" && (
@@ -262,9 +264,9 @@ export function Dashboard() {
                         onClick={() =>
                           handleStatusChange(report.id, "in_progress")
                         }
-                        className="flex items-center gap-1 px-2 sm:px-3 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 text-xs sm:text-sm"
+                        className="flex items-center justify-center gap-1 px-2 sm:px-3 py-2 sm:py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 text-xs sm:text-sm flex-1 sm:flex-none"
                       >
-                        Progress
+                        <span className="hidden sm:inline">Progress</span><span className="sm:hidden">Prog</span>
                       </button>
                     )}
                     {report.status !== "resolved" && (
@@ -272,18 +274,18 @@ export function Dashboard() {
                         onClick={() =>
                           handleStatusChange(report.id, "resolved")
                         }
-                        className="flex items-center gap-1 px-2 sm:px-3 py-1 bg-power-100 text-power-700 rounded hover:bg-power-200 text-xs sm:text-sm"
+                        className="flex items-center justify-center gap-1 px-2 sm:px-3 py-2 sm:py-1 bg-power-100 text-power-700 rounded hover:bg-power-200 text-xs sm:text-sm flex-1 sm:flex-none"
                       >
-                        <Check className="w-3 h-3 sm:w-4 sm:h-4" />
-                        Done
+                        <Check className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                        <span className="hidden sm:inline">Done</span><span className="sm:hidden">Done</span>
                       </button>
                     )}
                     <button
                       onClick={() => handleStatusChange(report.id, "rejected")}
-                      className="flex items-center gap-1 px-2 sm:px-3 py-1 bg-danger-100 text-danger-700 rounded hover:bg-danger-200 text-xs sm:text-sm"
+                      className="flex items-center justify-center gap-1 px-2 sm:px-3 py-2 sm:py-1 bg-danger-100 text-danger-700 rounded hover:bg-danger-200 text-xs sm:text-sm flex-1 sm:flex-none"
                     >
-                      <X className="w-3 h-3 sm:w-4 sm:h-4" />
-                      Reject
+                      <X className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                      <span className="hidden sm:inline">Reject</span><span className="sm:hidden">Rej</span>
                     </button>
                   </div>
                 </div>
