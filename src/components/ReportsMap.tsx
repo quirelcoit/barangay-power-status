@@ -405,35 +405,35 @@ export function ReportsMap() {
                   position={[report.lat, report.lng] as L.LatLngExpression}
                   icon={createMarkerIcon(report.category)}
                 >
-                  <Popup className="leaflet-popup-simple">
-                    <div className="w-72 p-2">
+                  <Popup className="leaflet-popup-simple" minWidth={280}>
+                    <div className="min-w-80 sm:min-w-96 p-4 sm:p-5">
                       {/* Title */}
-                      <h3 className="font-bold text-lg text-gray-900 mb-2">
+                      <h3 className="font-bold text-xl sm:text-2xl text-gray-900 mb-3">
                         {CATEGORY_COLORS[report.category]?.label ||
                           report.category}
                       </h3>
 
                       {/* Location - prominent */}
-                      <div className="mb-3 p-2 bg-blue-50 border-l-4 border-blue-500 rounded">
-                        <p className="text-sm font-semibold text-gray-900">
+                      <div className="mb-4 p-3 sm:p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+                        <p className="text-base sm:text-lg font-semibold text-gray-900">
                           📍 {getLocationName(report)}
                         </p>
                       </div>
 
                       {/* Description if available */}
                       {report.description && (
-                        <div className="mb-3">
-                          <p className="text-xs font-semibold text-gray-600 mb-1">
+                        <div className="mb-4">
+                          <p className="text-sm sm:text-base font-semibold text-gray-600 mb-2">
                             Description:
                           </p>
-                          <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
+                          <p className="text-base sm:text-lg text-gray-700 bg-gray-50 p-3 rounded">
                             "{report.description}"
                           </p>
                         </div>
                       )}
 
                       {/* Timestamp */}
-                      <div className="text-xs text-gray-500 border-t border-gray-200 pt-2 mb-2">
+                      <div className="text-sm sm:text-base text-gray-500 border-t border-gray-200 pt-3 mb-3">
                         <p>🕐 {new Date(report.created_at).toLocaleString()}</p>
                       </div>
 
@@ -441,9 +441,9 @@ export function ReportsMap() {
                       {isAdmin && (
                         <button
                           onClick={() => deleteReport(report.id)}
-                          className="w-full mt-2 px-3 py-2 bg-red-50 text-red-700 border border-red-200 rounded hover:bg-red-100 transition-colors text-sm font-semibold flex items-center justify-center gap-2"
+                          className="w-full mt-3 px-4 py-3 sm:py-4 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-colors text-base sm:text-lg font-semibold flex items-center justify-center gap-2"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-5 h-5 sm:w-6 sm:h-6" />
                           Delete Report
                         </button>
                       )}
