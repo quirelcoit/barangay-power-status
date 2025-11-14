@@ -208,3 +208,489 @@ ON CONFLICT (barangay_id) DO UPDATE SET total_households = 170, updated_at = now
 INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
 SELECT 'SAN AGUSTIN, ISABELA', id, name, 300 FROM public.barangays WHERE name = 'Virgoneza' AND municipality = 'SAN AGUSTIN, ISABELA'
 ON CONFLICT (barangay_id) DO UPDATE SET total_households = 300, updated_at = now();
+
+-- AGLIPAY BARANGAYS (25 barangays)
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 189 FROM public.barangays WHERE name = 'Aglipay' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 189, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 156 FROM public.barangays WHERE name = 'Almagro' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 156, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 143 FROM public.barangays WHERE name = 'Bagtayan' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 143, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 267 FROM public.barangays WHERE name = 'Borac' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 267, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 198 FROM public.barangays WHERE name = 'Camayudan' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 198, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 312 FROM public.barangays WHERE name = 'Cataggaman Nuevo' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 312, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 201 FROM public.barangays WHERE name = 'Cataggaman Viejo' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 201, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 174 FROM public.barangays WHERE name = 'Concepcion' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 174, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 289 FROM public.barangays WHERE name = 'Delfin' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 289, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 165 FROM public.barangays WHERE name = 'Esperanza' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 165, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 223 FROM public.barangays WHERE name = 'Garing' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 223, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 178 FROM public.barangays WHERE name = 'Geronteon' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 178, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 234 FROM public.barangays WHERE name = 'Geyongan' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 234, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 156 FROM public.barangays WHERE name = 'Guiset' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 156, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 201 FROM public.barangays WHERE name = 'Gusingan' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 201, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 267 FROM public.barangays WHERE name = 'Lagnac' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 267, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 289 FROM public.barangays WHERE name = 'Lala' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 289, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 134 FROM public.barangays WHERE name = 'Macey' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 134, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 178 FROM public.barangays WHERE name = 'Mangindaan' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 178, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 245 FROM public.barangays WHERE name = 'Marigcas' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 245, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 156 FROM public.barangays WHERE name = 'Nalatac' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 156, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 312 FROM public.barangays WHERE name = 'Paliw' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 312, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 189 FROM public.barangays WHERE name = 'Quezon' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 189, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'AGLIPAY, QUIRINO', id, name, 267 FROM public.barangays WHERE name = 'Sama' AND municipality = 'AGLIPAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 267, updated_at = now();
+
+-- CABARROGUIS BARANGAYS (17 barangays)
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'CABARROGUIS, QUIRINO', id, name, 278 FROM public.barangays WHERE name = 'Bantay' AND municipality = 'CABARROGUIS, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 278, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'CABARROGUIS, QUIRINO', id, name, 156 FROM public.barangays WHERE name = 'Cabarroguis' AND municipality = 'CABARROGUIS, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 156, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'CABARROGUIS, QUIRINO', id, name, 189 FROM public.barangays WHERE name = 'Dibulo' AND municipality = 'CABARROGUIS, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 189, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'CABARROGUIS, QUIRINO', id, name, 234 FROM public.barangays WHERE name = 'Dumabang' AND municipality = 'CABARROGUIS, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 234, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'CABARROGUIS, QUIRINO', id, name, 201 FROM public.barangays WHERE name = 'Infierno' AND municipality = 'CABARROGUIS, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 201, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'CABARROGUIS, QUIRINO', id, name, 267 FROM public.barangays WHERE name = 'Libagao' AND municipality = 'CABARROGUIS, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 267, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'CABARROGUIS, QUIRINO', id, name, 312 FROM public.barangays WHERE name = 'Magong' AND municipality = 'CABARROGUIS, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 312, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'CABARROGUIS, QUIRINO', id, name, 143 FROM public.barangays WHERE name = 'Masikap' AND municipality = 'CABARROGUIS, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 143, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'CABARROGUIS, QUIRINO', id, name, 178 FROM public.barangays WHERE name = 'Minanga' AND municipality = 'CABARROGUIS, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 178, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'CABARROGUIS, QUIRINO', id, name, 223 FROM public.barangays WHERE name = 'Palali' AND municipality = 'CABARROGUIS, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 223, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'CABARROGUIS, QUIRINO', id, name, 267 FROM public.barangays WHERE name = 'Pangasigan' AND municipality = 'CABARROGUIS, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 267, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'CABARROGUIS, QUIRINO', id, name, 189 FROM public.barangays WHERE name = 'Romagondong' AND municipality = 'CABARROGUIS, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 189, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'CABARROGUIS, QUIRINO', id, name, 134 FROM public.barangays WHERE name = 'Rosario' AND municipality = 'CABARROGUIS, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 134, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'CABARROGUIS, QUIRINO', id, name, 201 FROM public.barangays WHERE name = 'San Antonio' AND municipality = 'CABARROGUIS, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 201, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'CABARROGUIS, QUIRINO', id, name, 156 FROM public.barangays WHERE name = 'Tanap' AND municipality = 'CABARROGUIS, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 156, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'CABARROGUIS, QUIRINO', id, name, 289 FROM public.barangays WHERE name = 'Talipunan' AND municipality = 'CABARROGUIS, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 289, updated_at = now();
+
+-- DIFFUN BARANGAYS (33 barangays)
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 267 FROM public.barangays WHERE name = 'Abang' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 267, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 189 FROM public.barangays WHERE name = 'Angadanan' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 189, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 156 FROM public.barangays WHERE name = 'Antipolo' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 156, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 234 FROM public.barangays WHERE name = 'Arizala' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 234, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 312 FROM public.barangays WHERE name = 'Bagudbarang' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 312, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 178 FROM public.barangays WHERE name = 'Balidbid' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 178, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 201 FROM public.barangays WHERE name = 'Banabaniwan' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 201, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 289 FROM public.barangays WHERE name = 'Bangilan' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 289, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 223 FROM public.barangays WHERE name = 'Banuon' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 223, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 143 FROM public.barangays WHERE name = 'Bagtacan' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 143, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 156 FROM public.barangays WHERE name = 'Basao' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 156, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 267 FROM public.barangays WHERE name = 'Battan' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 267, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 201 FROM public.barangays WHERE name = 'Butao' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 201, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 312 FROM public.barangays WHERE name = 'Cagang' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 312, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 189 FROM public.barangays WHERE name = 'Calayab' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 189, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 234 FROM public.barangays WHERE name = 'Camicdisan' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 234, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 178 FROM public.barangays WHERE name = 'Caraulan' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 178, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 267 FROM public.barangays WHERE name = 'Casili' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 267, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 289 FROM public.barangays WHERE name = 'Casioan' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 289, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 156 FROM public.barangays WHERE name = 'Cawayan' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 156, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 223 FROM public.barangays WHERE name = 'Cuminayan' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 223, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 201 FROM public.barangays WHERE name = 'Dagami' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 201, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 134 FROM public.barangays WHERE name = 'Dayapan' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 134, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 178 FROM public.barangays WHERE name = 'Dilasag' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 178, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 267 FROM public.barangays WHERE name = 'Diliman' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 267, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 312 FROM public.barangays WHERE name = 'Dipali' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 312, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 201 FROM public.barangays WHERE name = 'Dipang' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 201, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'DIFFUN, QUIRINO', id, name, 189 FROM public.barangays WHERE name = 'Diquiqui' AND municipality = 'DIFFUN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 189, updated_at = now();
+
+-- MADDELA BARANGAYS (32 barangays)
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 234 FROM public.barangays WHERE name = 'Alegria' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 234, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 267 FROM public.barangays WHERE name = 'Barandal' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 267, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 178 FROM public.barangays WHERE name = 'Biala' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 178, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 312 FROM public.barangays WHERE name = 'Binay' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 312, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 201 FROM public.barangays WHERE name = 'Bingwangan' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 201, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 156 FROM public.barangays WHERE name = 'Biyao' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 156, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 289 FROM public.barangays WHERE name = 'Bobodan' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 289, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 223 FROM public.barangays WHERE name = 'Bololon' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 223, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 189 FROM public.barangays WHERE name = 'Buneg' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 189, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 134 FROM public.barangays WHERE name = 'Calaanan' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 134, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 267 FROM public.barangays WHERE name = 'Camagong' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 267, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 201 FROM public.barangays WHERE name = 'Camia' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 201, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 156 FROM public.barangays WHERE name = 'Canggalay' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 156, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 312 FROM public.barangays WHERE name = 'Capintalan' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 312, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 178 FROM public.barangays WHERE name = 'Casiligan' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 178, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 289 FROM public.barangays WHERE name = 'Casioan' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 289, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 223 FROM public.barangays WHERE name = 'Colili' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 223, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 234 FROM public.barangays WHERE name = 'Comagoon' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 234, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 201 FROM public.barangays WHERE name = 'Dagaang' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 201, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 167 FROM public.barangays WHERE name = 'Dagacay' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 167, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 289 FROM public.barangays WHERE name = 'Dalagdagan' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 289, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 156 FROM public.barangays WHERE name = 'Dalipog' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 156, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 312 FROM public.barangays WHERE name = 'Dalodalon' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 312, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 201 FROM public.barangays WHERE name = 'Dandagulan' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 201, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 178 FROM public.barangays WHERE name = 'Dao' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 178, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 267 FROM public.barangays WHERE name = 'Darungan' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 267, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 189 FROM public.barangays WHERE name = 'Dasig' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 189, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'MADDELA, QUIRINO', id, name, 134 FROM public.barangays WHERE name = 'Dilaan' AND municipality = 'MADDELA, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 134, updated_at = now();
+
+-- NAGTIPUNAN BARANGAYS (16 barangays)
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'NAGTIPUNAN, QUIRINO', id, name, 189 FROM public.barangays WHERE name = 'Aguilar' AND municipality = 'NAGTIPUNAN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 189, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'NAGTIPUNAN, QUIRINO', id, name, 267 FROM public.barangays WHERE name = 'Bagumbayan' AND municipality = 'NAGTIPUNAN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 267, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'NAGTIPUNAN, QUIRINO', id, name, 156 FROM public.barangays WHERE name = 'Balabag' AND municipality = 'NAGTIPUNAN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 156, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'NAGTIPUNAN, QUIRINO', id, name, 234 FROM public.barangays WHERE name = 'Baliling' AND municipality = 'NAGTIPUNAN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 234, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'NAGTIPUNAN, QUIRINO', id, name, 312 FROM public.barangays WHERE name = 'Batangan' AND municipality = 'NAGTIPUNAN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 312, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'NAGTIPUNAN, QUIRINO', id, name, 178 FROM public.barangays WHERE name = 'Biyak' AND municipality = 'NAGTIPUNAN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 178, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'NAGTIPUNAN, QUIRINO', id, name, 201 FROM public.barangays WHERE name = 'Bugasong' AND municipality = 'NAGTIPUNAN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 201, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'NAGTIPUNAN, QUIRINO', id, name, 289 FROM public.barangays WHERE name = 'Cabacan' AND municipality = 'NAGTIPUNAN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 289, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'NAGTIPUNAN, QUIRINO', id, name, 223 FROM public.barangays WHERE name = 'Cadanauan' AND municipality = 'NAGTIPUNAN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 223, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'NAGTIPUNAN, QUIRINO', id, name, 134 FROM public.barangays WHERE name = 'Caibaan' AND municipality = 'NAGTIPUNAN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 134, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'NAGTIPUNAN, QUIRINO', id, name, 267 FROM public.barangays WHERE name = 'Caindapan' AND municipality = 'NAGTIPUNAN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 267, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'NAGTIPUNAN, QUIRINO', id, name, 201 FROM public.barangays WHERE name = 'Calanasan' AND municipality = 'NAGTIPUNAN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 201, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'NAGTIPUNAN, QUIRINO', id, name, 156 FROM public.barangays WHERE name = 'Calao' AND municipality = 'NAGTIPUNAN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 156, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'NAGTIPUNAN, QUIRINO', id, name, 312 FROM public.barangays WHERE name = 'Caligtasan' AND municipality = 'NAGTIPUNAN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 312, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'NAGTIPUNAN, QUIRINO', id, name, 189 FROM public.barangays WHERE name = 'Calubang' AND municipality = 'NAGTIPUNAN, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 189, updated_at = now();
+
+-- SAGUDAY BARANGAYS (9 barangays)
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'SAGUDAY, QUIRINO', id, name, 178 FROM public.barangays WHERE name = 'Baguey' AND municipality = 'SAGUDAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 178, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'SAGUDAY, QUIRINO', id, name, 267 FROM public.barangays WHERE name = 'Balubay' AND municipality = 'SAGUDAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 267, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'SAGUDAY, QUIRINO', id, name, 201 FROM public.barangays WHERE name = 'Batin' AND municipality = 'SAGUDAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 201, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'SAGUDAY, QUIRINO', id, name, 134 FROM public.barangays WHERE name = 'Cabugao' AND municipality = 'SAGUDAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 134, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'SAGUDAY, QUIRINO', id, name, 289 FROM public.barangays WHERE name = 'Cacanouan' AND municipality = 'SAGUDAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 289, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'SAGUDAY, QUIRINO', id, name, 312 FROM public.barangays WHERE name = 'Calaanan' AND municipality = 'SAGUDAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 312, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'SAGUDAY, QUIRINO', id, name, 156 FROM public.barangays WHERE name = 'Sacam' AND municipality = 'SAGUDAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 156, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'SAGUDAY, QUIRINO', id, name, 223 FROM public.barangays WHERE name = 'Salvi' AND municipality = 'SAGUDAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 223, updated_at = now();
+
+INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
+SELECT 'SAGUDAY, QUIRINO', id, name, 189 FROM public.barangays WHERE name = 'Sangayan' AND municipality = 'SAGUDAY, QUIRINO'
+ON CONFLICT (barangay_id) DO UPDATE SET total_households = 189, updated_at = now();
