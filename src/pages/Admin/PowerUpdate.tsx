@@ -209,12 +209,20 @@ export function PowerUpdate() {
 
   const loadBarangayHouseholdData = async (municipalityLabel: string) => {
     try {
-      setLoadingBarangayHouseholds((prev) => new Set(prev).add(municipalityLabel));
+      setLoadingBarangayHouseholds((prev) =>
+        new Set(prev).add(municipalityLabel)
+      );
+
+      // Map short code to full municipality name
+      const muniObj = MUNICIPALITIES.find((m) => m.value === municipalityLabel);
+      const fullMuniName = muniObj?.label || municipalityLabel;
 
       const { data, error } = await supabase
         .from("barangay_household_status")
-        .select("barangay_id, barangay_name, total_households, restored_households")
-        .eq("municipality", municipalityLabel.toUpperCase())
+        .select(
+          "barangay_id, barangay_name, total_households, restored_households"
+        )
+        .eq("municipality", fullMuniName)
         .order("barangay_name", { ascending: true });
 
       if (error) throw error;
@@ -1244,7 +1252,8 @@ export function PowerUpdate() {
                     expandedBarangayMunicipality === muni.value;
                   const barangays = barangayHouseholdData[muni.value] || [];
                   const isLoading = loadingBarangayHouseholds.has(muni.value);
-                  const muniUpdates = barangayHouseholdUpdates[muni.value] || {};
+                  const muniUpdates =
+                    barangayHouseholdUpdates[muni.value] || {};
 
                   return (
                     <div
@@ -1254,7 +1263,9 @@ export function PowerUpdate() {
                       {/* Municipality Header - Clickable */}
                       <button
                         type="button"
-                        onClick={() => toggleBarangayHouseholdMunicipality(muni.value)}
+                        onClick={() =>
+                          toggleBarangayHouseholdMunicipality(muni.value)
+                        }
                         disabled={loading}
                         className="w-full bg-gray-50 hover:bg-blue-50 disabled:opacity-50 transition px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between"
                       >
@@ -1276,7 +1287,9 @@ export function PowerUpdate() {
                         <div className="p-3 sm:p-6 bg-white space-y-3">
                           {isLoading ? (
                             <div className="text-center py-4">
-                              <p className="text-sm text-gray-600">Loading barangays...</p>
+                              <p className="text-sm text-gray-600">
+                                Loading barangays...
+                              </p>
                             </div>
                           ) : barangays.length === 0 ? (
                             <div className="bg-yellow-50 p-3 rounded border border-yellow-200 text-xs sm:text-sm text-yellow-900">
@@ -1411,8 +1424,13 @@ export function PowerUpdate() {
                       💡 How to use:
                     </p>
                     <ul className="text-xs sm:text-sm text-blue-800 space-y-1 list-disc list-inside">
-                      <li>Click on a municipality to expand and see all barangays</li>
-                      <li>Enter the number of restored households in the "Restored" column</li>
+                      <li>
+                        Click on a municipality to expand and see all barangays
+                      </li>
+                      <li>
+                        Enter the number of restored households in the
+                        "Restored" column
+                      </li>
                       <li>"For Restore" and percentage will auto-calculate</li>
                       <li>Verify the timestamp and submit</li>
                     </ul>

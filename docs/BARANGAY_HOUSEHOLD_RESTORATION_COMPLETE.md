@@ -11,6 +11,7 @@
 Added granular household restoration tracking at the barangay level, allowing staff to track exactly how many households in each barangay have been restored to power. This complements the existing municipality-level tracking.
 
 **Key Additions:**
+
 1. ✅ Admin form with expandable municipalities showing all barangays
 2. ✅ Per-barangay input fields for restored households
 3. ✅ Auto-calculated "For Restoration" count and percentage
@@ -26,12 +27,15 @@ Added granular household restoration tracking at the barangay level, allowing st
 ### 1. Database Schema (MIGRATION_BARANGAY_HOUSEHOLDS.sql)
 
 #### Tables Created:
+
 - **barangay_households**: Stores fixed household counts per barangay
+
   - UNIQUE constraint on `barangay_id`
   - CHECK constraint on `total_households > 0`
   - Tracks creation/update timestamps
 
 - **barangay_household_updates**: Stores restoration progress records
+
   - Foreign key to `barangays`
   - CHECK constraint: `0 ≤ restored_households ≤ total_households`
   - Tracks who made updates (`updated_by` user ID)
@@ -44,6 +48,7 @@ Added granular household restoration tracking at the barangay level, allowing st
   - Optimized with indexes on municipality, barangay_id, updated_at
 
 #### Data Seeded:
+
 - **San Agustin, Isabela:** 18 barangays (247-475 HH)
 - **Aglipay, Quirino:** 25 barangays (134-312 HH)
 - **Cabarroguis, Quirino:** 17 barangays (134-312 HH)
@@ -57,7 +62,9 @@ Added granular household restoration tracking at the barangay level, allowing st
 ### 2. Frontend Implementation
 
 #### PowerProgress.tsx (Dashboard Display)
+
 **New Interface:**
+
 ```typescript
 interface BarangayHouseholdData {
   barangay_id: string;
@@ -70,6 +77,7 @@ interface BarangayHouseholdData {
 ```
 
 **New Features:**
+
 - `barangayHouseholds` state: Lazy-loads barangay data per municipality
 - `loadBarangayHouseholds(municipality)`: Fetches from `barangay_household_status` view
 - Energized Barangays section shows cards with:
@@ -80,6 +88,7 @@ interface BarangayHouseholdData {
   - Percentage with color-coded progress bar
 
 **Color Coding Logic:**
+
 - 🔴 Red (0-24%)
 - 🟠 Orange (25-49%)
 - 🟡 Yellow (50-74%)
@@ -87,15 +96,18 @@ interface BarangayHouseholdData {
 - 🟢 Green (100%)
 
 #### PowerUpdate.tsx (Admin Form)
+
 **New Tab:** "Barangay Households"
 
 **New Functions:**
+
 1. `loadBarangayHouseholdData(municipality)` - Fetches barangay list from database
 2. `toggleBarangayHouseholdMunicipality(municipality)` - Expand/collapse with lazy loading
 3. `updateBarangayHouseholdValue(municipality, barangayId, restoredCount)` - Update state + localStorage
 4. `submitBarangayHouseholdUpdates()` - Save individual updates to `barangay_household_updates` table
 
 **Form Layout:**
+
 ```
 DateTime Picker: [as_of_time field]
 
@@ -114,6 +126,7 @@ Submit Button: "✅ Submit Barangay Household Updates"
 ```
 
 **State Management:**
+
 - `barangayHouseholdData`: Map<municipality, BarangayHouseholdData[]>
 - `barangayHouseholdUpdates`: Persisted to localStorage
   - Structure: `{ [municipality]: { [barangayId]: restoredCount } }`
@@ -121,6 +134,7 @@ Submit Button: "✅ Submit Barangay Household Updates"
 - `loadingBarangayHouseholds`: Set<string> for loading states
 
 **Form Persistence:**
+
 - Restored household values auto-save to localStorage
 - Auto-recovery on page reload
 - Key: `barangayHouseholdUpdates`
@@ -128,6 +142,7 @@ Submit Button: "✅ Submit Barangay Household Updates"
 ### 3. Data Flow
 
 **Reading:**
+
 1. User clicks municipality to expand
 2. App checks if data is cached
 3. If not cached, fetches from `barangay_household_status` view
@@ -135,6 +150,7 @@ Submit Button: "✅ Submit Barangay Household Updates"
 5. Form renders with current values
 
 **Writing:**
+
 1. User enters restored household count
 2. State updates immediately (optimistic UI)
 3. Value persists to localStorage
@@ -151,6 +167,7 @@ Submit Button: "✅ Submit Barangay Household Updates"
 ## Commits
 
 1. **5357730** - feat: Implement complete barangay household restoration admin form
+
    - All form functions and JSX
    - Expandable municipalities with lazy loading
    - Household input grid with auto-calculations
@@ -167,13 +184,16 @@ Submit Button: "✅ Submit Barangay Household Updates"
 ## Next Steps: Deployment
 
 ### Step 1: Run Migration
+
 Execute in Supabase SQL Editor:
+
 ```sql
 -- Copy-paste entire contents of:
 supabase_sql/MIGRATION_BARANGAY_HOUSEHOLDS.sql
 ```
 
 This will:
+
 - ✅ Create `barangay_households` table
 - ✅ Create `barangay_household_updates` table
 - ✅ Create `barangay_household_status` view
@@ -182,6 +202,7 @@ This will:
 - ✅ Seed all 150 barangays with household counts
 
 ### Step 2: Test Admin Form (Staging)
+
 1. Deploy to Vercel staging environment
 2. Go to Admin → Power Update → Barangay Households tab
 3. Click each municipality to expand
@@ -191,6 +212,7 @@ This will:
 7. Refresh page, verify data persists
 
 ### Step 3: Test Dashboard Display
+
 1. Check PowerProgress page (Energized Barangays section)
 2. Click municipality to expand
 3. Verify barangay cards display:
@@ -201,6 +223,7 @@ This will:
    - ✅ Percentage with correct color bar
 
 ### Step 4: Deploy to Production
+
 ```bash
 git push origin main
 # Vercel auto-deploys on push
@@ -212,13 +235,16 @@ git push origin main
 ## File Changes Summary
 
 ### Modified Files:
+
 1. **src/pages/Admin/PowerUpdate.tsx** (+894 lines)
+
    - Added 4 new functions for barangay household management
    - Added 4 new state variables
    - Replaced placeholder with full form implementation
    - Added handleSubmit routing for new tab
 
 2. **src/pages/PowerProgress.tsx** (Enhanced)
+
    - Added BarangayHouseholdData interface
    - Added barangayHouseholds state with lazy loading
    - Added loadBarangayHouseholds() function
@@ -230,6 +256,7 @@ git push origin main
    - Ready to execute in Supabase
 
 ### New Files:
+
 - docs/BARANGAY_HOUSEHOLD_RESTORATION_COMPLETE.md (this file)
 
 ---
@@ -237,6 +264,7 @@ git push origin main
 ## Database Query Reference
 
 ### To view all barangay household data:
+
 ```sql
 SELECT * FROM barangay_household_status
 WHERE municipality = 'DIFFUN, QUIRINO'
@@ -244,8 +272,9 @@ ORDER BY barangay_name;
 ```
 
 ### To view latest updates for a municipality:
+
 ```sql
-SELECT 
+SELECT
   municipality,
   barangay_name,
   total_households,
@@ -260,11 +289,12 @@ ORDER BY percent_restored DESC;
 ```
 
 ### To insert a manual household update:
+
 ```sql
 INSERT INTO barangay_household_updates (
-  barangay_id, 
-  restored_households, 
-  as_of_time, 
+  barangay_id,
+  restored_households,
+  as_of_time,
   updated_by
 ) VALUES (
   'barangay-uuid-here',
