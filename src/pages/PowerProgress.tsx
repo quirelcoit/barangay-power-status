@@ -504,8 +504,28 @@ export function PowerProgress() {
                           <td className="px-2 sm:px-4 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base">
                             {muni.energized_barangays}
                           </td>
-                          <td className={`px-2 sm:px-4 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm ${barangayPercentColor}`}>
-                            {muni.percent_energized.toFixed(1)}%
+                          <td className="px-2 sm:px-4 py-3 sm:py-4">
+                            <div className="space-y-1">
+                              <div className={`text-center font-bold text-xs sm:text-sm rounded ${barangayPercentColor} py-1`}>
+                                {muni.percent_energized.toFixed(1)}%
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                <div
+                                  className={`h-full ${
+                                    muni.percent_energized === 100
+                                      ? "bg-green-500"
+                                      : muni.percent_energized >= 75
+                                      ? "bg-lime-500"
+                                      : muni.percent_energized >= 50
+                                      ? "bg-yellow-500"
+                                      : muni.percent_energized >= 25
+                                      ? "bg-orange-500"
+                                      : "bg-red-500"
+                                  } transition-all duration-500`}
+                                  style={{ width: `${muni.percent_energized}%` }}
+                                />
+                              </div>
+                            </div>
                           </td>
                           
                           {/* HOUSEHOLD LEVEL */}
@@ -515,8 +535,28 @@ export function PowerProgress() {
                           <td className="px-2 sm:px-4 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base">
                             {hhEnergized.toLocaleString()}
                           </td>
-                          <td className={`px-2 sm:px-4 py-3 sm:py-4 text-center font-bold text-xs sm:text-sm ${householdPercentColor}`}>
-                            {hhPercent.toFixed(1)}%
+                          <td className="px-2 sm:px-4 py-3 sm:py-4">
+                            <div className="space-y-1">
+                              <div className={`text-center font-bold text-xs sm:text-sm rounded ${householdPercentColor} py-1`}>
+                                {hhPercent.toFixed(1)}%
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                                <div
+                                  className={`h-full ${
+                                    hhPercent === 100
+                                      ? "bg-green-500"
+                                      : hhPercent >= 75
+                                      ? "bg-lime-500"
+                                      : hhPercent >= 50
+                                      ? "bg-yellow-500"
+                                      : hhPercent >= 25
+                                      ? "bg-orange-500"
+                                      : "bg-red-500"
+                                  } transition-all duration-500`}
+                                  style={{ width: `${hhPercent}%` }}
+                                />
+                              </div>
+                            </div>
                           </td>
                         </tr>
 
