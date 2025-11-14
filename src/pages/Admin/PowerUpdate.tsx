@@ -23,6 +23,14 @@ interface UpdateState {
   energizedBarangayIds: string[];
 }
 
+// TODO: Interface for barangay household updates (coming soon)
+// interface BarangayHouseholdUpdate {
+//   barangayId: string;
+//   barangayName: string;
+//   totalHouseholds: number;
+//   restoredHouseholds: number;
+// }
+
 const MUNICIPALITIES: Municipality[] = [
   { value: "diffun", label: "Diffun", totalBarangays: 33 },
   { value: "cabarroguis", label: "Cabarroguis", totalBarangays: 17 },
@@ -51,12 +59,14 @@ const HOUSEHOLD_TOTALS: { [key: string]: number } = {
 export function PowerUpdate() {
   const navigate = useNavigate();
   const { addToast } = useToast();
-  const [activeTab, setActiveTab] = useState<"barangay" | "household">(
+  const [activeTab, setActiveTab] = useState<"barangay" | "household" | "barangay_household">(
     "barangay"
   );
   const [expandedMunicipality, setExpandedMunicipality] = useState<string | null>(null);
   const [barangays, setBarangays] = useState<{ [key: string]: Barangay[] }>({});
   const [loadingBarangays, setLoadingBarangays] = useState<Set<string>>(new Set());
+  const [expandedBarangayMunicipality, setExpandedBarangayMunicipality] = useState<string | null>(null);
+  // TODO: Implement full barangay household updating
 
   const [updates, setUpdates] = useState<{
     [key: string]: UpdateState;
@@ -568,6 +578,16 @@ export function PowerUpdate() {
           >
             Household Update
           </button>
+          <button
+            onClick={() => setActiveTab("barangay_household")}
+            className={`px-4 sm:px-6 py-2 sm:py-3 font-semibold text-sm sm:text-base transition-colors border-b-2 whitespace-nowrap ${
+              activeTab === "barangay_household"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Barangay Households
+          </button>
         </div>
 
         {/* Barangay Form */}
@@ -965,6 +985,88 @@ export function PowerUpdate() {
                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 sm:py-3 rounded-lg transition text-sm sm:text-base"
                 >
                   {loading ? "⏳ Submitting..." : "✅ Submit Household Updates"}
+                </button>
+              </div>
+            </div>
+          </form>
+        )}
+
+        {/* Barangay Household Form */}
+        {activeTab === "barangay_household" && (
+          <form onSubmit={handleSubmit}>
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              {/* Instructions & Date/Time Picker */}
+              <div className="p-3 sm:p-6 bg-blue-50 border-b border-blue-200 space-y-3 sm:space-y-4">
+                <p className="text-xs sm:text-sm text-blue-900">
+                  ℹ️ Click on a municipality to expand and enter restored households for each barangay. The percentage will calculate automatically.
+                </p>
+                <div>
+                  <label
+                    htmlFor="as_of_time_brgy_hh"
+                    className="block text-xs sm:text-sm font-semibold text-blue-900 mb-2"
+                  >
+                    Report As Of Date & Time
+                  </label>
+                  <input
+                    id="as_of_time_brgy_hh"
+                    type="datetime-local"
+                    value={asOfTime}
+                    onChange={(e) => setAsOfTime(e.target.value)}
+                    className="w-full sm:w-64 px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  />
+                </div>
+              </div>
+
+              {/* Municipalities List */}
+              <div className="space-y-2 p-3 sm:p-6">
+                {MUNICIPALITIES.map((muni) => {
+                  const isExpanded = expandedBarangayMunicipality === muni.value;
+
+                  return (
+                    <div key={`brgy_hh_${muni.value}`} className="border border-gray-200 rounded-lg overflow-hidden">
+                      {/* Municipality Header - Clickable */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (isExpanded) {
+                            setExpandedBarangayMunicipality(null);
+                          } else {
+                            setExpandedBarangayMunicipality(muni.value);
+                          }
+                        }}
+                        className="w-full bg-gray-50 hover:bg-blue-50 transition px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between"
+                      >
+                        <span className="font-semibold text-gray-900 text-sm sm:text-base">{muni.label}</span>
+                        <span className="text-gray-600">{isExpanded ? "▼" : "▶"}</span>
+                      </button>
+
+                      {/* Expanded Barangay List */}
+                      {isExpanded && (
+                        <div className="p-3 sm:p-6 bg-white space-y-3">
+                          <p className="text-xs sm:text-sm text-gray-600 mb-4">Coming soon: Enter household restoration per barangay</p>
+                          <div className="bg-blue-50 p-3 rounded border border-blue-200 text-xs sm:text-sm text-blue-900">
+                            Barangay household data will be displayed here. Enter the number of restored households for each barangay.
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Notes & Submit */}
+              <div className="p-3 sm:p-6 bg-gray-50 border-t border-gray-200">
+                <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 leading-relaxed">
+                  Household restoration tracking per barangay is coming soon.
+                </p>
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 sm:py-3 rounded-lg transition text-sm sm:text-base"
+                >
+                  {loading ? "⏳ Submitting..." : "✅ Submit Barangay Household Updates"}
                 </button>
               </div>
             </div>
