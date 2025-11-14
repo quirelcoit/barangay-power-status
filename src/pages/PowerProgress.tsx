@@ -576,6 +576,9 @@ export function PowerProgress() {
                                                 key={brgy.barangay_id}
                                                 className="p-2 rounded text-xs sm:text-sm bg-gray-100 text-gray-700 border border-gray-300"
                                               >
+                                                <span className="text-sm mr-2">
+                                                  ⚠️
+                                                </span>
                                                 {brgy.barangay_name}
                                               </div>
                                             ))}
