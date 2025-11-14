@@ -277,16 +277,19 @@ Upgrade to **Cloudflare Pro** ($20/mo) if:
 **Date**: November 13, 2025
 
 #### New Features:
+
 1. **Municipality Expansion** - Users can now tap municipalities to see all energized barangays
 2. **Related Barangays Navigation** - Easy navigation between barangays in same municipality
 3. **Enhanced Data Display** - Proper barangay names and status indicators
 
 #### Files Updated:
+
 - `src/pages/PowerProgress.tsx` - Enhanced with real barangay data
 - `src/pages/BarangayView.tsx` - Added related barangays section
 - `docs/` - Added comprehensive documentation
 
 #### Documentation Added:
+
 - `BARANGAY_VIEW_IMPROVEMENTS.md` - Feature documentation
 - `CODE_CHANGES_REFERENCE.md` - Detailed code changes
 - `IMPLEMENTATION_COMPLETE_V2.md` - Implementation summary
@@ -298,6 +301,7 @@ Upgrade to **Cloudflare Pro** ($20/mo) if:
 **Vercel Status**: ⏳ Automatic deployment triggered
 
 #### What to Do:
+
 1. Visit https://github.com/quirelcoit/barangay-power-status
 2. Verify latest commit is visible (hash: 8af05be)
 3. Go to Vercel dashboard: https://vercel.com/dashboard
@@ -305,6 +309,7 @@ Upgrade to **Cloudflare Pro** ($20/mo) if:
 5. Once "Ready" (green), test at live URL
 
 #### Test After Deployment:
+
 ```
 1. Open home page (/)
 2. Click any municipality to expand and see energized barangays

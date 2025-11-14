@@ -23,13 +23,12 @@ interface UpdateState {
   energizedBarangayIds: string[];
 }
 
-// TODO: Interface for barangay household updates (coming soon)
-// interface BarangayHouseholdUpdate {
-//   barangayId: string;
-//   barangayName: string;
-//   totalHouseholds: number;
-//   restoredHouseholds: number;
-// }
+interface BarangayHouseholdData {
+  barangay_id: string;
+  barangay_name: string;
+  total_households: number;
+  restoredHouseholds: number;
+}
 
 const MUNICIPALITIES: Municipality[] = [
   { value: "diffun", label: "Diffun", totalBarangays: 33 },
@@ -59,14 +58,36 @@ const HOUSEHOLD_TOTALS: { [key: string]: number } = {
 export function PowerUpdate() {
   const navigate = useNavigate();
   const { addToast } = useToast();
-  const [activeTab, setActiveTab] = useState<"barangay" | "household" | "barangay_household">(
-    "barangay"
-  );
-  const [expandedMunicipality, setExpandedMunicipality] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<
+    "barangay" | "household" | "barangay_household"
+  >("barangay");
+  const [expandedMunicipality, setExpandedMunicipality] = useState<
+    string | null
+  >(null);
   const [barangays, setBarangays] = useState<{ [key: string]: Barangay[] }>({});
-  const [loadingBarangays, setLoadingBarangays] = useState<Set<string>>(new Set());
-  const [expandedBarangayMunicipality, setExpandedBarangayMunicipality] = useState<string | null>(null);
-  // TODO: Implement full barangay household updating
+  const [loadingBarangays, setLoadingBarangays] = useState<Set<string>>(
+    new Set()
+  );
+  const [expandedBarangayMunicipality, setExpandedBarangayMunicipality] =
+    useState<string | null>(null);
+  const [barangayHouseholdData, setBarangayHouseholdData] = useState<{
+    [key: string]: BarangayHouseholdData[];
+  }>({});
+  const [barangayHouseholdUpdates, setBarangayHouseholdUpdates] = useState<{
+    [key: string]: { [barangayId: string]: number };
+  }>(() => {
+    // Try to restore from localStorage
+    try {
+      const saved = localStorage.getItem("barangayHouseholdUpdates");
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.warn("Could not restore barangay household updates:", e);
+    }
+    return {};
+  });
+  const [loadingBarangayHouseholds, setLoadingBarangayHouseholds] = useState<
+    Set<string>
+  >(new Set());
 
   const [updates, setUpdates] = useState<{
     [key: string]: UpdateState;
@@ -113,10 +134,10 @@ export function PowerUpdate() {
 
   const loadBarangaysForMunicipality = async (municipality: string) => {
     try {
-      setLoadingBarangays(prev => new Set(prev).add(municipality));
+      setLoadingBarangays((prev) => new Set(prev).add(municipality));
 
       // Find the municipality label from MUNICIPALITIES array
-      const muniObj = MUNICIPALITIES.find(m => m.value === municipality);
+      const muniObj = MUNICIPALITIES.find((m) => m.value === municipality);
       if (!muniObj) return;
 
       const { data: brgyData, error } = await supabase
@@ -128,7 +149,7 @@ export function PowerUpdate() {
 
       if (error) throw error;
 
-      setBarangays(prev => ({
+      setBarangays((prev) => ({
         ...prev,
         [municipality]: brgyData || [],
       }));
@@ -136,7 +157,7 @@ export function PowerUpdate() {
       console.warn("Could not load barangays:", err);
       addToast("Failed to load barangays", "error");
     } finally {
-      setLoadingBarangays(prev => {
+      setLoadingBarangays((prev) => {
         const newSet = new Set(prev);
         newSet.delete(municipality);
         return newSet;
@@ -155,8 +176,11 @@ export function PowerUpdate() {
     }
   };
 
-  const toggleBarangaySelection = (municipality: string, barangayId: string) => {
-    setUpdates(prev => {
+  const toggleBarangaySelection = (
+    municipality: string,
+    barangayId: string
+  ) => {
+    setUpdates((prev) => {
       const muniUpdate = prev[municipality] || {
         energized: 0,
         remarks: "",
@@ -169,7 +193,7 @@ export function PowerUpdate() {
       const isSelected = energizedBarangayIds.includes(barangayId);
 
       const newBarangayIds = isSelected
-        ? energizedBarangayIds.filter(id => id !== barangayId)
+        ? energizedBarangayIds.filter((id) => id !== barangayId)
         : [...energizedBarangayIds, barangayId];
 
       return {
@@ -181,6 +205,67 @@ export function PowerUpdate() {
         },
       };
     });
+  };
+
+  const loadBarangayHouseholdData = async (municipalityLabel: string) => {
+    try {
+      setLoadingBarangayHouseholds((prev) => new Set(prev).add(municipalityLabel));
+
+      const { data, error } = await supabase
+        .from("barangay_household_status")
+        .select("barangay_id, barangay_name, total_households, restored_households")
+        .eq("municipality", municipalityLabel.toUpperCase())
+        .order("barangay_name", { ascending: true });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const barangayData: BarangayHouseholdData[] = data.map((item: any) => ({
+          barangay_id: item.barangay_id,
+          barangay_name: item.barangay_name,
+          total_households: item.total_households,
+          restoredHouseholds: item.restored_households || 0,
+        }));
+
+        setBarangayHouseholdData((prev) => ({
+          ...prev,
+          [municipalityLabel]: barangayData,
+        }));
+
+        // Initialize updates for this municipality if not already done
+        setBarangayHouseholdUpdates((prev) => {
+          const muniKey = municipalityLabel;
+          if (prev[muniKey]) return prev; // Already initialized
+
+          const newUpdates = { ...prev };
+          newUpdates[muniKey] = {};
+          barangayData.forEach((b) => {
+            newUpdates[muniKey][b.barangay_id] = b.restoredHouseholds;
+          });
+          return newUpdates;
+        });
+      }
+    } catch (err) {
+      console.warn("Could not load barangay household data:", err);
+      addToast("Failed to load barangay household data", "error");
+    } finally {
+      setLoadingBarangayHouseholds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(municipalityLabel);
+        return newSet;
+      });
+    }
+  };
+
+  const toggleBarangayHouseholdMunicipality = (municipality: string) => {
+    if (expandedBarangayMunicipality === municipality) {
+      setExpandedBarangayMunicipality(null);
+    } else {
+      setExpandedBarangayMunicipality(municipality);
+      if (!barangayHouseholdData[municipality]) {
+        loadBarangayHouseholdData(municipality);
+      }
+    }
   };
 
   // Save form data to localStorage whenever updates change
@@ -292,6 +377,8 @@ export function PowerUpdate() {
       await submitBarangayUpdates();
     } else if (activeTab === "household") {
       await submitHouseholdUpdates();
+    } else if (activeTab === "barangay_household") {
+      await submitBarangayHouseholdUpdates();
     }
   };
 
@@ -299,10 +386,7 @@ export function PowerUpdate() {
     // Check if at least one municipality has data
     const hasUpdates = Object.values(updates).some((u) => u.energized > 0);
     if (!hasUpdates) {
-      addToast(
-        "Please select at least one energized barangay",
-        "error"
-      );
+      addToast("Please select at least one energized barangay", "error");
       return;
     }
 
@@ -370,7 +454,7 @@ export function PowerUpdate() {
 
         // Now insert individual barangay updates for energized barangays
         // Get all barangays for this municipality
-        const muniObj = MUNICIPALITIES.find(m => m.value === muni.value);
+        const muniObj = MUNICIPALITIES.find((m) => m.value === muni.value);
         if (!muniObj) continue;
 
         const { data: allBarangays } = await supabase
@@ -398,8 +482,8 @@ export function PowerUpdate() {
 
           // Insert no_power updates for non-energized barangays
           const nonEnergizedIds = (allBarangays || [])
-            .filter(b => !energizedIds.includes(b.id))
-            .map(b => b.id);
+            .filter((b) => !energizedIds.includes(b.id))
+            .map((b) => b.id);
 
           for (const barangayId of nonEnergizedIds) {
             await supabase.from("barangay_updates").insert([
@@ -432,6 +516,115 @@ export function PowerUpdate() {
       console.error("Barangay submission error:", err);
       addToast(
         err instanceof Error ? err.message : "Failed to update barangay status",
+        "error"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateBarangayHouseholdValue = (
+    municipality: string,
+    barangayId: string,
+    restoredCount: number
+  ) => {
+    // Update state
+    setBarangayHouseholdUpdates((prev) => ({
+      ...prev,
+      [municipality]: {
+        ...prev[municipality],
+        [barangayId]: Math.max(0, restoredCount),
+      },
+    }));
+
+    // Persist to localStorage
+    const storageKey = "barangayHouseholdUpdates";
+    const stored = localStorage.getItem(storageKey);
+    const data = stored ? JSON.parse(stored) : {};
+    if (!data[municipality]) data[municipality] = {};
+    data[municipality][barangayId] = Math.max(0, restoredCount);
+    localStorage.setItem(storageKey, JSON.stringify(data));
+  };
+
+  const submitBarangayHouseholdUpdates = async () => {
+    // Check if at least one barangay has household data
+    const hasUpdates = Object.values(barangayHouseholdUpdates).some(
+      (muniUpdates) => Object.values(muniUpdates).some((v) => v > 0)
+    );
+
+    if (!hasUpdates) {
+      addToast(
+        "Please enter at least one barangay's restored households",
+        "error"
+      );
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const asOfDateTime = new Date(`${asOfTime}:00`).toISOString();
+
+      // Process each municipality and barangay
+      for (const [municipality, barangayUpdates] of Object.entries(
+        barangayHouseholdUpdates
+      )) {
+        for (const [barangayId, restoredCount] of Object.entries(
+          barangayUpdates
+        )) {
+          if (!restoredCount || restoredCount === 0) continue;
+
+          // Get barangay data to validate
+          const barangayArray = barangayHouseholdData[municipality];
+          const barangay = barangayArray?.find(
+            (b) => b.barangay_id === barangayId
+          );
+
+          if (!barangay) continue;
+
+          // Validate restored count doesn't exceed total
+          if (restoredCount > barangay.total_households) {
+            addToast(
+              `Restored households for ${barangay.barangay_name} cannot exceed total (${barangay.total_households})`,
+              "error"
+            );
+            setLoading(false);
+            return;
+          }
+
+          // Insert barangay household update
+          const { error } = await supabase
+            .from("barangay_household_updates")
+            .insert([
+              {
+                barangay_id: barangayId,
+                restored_households: restoredCount,
+                as_of_time: asOfDateTime,
+                updated_by: session?.session?.user?.id,
+              },
+            ]);
+
+          if (error) throw error;
+        }
+      }
+
+      setSubmitted(true);
+      addToast(
+        "✅ Barangay household restoration updates submitted successfully!",
+        "success"
+      );
+
+      // Auto-hide success message after 3 seconds
+      setTimeout(() => {
+        setSubmitted(false);
+      }, 3000);
+    } catch (err) {
+      console.error("Barangay household submission error:", err);
+      addToast(
+        err instanceof Error
+          ? err.message
+          : "Failed to update barangay household status",
         "error"
       );
     } finally {
@@ -597,7 +790,8 @@ export function PowerUpdate() {
               {/* Instructions & Date/Time Picker */}
               <div className="p-3 sm:p-6 bg-blue-50 border-b border-blue-200 space-y-3 sm:space-y-4">
                 <p className="text-xs sm:text-sm text-blue-900">
-                  ℹ️ Click on a municipality to expand and select which barangays are energized. The count will update automatically.
+                  ℹ️ Click on a municipality to expand and select which
+                  barangays are energized. The count will update automatically.
                 </p>
                 <div>
                   <label
@@ -626,11 +820,15 @@ export function PowerUpdate() {
                       : (0).toFixed(2);
                   const isExpanded = expandedMunicipality === muni.value;
                   const muniBarangays = barangays[muni.value] || [];
-                  const energizedBarangayIds = updates[muni.value]?.energizedBarangayIds || [];
+                  const energizedBarangayIds =
+                    updates[muni.value]?.energizedBarangayIds || [];
                   const isLoading = loadingBarangays.has(muni.value);
 
                   return (
-                    <div key={muni.value} className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div
+                      key={muni.value}
+                      className="border border-gray-200 rounded-lg overflow-hidden"
+                    >
                       {/* Municipality Header - Clickable */}
                       <button
                         type="button"
@@ -640,12 +838,15 @@ export function PowerUpdate() {
                         <div className="text-left flex-1">
                           <p className="font-semibold text-gray-900 text-sm sm:text-base flex items-center gap-2">
                             <ChevronDown
-                              className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                              className={`w-4 h-4 transition-transform ${
+                                isExpanded ? "rotate-180" : ""
+                              }`}
                             />
                             {muni.label}
                           </p>
                           <p className="text-xs sm:text-sm text-gray-600">
-                            Total: {muni.totalBarangays} | Energized: {energized} | {percentage}%
+                            Total: {muni.totalBarangays} | Energized:{" "}
+                            {energized} | {percentage}%
                           </p>
                         </div>
                         <div className="text-right">
@@ -671,9 +872,13 @@ export function PowerUpdate() {
                       {isExpanded && (
                         <div className="bg-white border-t border-gray-200 p-3 sm:p-6">
                           {isLoading ? (
-                            <p className="text-center text-gray-600 py-4">Loading barangays...</p>
+                            <p className="text-center text-gray-600 py-4">
+                              Loading barangays...
+                            </p>
                           ) : muniBarangays.length === 0 ? (
-                            <p className="text-center text-gray-600 py-4">No barangays found</p>
+                            <p className="text-center text-gray-600 py-4">
+                              No barangays found
+                            </p>
                           ) : (
                             <div className="space-y-2">
                               <p className="text-xs sm:text-sm text-gray-600 mb-4">
@@ -681,7 +886,8 @@ export function PowerUpdate() {
                               </p>
                               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-96 overflow-y-auto">
                                 {muniBarangays.map((brgy) => {
-                                  const isChecked = energizedBarangayIds.includes(brgy.id);
+                                  const isChecked =
+                                    energizedBarangayIds.includes(brgy.id);
                                   return (
                                     <label
                                       key={brgy.id}
@@ -691,7 +897,10 @@ export function PowerUpdate() {
                                         type="checkbox"
                                         checked={isChecked}
                                         onChange={() =>
-                                          toggleBarangaySelection(muni.value, brgy.id)
+                                          toggleBarangaySelection(
+                                            muni.value,
+                                            brgy.id
+                                          )
                                         }
                                         className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                                       />
@@ -709,7 +918,8 @@ export function PowerUpdate() {
                                 })}
                               </div>
                               <p className="text-xs text-gray-500 mt-3">
-                                Selected: {energizedBarangayIds.length} / {muniBarangays.length}
+                                Selected: {energizedBarangayIds.length} /{" "}
+                                {muniBarangays.length}
                               </p>
                             </div>
                           )}
@@ -728,9 +938,8 @@ export function PowerUpdate() {
                         (sum, m) => sum + (updates[m.value]?.energized || 0),
                         0
                       )}
-                    </span>
-                    {" "}/
-                    {" "}
+                    </span>{" "}
+                    /{" "}
                     <span>
                       {MUNICIPALITIES.reduce(
                         (sum, m) => sum + m.totalBarangays,
@@ -743,13 +952,16 @@ export function PowerUpdate() {
                       className="h-full bg-green-500 transition-all"
                       style={{
                         width: `${
-                          MUNICIPALITIES.reduce(
-                            (sum, m) => sum + (updates[m.value]?.energized || 0),
+                          (MUNICIPALITIES.reduce(
+                            (sum, m) =>
+                              sum + (updates[m.value]?.energized || 0),
                             0
-                          ) / MUNICIPALITIES.reduce(
-                            (sum, m) => sum + m.totalBarangays,
-                            0
-                          ) * 100
+                          ) /
+                            MUNICIPALITIES.reduce(
+                              (sum, m) => sum + m.totalBarangays,
+                              0
+                            )) *
+                          100
                         }%`,
                       }}
                     />
@@ -760,7 +972,9 @@ export function PowerUpdate() {
               {/* Notes & Submit */}
               <div className="p-3 sm:p-6 bg-gray-50 border-t border-gray-200">
                 <p className="text-xs sm:text-xs text-gray-600 mb-3 sm:mb-4 leading-relaxed">
-                  * Select energized barangays using checkboxes. Count updates automatically. These selections will sync with the main dashboard.
+                  * Select energized barangays using checkboxes. Count updates
+                  automatically. These selections will sync with the main
+                  dashboard.
                 </p>
 
                 {/* Submit Button */}
@@ -867,7 +1081,9 @@ export function PowerUpdate() {
                                     remarks: updates[muni.value]?.remarks || "",
                                     photo: updates[muni.value]?.photo || null,
                                     energizedHouseholds: val,
-                                    energizedBarangayIds: updates[muni.value]?.energizedBarangayIds || [],
+                                    energizedBarangayIds:
+                                      updates[muni.value]
+                                        ?.energizedBarangayIds || [],
                                   },
                                 });
                               }}
@@ -889,7 +1105,9 @@ export function PowerUpdate() {
                                         updates[muni.value]?.remarks || "",
                                       photo: updates[muni.value]?.photo || null,
                                       energizedHouseholds: 0,
-                                      energizedBarangayIds: updates[muni.value]?.energizedBarangayIds || [],
+                                      energizedBarangayIds:
+                                        updates[muni.value]
+                                          ?.energizedBarangayIds || [],
                                     },
                                   });
                                 }
@@ -998,7 +1216,9 @@ export function PowerUpdate() {
               {/* Instructions & Date/Time Picker */}
               <div className="p-3 sm:p-6 bg-blue-50 border-b border-blue-200 space-y-3 sm:space-y-4">
                 <p className="text-xs sm:text-sm text-blue-900">
-                  ℹ️ Click on a municipality to expand and enter restored households for each barangay. The percentage will calculate automatically.
+                  ℹ️ Click on a municipality to expand and enter restored
+                  households for each barangay. The percentage will calculate
+                  automatically.
                 </p>
                 <div>
                   <label
@@ -1020,33 +1240,162 @@ export function PowerUpdate() {
               {/* Municipalities List */}
               <div className="space-y-2 p-3 sm:p-6">
                 {MUNICIPALITIES.map((muni) => {
-                  const isExpanded = expandedBarangayMunicipality === muni.value;
+                  const isExpanded =
+                    expandedBarangayMunicipality === muni.value;
+                  const barangays = barangayHouseholdData[muni.value] || [];
+                  const isLoading = loadingBarangayHouseholds.has(muni.value);
+                  const muniUpdates = barangayHouseholdUpdates[muni.value] || {};
 
                   return (
-                    <div key={`brgy_hh_${muni.value}`} className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div
+                      key={`brgy_hh_${muni.value}`}
+                      className="border border-gray-200 rounded-lg overflow-hidden"
+                    >
                       {/* Municipality Header - Clickable */}
                       <button
                         type="button"
-                        onClick={() => {
-                          if (isExpanded) {
-                            setExpandedBarangayMunicipality(null);
-                          } else {
-                            setExpandedBarangayMunicipality(muni.value);
-                          }
-                        }}
-                        className="w-full bg-gray-50 hover:bg-blue-50 transition px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between"
+                        onClick={() => toggleBarangayHouseholdMunicipality(muni.value)}
+                        disabled={loading}
+                        className="w-full bg-gray-50 hover:bg-blue-50 disabled:opacity-50 transition px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between"
                       >
-                        <span className="font-semibold text-gray-900 text-sm sm:text-base">{muni.label}</span>
-                        <span className="text-gray-600">{isExpanded ? "▼" : "▶"}</span>
+                        <span className="font-semibold text-gray-900 text-sm sm:text-base">
+                          {muni.label}
+                          {barangays.length > 0 && (
+                            <span className="text-xs text-gray-500 ml-2">
+                              ({barangays.length} barangays)
+                            </span>
+                          )}
+                        </span>
+                        <span className="text-gray-600">
+                          {isExpanded ? "▼" : "▶"}
+                        </span>
                       </button>
 
                       {/* Expanded Barangay List */}
                       {isExpanded && (
                         <div className="p-3 sm:p-6 bg-white space-y-3">
-                          <p className="text-xs sm:text-sm text-gray-600 mb-4">Coming soon: Enter household restoration per barangay</p>
-                          <div className="bg-blue-50 p-3 rounded border border-blue-200 text-xs sm:text-sm text-blue-900">
-                            Barangay household data will be displayed here. Enter the number of restored households for each barangay.
-                          </div>
+                          {isLoading ? (
+                            <div className="text-center py-4">
+                              <p className="text-sm text-gray-600">Loading barangays...</p>
+                            </div>
+                          ) : barangays.length === 0 ? (
+                            <div className="bg-yellow-50 p-3 rounded border border-yellow-200 text-xs sm:text-sm text-yellow-900">
+                              No barangay household data found.
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              {/* Barangay Grid Header */}
+                              <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-gray-700 pb-2 border-b border-gray-200">
+                                <div className="col-span-3">Barangay</div>
+                                <div className="col-span-2">Total HH</div>
+                                <div className="col-span-2">Restored</div>
+                                <div className="col-span-2">For Restore</div>
+                                <div className="col-span-3">%</div>
+                              </div>
+
+                              {/* Barangay Rows */}
+                              {barangays.map((barangay) => {
+                                const restoredCount =
+                                  muniUpdates[barangay.barangay_id] ||
+                                  barangay.restoredHouseholds ||
+                                  0;
+                                const forRestoration =
+                                  barangay.total_households - restoredCount;
+                                const percent =
+                                  barangay.total_households > 0
+                                    ? Math.round(
+                                        (restoredCount /
+                                          barangay.total_households) *
+                                          100
+                                      )
+                                    : 0;
+
+                                // Color logic based on percentage
+                                let bgColor = "bg-red-50"; // 0-24%
+                                let barColor = "bg-red-500"; // 0-24%
+                                if (percent >= 25 && percent < 50) {
+                                  bgColor = "bg-orange-50";
+                                  barColor = "bg-orange-500";
+                                } else if (percent >= 50 && percent < 75) {
+                                  bgColor = "bg-yellow-50";
+                                  barColor = "bg-yellow-500";
+                                } else if (percent >= 75 && percent < 100) {
+                                  bgColor = "bg-lime-50";
+                                  barColor = "bg-lime-500";
+                                } else if (percent === 100) {
+                                  bgColor = "bg-green-50";
+                                  barColor = "bg-green-500";
+                                }
+
+                                return (
+                                  <div
+                                    key={barangay.barangay_id}
+                                    className={`grid grid-cols-12 gap-2 items-center p-2 rounded ${bgColor} border border-gray-100`}
+                                  >
+                                    {/* Barangay Name */}
+                                    <div className="col-span-3">
+                                      <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
+                                        ⚡ {barangay.barangay_name}
+                                      </p>
+                                    </div>
+
+                                    {/* Total HH */}
+                                    <div className="col-span-2">
+                                      <p className="text-xs sm:text-sm text-gray-700 text-center font-semibold">
+                                        {barangay.total_households}
+                                      </p>
+                                    </div>
+
+                                    {/* Restored HH Input */}
+                                    <div className="col-span-2">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        max={barangay.total_households}
+                                        value={restoredCount}
+                                        onChange={(e) => {
+                                          const val = parseInt(
+                                            e.target.value || "0"
+                                          );
+                                          updateBarangayHouseholdValue(
+                                            muni.value,
+                                            barangay.barangay_id,
+                                            val
+                                          );
+                                        }}
+                                        disabled={loading}
+                                        className="w-full px-1 py-1 text-xs sm:text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                      />
+                                    </div>
+
+                                    {/* For Restoration */}
+                                    <div className="col-span-2">
+                                      <p className="text-xs sm:text-sm text-gray-700 text-center font-medium">
+                                        {forRestoration}
+                                      </p>
+                                    </div>
+
+                                    {/* Percentage with Bar */}
+                                    <div className="col-span-3">
+                                      <div className="space-y-1">
+                                        <p className="text-xs sm:text-sm font-semibold text-gray-900 text-center">
+                                          {percent}%
+                                        </p>
+                                        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                                          <div
+                                            className={`h-full ${barColor} transition-all duration-200`}
+                                            style={{
+                                              width: `${percent}%`,
+                                            }}
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1056,18 +1405,30 @@ export function PowerUpdate() {
 
               {/* Notes & Submit */}
               <div className="p-3 sm:p-6 bg-gray-50 border-t border-gray-200">
-                <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 leading-relaxed">
-                  Household restoration tracking per barangay is coming soon.
-                </p>
+                <div className="space-y-3">
+                  <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                    <p className="text-xs sm:text-sm text-blue-900 font-semibold mb-2">
+                      💡 How to use:
+                    </p>
+                    <ul className="text-xs sm:text-sm text-blue-800 space-y-1 list-disc list-inside">
+                      <li>Click on a municipality to expand and see all barangays</li>
+                      <li>Enter the number of restored households in the "Restored" column</li>
+                      <li>"For Restore" and percentage will auto-calculate</li>
+                      <li>Verify the timestamp and submit</li>
+                    </ul>
+                  </div>
 
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 sm:py-3 rounded-lg transition text-sm sm:text-base"
-                >
-                  {loading ? "⏳ Submitting..." : "✅ Submit Barangay Household Updates"}
-                </button>
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-2 sm:py-3 rounded-lg transition text-sm sm:text-base"
+                  >
+                    {loading
+                      ? "⏳ Submitting..."
+                      : "✅ Submit Barangay Household Updates"}
+                  </button>
+                </div>
               </div>
             </div>
           </form>

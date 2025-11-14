@@ -7,7 +7,9 @@ This enhancement adds granular household-level restoration tracking per barangay
 ## What's Been Implemented
 
 ### 1. **Dashboard Display (PowerProgress.tsx)**
+
 ✅ **Energized Barangays Section** now shows detailed household data:
+
 - Barangay Name with ⚡ icon
 - Total Households (formatted with thousand separator)
 - Restored Households (formatted with thousand separator)
@@ -15,6 +17,7 @@ This enhancement adds granular household-level restoration tracking per barangay
 - % Restored (with background color + progress bar matching percentage ranges)
 
 **Example for Diffun when expanded:**
+
 ```
 ✓ Energized Barangays (14)
   ⚡ Andres Bonifacio
@@ -25,24 +28,30 @@ This enhancement adds granular household-level restoration tracking per barangay
 ```
 
 ### 2. **Database Schema (MIGRATION_BARANGAY_HOUSEHOLDS.sql)**
+
 ✅ Created two new tables:
 
 **`barangay_households`** - Fixed household count per barangay
+
 - municipality, barangay_id, barangay_name, total_households
 - Used for reference data
 
 **`barangay_household_updates`** - Tracks restoration progress
+
 - municipality, barangay_id, restored_households, as_of_time
 - Stores history of when households were restored
 
 ✅ Created **`barangay_household_status` view** that:
+
 - Joins barangay_households with latest updates
-- Calculates percent_restored = (restored_households / total_households) * 100
+- Calculates percent_restored = (restored_households / total_households) \* 100
 - Calculates for_restoration_households = total_households - restored_households
 - Used for efficient dashboard queries
 
 ### 3. **Admin Interface Update (PowerUpdate.tsx)**
+
 ✅ Added **"Barangay Households" tab** to admin power update page
+
 - Visible between "Household Update" and "Barangay Update" tabs
 - Skeleton implementation ready for full feature development
 - Shows message: "Barangay household data will be displayed here"
@@ -50,15 +59,19 @@ This enhancement adds granular household-level restoration tracking per barangay
 ## Next Steps for Full Implementation
 
 ### Phase 1: Data Seeding (Immediate)
+
 1. Load all barangay household totals from your dataset into `barangay_households` table
+
    - Script provided in MIGRATION_BARANGAY_HOUSEHOLDS.sql (partial - needs all municipalities)
    - Data format: Municipality | Barangay | Total Households
 
 2. Seed sample initial restoration data (optional, for testing)
 
 ### Phase 2: Admin UI Implementation
+
 3. Implement expandable municipality sections showing all barangays
 4. For each barangay show:
+
    - Barangay name
    - Total households (read-only)
    - Restored households (input field - number)
@@ -71,10 +84,12 @@ This enhancement adds granular household-level restoration tracking per barangay
    - as_of_time = from datetime picker
 
 ### Phase 3: Dashboard Sync
+
 6. PowerProgress dashboard automatically shows latest data
    - No additional code needed - already queries view
 
 ### Phase 4: Historical Tracking
+
 7. Add timeline/history view showing restoration progress over time
    - Query multiple records per barangay
    - Show dates and progress changes
@@ -82,6 +97,7 @@ This enhancement adds granular household-level restoration tracking per barangay
 ## Data Structure Reference
 
 **Household Restoration Percentage Ranges:**
+
 - 100% = Green (bg-green-50, text-green-600)
 - 75-99% = Lime (bg-lime-50, text-lime-600)
 - 50-74% = Yellow (bg-yellow-50, text-yellow-600)
@@ -89,6 +105,7 @@ This enhancement adds granular household-level restoration tracking per barangay
 - 0-24% = Red (bg-red-50, text-red-600)
 
 **Progress Bar Colors:**
+
 - 100% = bg-green-500
 - 75-99% = bg-lime-500
 - 50-74% = bg-yellow-500
@@ -114,6 +131,7 @@ This enhancement adds granular household-level restoration tracking per barangay
 ## Testing the Current Implementation
 
 1. **Dashboard Display:**
+
    - Go to https://barangay-power-status.vercel.app/
    - Click on a municipality to expand
    - Energized barangays now show household data

@@ -3,6 +3,7 @@
 ## How Staff Updates Energized Barangays
 
 ### Access the Admin Power Update Page
+
 1. Go to admin panel: `/admin/power-update`
 2. Click on "Barangay Update" tab (if on Household tab)
 3. Set the "Report As Of Date & Time" - this is when the status was taken
@@ -12,12 +13,14 @@
 **For each municipality:**
 
 1. **Click on the municipality name** to expand it
+
    - Example: Click on "DIFFUN" row
    - The row expands downward showing all barangays
 
 2. **Wait for barangays to load** (shows "Loading barangays...")
 
 3. **Check the checkboxes** for energized barangays
+
    - Green checkmark appears when selected
    - Each selection updates the count automatically
    - Shows "Selected: X / Y" at the bottom
@@ -29,12 +32,14 @@
 ### Visual Feedback
 
 **Municipality Header Shows:**
+
 - Total barangays in municipality
 - Count of energized barangays
 - Percentage (color-coded: green=100%, yellow=50-74%, etc.)
 - Chevron icon shows if expanded ▼ or collapsed ▶
 
 **Barangay Checklist:**
+
 - Scrollable grid with all barangay names
 - Checkboxes for easy selection
 - Search would be helpful (can add later)
@@ -43,6 +48,7 @@
 ### Submit the Update
 
 1. **Review the summary** at bottom showing:
+
    - Total Energized Barangays across all municipalities
    - Progress bar showing overall energization percentage
 
@@ -59,6 +65,7 @@
 When you submit:
 
 1. **municipality_updates table** - Gets the aggregate count
+
    ```
    municipality: "DIFFUN"
    total_barangays: 33
@@ -66,11 +73,12 @@ When you submit:
    ```
 
 2. **barangay_updates table** - Gets individual status
+
    ```
    Each selected barangay gets:
    - power_status: "energized"
    - headline: "Power Status Update - [timestamp]"
-   
+
    Each non-selected barangay gets:
    - power_status: "no_power"
    ```
@@ -87,10 +95,11 @@ When users go to home page and expand a municipality:
 ### Examples
 
 **Example 1: Updating Diffun**
+
 ```
 1. Click "DIFFUN" municipality
 2. Barangays load: Abueg, Ambag, Bacug, ... (33 total)
-3. Check: Abueg, Ambag, Bacug, Bobonan, Cabanauan, 
+3. Check: Abueg, Ambag, Bacug, Bobonan, Cabanauan,
           Caberizaan, Cabugnayan, Casiguran, Castillo
 4. Shows "Selected: 9 / 33"
 5. Municipality header shows "Energized: 9"
@@ -99,16 +108,18 @@ When users go to home page and expand a municipality:
 ```
 
 **Example 2: All energized**
+
 ```
 1. Click "SAGUDAY"
 2. Check ALL 9 barangays
-3. Shows "Selected: 9 / 9" 
+3. Shows "Selected: 9 / 9"
 4. Percentage shows 100% (green)
 5. Submit
 6. Main dashboard shows all 9 in GREEN
 ```
 
 **Example 3: Partial**
+
 ```
 1. Click "CABARROGUIS"
 2. Check 12 out of 17

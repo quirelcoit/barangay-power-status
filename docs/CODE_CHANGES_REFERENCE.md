@@ -14,7 +14,9 @@ This document provides a quick reference of all code changes made to implement t
 
 ```typescript
 // NEW STATE FOR TRACKING LOADING STATUS
-const [loadingBarangays, setLoadingBarangays] = useState<Set<string>>(new Set());
+const [loadingBarangays, setLoadingBarangays] = useState<Set<string>>(
+  new Set()
+);
 ```
 
 **Purpose**: Tracks which municipalities are currently loading their barangay details to prevent multiple simultaneous requests.
@@ -26,6 +28,7 @@ const [loadingBarangays, setLoadingBarangays] = useState<Set<string>>(new Set())
 **Location**: Line ~226
 
 **Before** (Old Logic):
+
 ```typescript
 const loadBarangayDetails = async (municipality: string) => {
   try {
@@ -41,14 +44,16 @@ const loadBarangayDetails = async (municipality: string) => {
 
     if (data && data.length > 0) {
       // ... get barangays
-      
+
       // Demo: randomly mark some as energized (DEMO DATA!)
-      const energizedCount = municipalities.find(m => m.municipality === municipality)?.energized_barangays || 0;
-      
+      const energizedCount =
+        municipalities.find((m) => m.municipality === municipality)
+          ?.energized_barangays || 0;
+
       const barangayStatuses = muniBarangays.map((b, idx) => ({
         barangay_id: b.id,
         barangay_name: b.name,
-        is_energized: idx < energizedCount,  // WRONG! Just based on index
+        is_energized: idx < energizedCount, // WRONG! Just based on index
       }));
       // ...
     }
@@ -59,10 +64,11 @@ const loadBarangayDetails = async (municipality: string) => {
 ```
 
 **After** (New Logic):
+
 ```typescript
 const loadBarangayDetails = async (municipality: string) => {
   try {
-    setLoadingBarangays(prev => new Set(prev).add(municipality));
+    setLoadingBarangays((prev) => new Set(prev).add(municipality));
 
     // Get all barangays for this municipality
     const { data: muniBarangays, error: bErr } = await supabase
@@ -78,7 +84,10 @@ const loadBarangayDetails = async (municipality: string) => {
       const { data: updates, error: updatesErr } = await supabase
         .from("barangay_updates")
         .select("barangay_id, power_status")
-        .in("barangay_id", muniBarangays.map(b => b.id))
+        .in(
+          "barangay_id",
+          muniBarangays.map((b) => b.id)
+        )
         .eq("is_published", true)
         .order("created_at", { ascending: false });
 
@@ -96,7 +105,7 @@ const loadBarangayDetails = async (municipality: string) => {
       const barangayStatuses: BarangayStatus[] = muniBarangays.map((b) => ({
         barangay_id: b.id,
         barangay_name: b.name,
-        is_energized: updateMap.get(b.id) === "energized" || false,  // CORRECT! Based on actual status
+        is_energized: updateMap.get(b.id) === "energized" || false, // CORRECT! Based on actual status
       }));
 
       const newDetails = new Map(barangayDetails);
@@ -107,7 +116,7 @@ const loadBarangayDetails = async (municipality: string) => {
     console.warn("Could not load barangay details:", err);
     addToast("Failed to load barangay details", "error");
   } finally {
-    setLoadingBarangays(prev => {
+    setLoadingBarangays((prev) => {
       const newSet = new Set(prev);
       newSet.delete(municipality);
       return newSet;
@@ -117,6 +126,7 @@ const loadBarangayDetails = async (municipality: string) => {
 ```
 
 **Key Improvements**:
+
 1. ✅ Fetches actual barangay names from database
 2. ✅ Queries real power status from `barangay_updates` table
 3. ✅ Uses efficient Map for O(1) lookups
@@ -130,94 +140,120 @@ const loadBarangayDetails = async (municipality: string) => {
 **Location**: Line ~520
 
 **Before** (Old UI):
+
 ```tsx
-{/* Expanded Barangay List */}
-{expandedMunicipality === muni.municipality && barangayDetails.has(muni.municipality) && (
-  <tr className="bg-blue-50 border-b border-blue-200">
-    <td colSpan={4} className="px-3 sm:px-6 py-4">
-      <div>
-        <p className="font-semibold text-sm mb-3 text-gray-900">
-          Energized Barangays ({muni.energized_barangays}):
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-          {barangayDetails.get(muni.municipality)?.map((brgy) => (
-            <div
-              key={brgy.barangay_id}
-              className={`p-2 rounded text-xs sm:text-sm ${
-                brgy.is_energized
-                  ? "bg-green-100 text-green-800 border border-green-300"
-                  : "bg-gray-100 text-gray-600"
-              }`}
-            >
-              {brgy.is_energized && "✓ "}{brgy.barangay_name}
+{
+  /* Expanded Barangay List */
+}
+{
+  expandedMunicipality === muni.municipality &&
+    barangayDetails.has(muni.municipality) && (
+      <tr className="bg-blue-50 border-b border-blue-200">
+        <td colSpan={4} className="px-3 sm:px-6 py-4">
+          <div>
+            <p className="font-semibold text-sm mb-3 text-gray-900">
+              Energized Barangays ({muni.energized_barangays}):
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+              {barangayDetails.get(muni.municipality)?.map((brgy) => (
+                <div
+                  key={brgy.barangay_id}
+                  className={`p-2 rounded text-xs sm:text-sm ${
+                    brgy.is_energized
+                      ? "bg-green-100 text-green-800 border border-green-300"
+                      : "bg-gray-100 text-gray-600"
+                  }`}
+                >
+                  {brgy.is_energized && "✓ "}
+                  {brgy.barangay_name}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
-    </td>
-  </tr>
-)}
+          </div>
+        </td>
+      </tr>
+    );
+}
 ```
 
 **After** (Enhanced UI with Loading & Separation):
-```tsx
-{/* Expanded Barangay List */}
-{expandedMunicipality === muni.municipality && (
-  <tr className="bg-gradient-to-r from-green-50 to-blue-50 border-b-2 border-green-200">
-    <td colSpan={4} className="px-3 sm:px-6 py-4">
-      {loadingBarangays.has(muni.municipality) ? (
-        <div className="text-center py-6">
-          <p className="text-gray-600 font-medium">Loading barangays...</p>
-        </div>
-      ) : barangayDetails.has(muni.municipality) ? (
-        <div className="space-y-4">
-          {/* Energized Barangays */}
-          <div>
-            <p className="font-bold text-base text-green-700 mb-3 flex items-center gap-2">
-              <span className="text-lg">✓</span>
-              Energized Barangays ({muni.energized_barangays})
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-              {barangayDetails.get(muni.municipality)?.filter(b => b.is_energized).map((brgy) => (
-                <div
-                  key={brgy.barangay_id}
-                  className="p-3 rounded-lg text-sm font-medium bg-green-100 text-green-800 border-2 border-green-300 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <span className="text-lg mr-2">⚡</span>{brgy.barangay_name}
-                </div>
-              ))}
-              {muni.energized_barangays === 0 && (
-                <p className="text-gray-500 italic text-sm col-span-full">No energized barangays yet</p>
-              )}
-            </div>
-          </div>
 
-          {/* Non-Energized Barangays */}
-          {muni.partial_barangays > 0 || muni.no_power_barangays > 0 ? (
+```tsx
+{
+  /* Expanded Barangay List */
+}
+{
+  expandedMunicipality === muni.municipality && (
+    <tr className="bg-gradient-to-r from-green-50 to-blue-50 border-b-2 border-green-200">
+      <td colSpan={4} className="px-3 sm:px-6 py-4">
+        {loadingBarangays.has(muni.municipality) ? (
+          <div className="text-center py-6">
+            <p className="text-gray-600 font-medium">Loading barangays...</p>
+          </div>
+        ) : barangayDetails.has(muni.municipality) ? (
+          <div className="space-y-4">
+            {/* Energized Barangays */}
             <div>
-              <p className="font-bold text-base text-gray-700 mb-3">
-                Still Restoring ({barangayDetails.get(muni.municipality)?.filter(b => !b.is_energized).length || 0})
+              <p className="font-bold text-base text-green-700 mb-3 flex items-center gap-2">
+                <span className="text-lg">✓</span>
+                Energized Barangays ({muni.energized_barangays})
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                {barangayDetails.get(muni.municipality)?.filter(b => !b.is_energized).map((brgy) => (
-                  <div
-                    key={brgy.barangay_id}
-                    className="p-2 rounded text-xs sm:text-sm bg-gray-100 text-gray-700 border border-gray-300"
-                  >
-                    {brgy.barangay_name}
-                  </div>
-                ))}
+                {barangayDetails
+                  .get(muni.municipality)
+                  ?.filter((b) => b.is_energized)
+                  .map((brgy) => (
+                    <div
+                      key={brgy.barangay_id}
+                      className="p-3 rounded-lg text-sm font-medium bg-green-100 text-green-800 border-2 border-green-300 shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <span className="text-lg mr-2">⚡</span>
+                      {brgy.barangay_name}
+                    </div>
+                  ))}
+                {muni.energized_barangays === 0 && (
+                  <p className="text-gray-500 italic text-sm col-span-full">
+                    No energized barangays yet
+                  </p>
+                )}
               </div>
             </div>
-          ) : null}
-        </div>
-      ) : null}
-    </td>
-  </tr>
-)}
+
+            {/* Non-Energized Barangays */}
+            {muni.partial_barangays > 0 || muni.no_power_barangays > 0 ? (
+              <div>
+                <p className="font-bold text-base text-gray-700 mb-3">
+                  Still Restoring (
+                  {barangayDetails
+                    .get(muni.municipality)
+                    ?.filter((b) => !b.is_energized).length || 0}
+                  )
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                  {barangayDetails
+                    .get(muni.municipality)
+                    ?.filter((b) => !b.is_energized)
+                    .map((brgy) => (
+                      <div
+                        key={brgy.barangay_id}
+                        className="p-2 rounded text-xs sm:text-sm bg-gray-100 text-gray-700 border border-gray-300"
+                      >
+                        {brgy.barangay_name}
+                      </div>
+                    ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </td>
+    </tr>
+  );
+}
 ```
 
 **Visual Improvements**:
+
 1. ✅ Loading state indicator
 2. ✅ Separated energized vs restoring barangays
 3. ✅ Better color contrast
@@ -265,6 +301,7 @@ const [relatedBarangays, setRelatedBarangays] = useState<BarangayItem[]>([]);
 **Location**: Line ~80 (inside useEffect)
 
 **Added Code**:
+
 ```typescript
 // Load related barangays from same municipality
 if (barangayData) {
@@ -281,7 +318,10 @@ if (barangayData) {
     const { data: updatesForRelated } = await supabase
       .from("barangay_updates")
       .select("barangay_id, power_status")
-      .in("barangay_id", relatedData.map(b => b.id))
+      .in(
+        "barangay_id",
+        relatedData.map((b) => b.id)
+      )
       .eq("is_published", true)
       .order("created_at", { ascending: false });
 
@@ -293,7 +333,7 @@ if (barangayData) {
       }
     });
 
-    const relatedWithStatus = relatedData.map(b => ({
+    const relatedWithStatus = relatedData.map((b) => ({
       ...b,
       latestStatus: statusMap.get(b.id) as any,
     }));
@@ -310,37 +350,41 @@ if (barangayData) {
 **Location**: Before the "Recent Reports" section
 
 ```tsx
-{/* Related Barangays in Same Municipality */}
-{relatedBarangays.length > 1 && (
-  <div className="mb-8">
-    <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-      <MapPin className="w-5 h-5 text-power-600" />
-      Other Barangays in {barangay.municipality}
-    </h2>
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      {relatedBarangays.map((brgy) => (
-        <Card
-          key={brgy.id}
-          className="cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => navigate(`/barangay/${brgy.id}`)}
-          padding="md"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <p className="font-medium text-gray-900">{brgy.name}</p>
-              {brgy.latestStatus && (
-                <div className="mt-2 flex items-center gap-2">
-                  <StatusBadge status={brgy.latestStatus} size="sm" />
-                </div>
-              )}
+{
+  /* Related Barangays in Same Municipality */
+}
+{
+  relatedBarangays.length > 1 && (
+    <div className="mb-8">
+      <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <MapPin className="w-5 h-5 text-power-600" />
+        Other Barangays in {barangay.municipality}
+      </h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {relatedBarangays.map((brgy) => (
+          <Card
+            key={brgy.id}
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => navigate(`/barangay/${brgy.id}`)}
+            padding="md"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">{brgy.name}</p>
+                {brgy.latestStatus && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <StatusBadge status={brgy.latestStatus} size="sm" />
+                  </div>
+                )}
+              </div>
+              <div className="text-xl text-gray-400">→</div>
             </div>
-            <div className="text-xl text-gray-400">→</div>
-          </div>
-        </Card>
-      ))}
+          </Card>
+        ))}
+      </div>
     </div>
-  </div>
-)}
+  );
+}
 ```
 
 ---
@@ -348,20 +392,22 @@ if (barangayData) {
 ## Summary of Technical Changes
 
 ### PowerProgress.tsx
-| Change | Type | Impact |
-|--------|------|--------|
-| Added `loadingBarangays` state | State Management | Better UX with loading indicators |
-| Rewrote `loadBarangayDetails()` | Function Logic | Real data instead of demo data |
-| Enhanced expansion display | UI/UX | Better visual hierarchy and clarity |
-| Added error feedback | Error Handling | User awareness of failures |
+
+| Change                          | Type             | Impact                              |
+| ------------------------------- | ---------------- | ----------------------------------- |
+| Added `loadingBarangays` state  | State Management | Better UX with loading indicators   |
+| Rewrote `loadBarangayDetails()` | Function Logic   | Real data instead of demo data      |
+| Enhanced expansion display      | UI/UX            | Better visual hierarchy and clarity |
+| Added error feedback            | Error Handling   | User awareness of failures          |
 
 ### BarangayView.tsx
-| Change | Type | Impact |
-|--------|------|--------|
-| Added `BarangayItem` interface | Type Safety | Better TypeScript support |
-| Added `relatedBarangays` state | State Management | Store related barangay data |
-| Enhanced data loading | Data Fetching | Load related barangays with status |
-| Added new section | UI/UX | Navigation between related barangays |
+
+| Change                         | Type             | Impact                               |
+| ------------------------------ | ---------------- | ------------------------------------ |
+| Added `BarangayItem` interface | Type Safety      | Better TypeScript support            |
+| Added `relatedBarangays` state | State Management | Store related barangay data          |
+| Enhanced data loading          | Data Fetching    | Load related barangays with status   |
+| Added new section              | UI/UX            | Navigation between related barangays |
 
 ---
 
@@ -389,6 +435,7 @@ Bundle Size Impact:
 ## Testing Recommendations
 
 ### Test Cases for PowerProgress
+
 ```
 1. Expand municipality → Should show barangays with correct names
 2. Expand again → Should not refetch (cached data)
@@ -398,6 +445,7 @@ Bundle Size Impact:
 ```
 
 ### Test Cases for BarangayView
+
 ```
 1. Load barangay detail page → Related barangays should load
 2. Click related barangay → Should navigate to new barangay

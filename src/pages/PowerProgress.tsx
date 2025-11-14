@@ -319,21 +319,25 @@ export function PowerProgress() {
       // Query the barangay_household_status view which joins barangay_households with latest updates
       const { data: hhData, error: hhErr } = await supabase
         .from("barangay_household_status")
-        .select("barangay_id, barangay_name, total_households, restored_households, for_restoration_households, percent_restored")
+        .select(
+          "barangay_id, barangay_name, total_households, restored_households, for_restoration_households, percent_restored"
+        )
         .eq("municipality", municipality)
         .order("barangay_name", { ascending: true });
 
       if (hhErr) throw hhErr;
 
       if (hhData && hhData.length > 0) {
-        const householdData: BarangayHouseholdData[] = hhData.map((hh: any) => ({
-          barangay_id: hh.barangay_id,
-          barangay_name: hh.barangay_name,
-          total_households: hh.total_households,
-          restored_households: hh.restored_households,
-          for_restoration_households: hh.for_restoration_households,
-          percent_restored: hh.percent_restored,
-        }));
+        const householdData: BarangayHouseholdData[] = hhData.map(
+          (hh: any) => ({
+            barangay_id: hh.barangay_id,
+            barangay_name: hh.barangay_name,
+            total_households: hh.total_households,
+            restored_households: hh.restored_households,
+            for_restoration_households: hh.for_restoration_households,
+            percent_restored: hh.percent_restored,
+          })
+        );
 
         const newHouseholds = new Map(barangayHouseholds);
         newHouseholds.set(municipality, householdData);
@@ -406,7 +410,9 @@ export function PowerProgress() {
                   <div className="text-xl sm:text-2xl font-bold">
                     {energizedBgy}
                   </div>
-                  <div className="text-xs sm:text-sm opacity-90">Barangays Energized</div>
+                  <div className="text-xs sm:text-sm opacity-90">
+                    Barangays Energized
+                  </div>
                 </div>
                 <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white p-3 sm:p-4 rounded-lg shadow">
                   <div className="text-xl sm:text-2xl font-bold">
@@ -420,13 +426,17 @@ export function PowerProgress() {
                   <div className="text-xl sm:text-2xl font-bold">
                     {noPowerBgy}
                   </div>
-                  <div className="text-xs sm:text-sm opacity-90">Still Restoring</div>
+                  <div className="text-xs sm:text-sm opacity-90">
+                    Still Restoring
+                  </div>
                 </div>
                 <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-3 sm:p-4 rounded-lg shadow">
                   <div className="text-xl sm:text-2xl font-bold">
                     {overallPercent.toFixed(2)}%
                   </div>
-                  <div className="text-xs sm:text-sm opacity-90">Barangay Overall</div>
+                  <div className="text-xs sm:text-sm opacity-90">
+                    Barangay Overall
+                  </div>
                 </div>
               </div>
             );
@@ -442,11 +452,17 @@ export function PowerProgress() {
                     Municipality / Town
                   </th>
                   {/* Barangay Level Columns */}
-                  <th colSpan={3} className="px-2 sm:px-4 py-3 sm:py-4 text-center font-bold text-green-700 text-xs sm:text-base border-l border-gray-300">
+                  <th
+                    colSpan={3}
+                    className="px-2 sm:px-4 py-3 sm:py-4 text-center font-bold text-green-700 text-xs sm:text-base border-l border-gray-300"
+                  >
                     BARANGAY LEVEL
                   </th>
                   {/* Household Level Columns */}
-                  <th colSpan={3} className="px-2 sm:px-4 py-3 sm:py-4 text-center font-bold text-blue-700 text-xs sm:text-base border-l border-gray-300">
+                  <th
+                    colSpan={3}
+                    className="px-2 sm:px-4 py-3 sm:py-4 text-center font-bold text-blue-700 text-xs sm:text-base border-l border-gray-300"
+                  >
                     HOUSEHOLD LEVEL
                   </th>
                 </tr>
@@ -487,14 +503,18 @@ export function PowerProgress() {
                 ) : (
                   municipalities.map((muni, idx) => {
                     const bgColor = idx % 2 === 0 ? "bg-white" : "bg-gray-50";
-                    
+
                     // Get household data for this municipality
                     const householdData = households.find(
-                      (h) => h.municipality.toUpperCase() === muni.municipality.toUpperCase()
+                      (h) =>
+                        h.municipality.toUpperCase() ===
+                        muni.municipality.toUpperCase()
                     );
                     const hhTotal = householdData?.total_households || 0;
-                    const hhEnergized = householdData?.energized_households || 0;
-                    const hhPercent = hhTotal > 0 ? (hhEnergized / hhTotal) * 100 : 0;
+                    const hhEnergized =
+                      householdData?.energized_households || 0;
+                    const hhPercent =
+                      hhTotal > 0 ? (hhEnergized / hhTotal) * 100 : 0;
 
                     // Color coding for barangay percentage
                     const barangayPercentColor =
@@ -540,7 +560,7 @@ export function PowerProgress() {
                               {muni.municipality.toUpperCase()}
                             </div>
                           </td>
-                          
+
                           {/* BARANGAY LEVEL */}
                           <td className="px-2 sm:px-4 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base border-l border-gray-300">
                             {muni.total_barangays}
@@ -550,7 +570,9 @@ export function PowerProgress() {
                           </td>
                           <td className="px-2 sm:px-4 py-3 sm:py-4">
                             <div className="space-y-1">
-                              <div className={`text-center font-bold text-xs sm:text-sm rounded ${barangayPercentColor} py-1`}>
+                              <div
+                                className={`text-center font-bold text-xs sm:text-sm rounded ${barangayPercentColor} py-1`}
+                              >
                                 {muni.percent_energized.toFixed(1)}%
                               </div>
                               <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
@@ -566,12 +588,14 @@ export function PowerProgress() {
                                       ? "bg-orange-500"
                                       : "bg-red-500"
                                   } transition-all duration-500`}
-                                  style={{ width: `${muni.percent_energized}%` }}
+                                  style={{
+                                    width: `${muni.percent_energized}%`,
+                                  }}
                                 />
                               </div>
                             </div>
                           </td>
-                          
+
                           {/* HOUSEHOLD LEVEL */}
                           <td className="px-2 sm:px-4 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base border-l border-gray-300">
                             {hhTotal.toLocaleString()}
@@ -581,7 +605,9 @@ export function PowerProgress() {
                           </td>
                           <td className="px-2 sm:px-4 py-3 sm:py-4">
                             <div className="space-y-1">
-                              <div className={`text-center font-bold text-xs sm:text-sm rounded ${householdPercentColor} py-1`}>
+                              <div
+                                className={`text-center font-bold text-xs sm:text-sm rounded ${householdPercentColor} py-1`}
+                              >
                                 {hhPercent.toFixed(1)}%
                               </div>
                               <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
@@ -607,12 +633,16 @@ export function PowerProgress() {
                         {/* Expanded Barangay Details Row */}
                         {expandedMunicipality === muni.municipality && (
                           <tr className={bgColor}>
-                            <td colSpan={7} className="px-3 sm:px-6 py-4 sm:py-6 border-b border-gray-200">
+                            <td
+                              colSpan={7}
+                              className="px-3 sm:px-6 py-4 sm:py-6 border-b border-gray-200"
+                            >
                               {loadingBarangays.has(muni.municipality) ? (
                                 <div className="text-center py-6 text-gray-600">
                                   Loading barangay details...
                                 </div>
-                              ) : barangayDetails.get(muni.municipality)?.length ? (
+                              ) : barangayDetails.get(muni.municipality)
+                                  ?.length ? (
                                 <div className="space-y-4">
                                   <div>
                                     <p className="font-bold text-base text-green-700 mb-3 flex items-center gap-2">
@@ -629,18 +659,31 @@ export function PowerProgress() {
                                         .get(muni.municipality)
                                         ?.filter((b) => b.is_energized)
                                         .map((brgy) => {
-                                          const householdInfo = barangayHouseholds
-                                            .get(muni.municipality)
-                                            ?.find((hh) => hh.barangay_id === brgy.barangay_id);
+                                          const householdInfo =
+                                            barangayHouseholds
+                                              .get(muni.municipality)
+                                              ?.find(
+                                                (hh) =>
+                                                  hh.barangay_id ===
+                                                  brgy.barangay_id
+                                              );
 
                                           const hhPercentColor =
-                                            householdInfo && householdInfo.percent_restored === 100
+                                            householdInfo &&
+                                            householdInfo.percent_restored ===
+                                              100
                                               ? "text-green-600 bg-green-50"
-                                              : householdInfo && householdInfo.percent_restored >= 75
+                                              : householdInfo &&
+                                                householdInfo.percent_restored >=
+                                                  75
                                               ? "text-lime-600 bg-lime-50"
-                                              : householdInfo && householdInfo.percent_restored >= 50
+                                              : householdInfo &&
+                                                householdInfo.percent_restored >=
+                                                  50
                                               ? "text-yellow-600 bg-yellow-50"
-                                              : householdInfo && householdInfo.percent_restored >= 25
+                                              : householdInfo &&
+                                                householdInfo.percent_restored >=
+                                                  25
                                               ? "text-orange-600 bg-orange-50"
                                               : "text-red-600 bg-red-50";
 
@@ -650,50 +693,81 @@ export function PowerProgress() {
                                               className="p-3 rounded-lg bg-green-50 border-2 border-green-300"
                                             >
                                               <div className="flex items-center gap-2 mb-2">
-                                                <span className="text-lg">⚡</span>
-                                                <span className="font-semibold text-gray-900">{brgy.barangay_name}</span>
+                                                <span className="text-lg">
+                                                  ⚡
+                                                </span>
+                                                <span className="font-semibold text-gray-900">
+                                                  {brgy.barangay_name}
+                                                </span>
                                               </div>
                                               {householdInfo ? (
                                                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs sm:text-sm">
                                                   <div>
-                                                    <p className="text-gray-600">Total HH</p>
-                                                    <p className="font-bold text-gray-900">{householdInfo.total_households.toLocaleString()}</p>
+                                                    <p className="text-gray-600">
+                                                      Total HH
+                                                    </p>
+                                                    <p className="font-bold text-gray-900">
+                                                      {householdInfo.total_households.toLocaleString()}
+                                                    </p>
                                                   </div>
                                                   <div>
-                                                    <p className="text-gray-600">Restored</p>
-                                                    <p className="font-bold text-green-700">{householdInfo.restored_households.toLocaleString()}</p>
+                                                    <p className="text-gray-600">
+                                                      Restored
+                                                    </p>
+                                                    <p className="font-bold text-green-700">
+                                                      {householdInfo.restored_households.toLocaleString()}
+                                                    </p>
                                                   </div>
                                                   <div>
-                                                    <p className="text-gray-600">For Restoration</p>
-                                                    <p className="font-bold text-orange-700">{householdInfo.for_restoration_households.toLocaleString()}</p>
+                                                    <p className="text-gray-600">
+                                                      For Restoration
+                                                    </p>
+                                                    <p className="font-bold text-orange-700">
+                                                      {householdInfo.for_restoration_households.toLocaleString()}
+                                                    </p>
                                                   </div>
                                                   <div className="col-span-2 sm:col-span-1">
-                                                    <p className="text-gray-600">% Restored</p>
+                                                    <p className="text-gray-600">
+                                                      % Restored
+                                                    </p>
                                                     <div className="space-y-1 mt-1">
-                                                      <div className={`text-center font-bold text-xs rounded ${hhPercentColor} py-0.5`}>
-                                                        {householdInfo.percent_restored.toFixed(1)}%
+                                                      <div
+                                                        className={`text-center font-bold text-xs rounded ${hhPercentColor} py-0.5`}
+                                                      >
+                                                        {householdInfo.percent_restored.toFixed(
+                                                          1
+                                                        )}
+                                                        %
                                                       </div>
                                                       <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
                                                         <div
                                                           className={`h-full ${
-                                                            householdInfo.percent_restored === 100
+                                                            householdInfo.percent_restored ===
+                                                            100
                                                               ? "bg-green-500"
-                                                              : householdInfo.percent_restored >= 75
+                                                              : householdInfo.percent_restored >=
+                                                                75
                                                               ? "bg-lime-500"
-                                                              : householdInfo.percent_restored >= 50
+                                                              : householdInfo.percent_restored >=
+                                                                50
                                                               ? "bg-yellow-500"
-                                                              : householdInfo.percent_restored >= 25
+                                                              : householdInfo.percent_restored >=
+                                                                25
                                                               ? "bg-orange-500"
                                                               : "bg-red-500"
                                                           }`}
-                                                          style={{ width: `${householdInfo.percent_restored}%` }}
+                                                          style={{
+                                                            width: `${householdInfo.percent_restored}%`,
+                                                          }}
                                                         />
                                                       </div>
                                                     </div>
                                                   </div>
                                                 </div>
                                               ) : (
-                                                <p className="text-gray-600 italic text-xs">No household data available</p>
+                                                <p className="text-gray-600 italic text-xs">
+                                                  No household data available
+                                                </p>
                                               )}
                                             </div>
                                           );
@@ -756,7 +830,7 @@ export function PowerProgress() {
                     <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-900 text-xs sm:text-base">
                       QUIRELCO FRANCHISE AREA
                     </td>
-                    
+
                     {/* BARANGAY TOTALS */}
                     <td className="px-2 sm:px-4 py-3 sm:py-4 text-center text-gray-900 text-xs sm:text-base border-l border-gray-300">
                       {municipalities.reduce(
@@ -780,8 +854,7 @@ export function PowerProgress() {
                           (sum, m) => sum + m.energized_barangays,
                           0
                         );
-                        const totalPercent =
-                          (energizedBgy / totalBgy) * 100;
+                        const totalPercent = (energizedBgy / totalBgy) * 100;
                         const percentColor =
                           totalPercent === 100
                             ? "text-green-600 bg-green-50"
@@ -820,19 +893,17 @@ export function PowerProgress() {
                         );
                       })()}
                     </td>
-                    
+
                     {/* HOUSEHOLD TOTALS */}
                     <td className="px-2 sm:px-4 py-3 sm:py-4 text-center text-gray-900 text-xs sm:text-base border-l border-gray-300">
-                      {households.reduce(
-                        (sum, h) => sum + h.total_households,
-                        0
-                      ).toLocaleString()}
+                      {households
+                        .reduce((sum, h) => sum + h.total_households, 0)
+                        .toLocaleString()}
                     </td>
                     <td className="px-2 sm:px-4 py-3 sm:py-4 text-center text-gray-900 text-xs sm:text-base">
-                      {households.reduce(
-                        (sum, h) => sum + h.energized_households,
-                        0
-                      ).toLocaleString()}
+                      {households
+                        .reduce((sum, h) => sum + h.energized_households, 0)
+                        .toLocaleString()}
                     </td>
                     <td className="px-2 sm:px-4 py-3 sm:py-4">
                       {(() => {
@@ -846,7 +917,9 @@ export function PowerProgress() {
                         );
                         const totalPercent =
                           totalHH > 0
-                            ? parseFloat(((energizedHH / totalHH) * 100).toFixed(2))
+                            ? parseFloat(
+                                ((energizedHH / totalHH) * 100).toFixed(2)
+                              )
                             : 0;
                         const percentColor =
                           totalPercent === 100
@@ -917,11 +990,15 @@ export function PowerProgress() {
             </div>
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 sm:w-6 sm:h-6 bg-yellow-500 rounded flex-shrink-0"></div>
-              <span className="text-xs sm:text-sm text-gray-700">50% - 74%</span>
+              <span className="text-xs sm:text-sm text-gray-700">
+                50% - 74%
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 sm:w-6 sm:h-6 bg-orange-500 rounded flex-shrink-0"></div>
-              <span className="text-xs sm:text-sm text-gray-700">25% - 49%</span>
+              <span className="text-xs sm:text-sm text-gray-700">
+                25% - 49%
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 sm:w-6 sm:h-6 bg-red-500 rounded flex-shrink-0"></div>

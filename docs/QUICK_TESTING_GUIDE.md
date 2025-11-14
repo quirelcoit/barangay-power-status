@@ -18,6 +18,7 @@ The app will be available at: `http://localhost:5173`
 ### Scenario: User taps on a municipality to see energized barangays
 
 **Steps:**
+
 1. Open the app home page
 2. Navigate to the **Barangay View** tab (if on Household tab)
 3. Look for the municipality table with rows like "DIFFUN", "CABARROGUIS", etc.
@@ -25,16 +26,17 @@ The app will be available at: `http://localhost:5173`
 5. **EXPECTED**: The row should expand downward
 
 **What You Should See:**
+
 ```
 DIFFUN (row highlighted)
   ▼ Expands to show:
-  
+
   ✓ Energized Barangays (9)
   [Grid of barangay names with GREEN background]
   ⚡ Name 1      ⚡ Name 2      ⚡ Name 3
   ⚡ Name 4      ⚡ Name 5      ⚡ Name 6
   ⚡ Name 7      ⚡ Name 8      ⚡ Name 9
-  
+
   Still Restoring (24)
   [Grid of barangay names with GRAY background]
   Name 10    Name 11    Name 12
@@ -42,6 +44,7 @@ DIFFUN (row highlighted)
 ```
 
 **Verification Checklist:**
+
 - [ ] Row expands when clicked
 - [ ] "Energized Barangays" section shows with correct count
 - [ ] All energized barangay names are displayed
@@ -53,6 +56,7 @@ DIFFUN (row highlighted)
 - [ ] No console errors (Press F12 to check)
 
 **Example Success Output:**
+
 ```
 ✓ Energized Barangays (9):
   ⚡ Abueg
@@ -64,7 +68,7 @@ DIFFUN (row highlighted)
   ⚡ Cabugnayan
   ⚡ Casiguran
   ⚡ Castillo
-  
+
 Still Restoring (24):
   Dabbung
   Diffun Proper
@@ -78,11 +82,13 @@ Still Restoring (24):
 ### Scenario: Verify loading indicator appears while data is fetched
 
 **Steps:**
+
 1. Expand a municipality row
 2. **IMMEDIATELY** watch for a loading indicator
 3. Barangays should appear after ~1 second
 
 **Expected Behavior:**
+
 ```
 [Click Municipality]
   ↓
@@ -92,6 +98,7 @@ Still Restoring (24):
 ```
 
 **Verification Checklist:**
+
 - [ ] "Loading barangays..." message appears briefly
 - [ ] Message disappears after data loads
 - [ ] Barangays appear in correct order
@@ -104,6 +111,7 @@ Still Restoring (24):
 ### Scenario: User views a barangay and sees related barangays
 
 **Steps:**
+
 1. From home page, click on any barangay card
    (E.g., Click on "Diffun" barangay card)
 2. Wait for the barangay detail page to load
@@ -111,6 +119,7 @@ Still Restoring (24):
 4. Look for **"Other Barangays in DIFFUN"** section
 
 **What You Should See:**
+
 ```
 Other Barangays in DIFFUN
 📍 Abueg                    [ENERGIZED]  →
@@ -121,6 +130,7 @@ Other Barangays in DIFFUN
 ```
 
 **Verification Checklist:**
+
 - [ ] "Other Barangays" section appears
 - [ ] All barangays from same municipality are listed
 - [ ] Each barangay shows its power status badge
@@ -135,12 +145,14 @@ Other Barangays in DIFFUN
 ### Scenario: User clicks on a related barangay to view its details
 
 **Steps:**
+
 1. You're viewing a barangay detail page
 2. Scroll to "Other Barangays" section
 3. **CLICK** on another barangay card
 4. **EXPECTED**: Should navigate to that barangay's detail page
 
 **Verification Checklist:**
+
 - [ ] Clicking a related barangay navigates to its page
 - [ ] New barangay details load correctly
 - [ ] "Other Barangays" section updates for new municipality
@@ -153,6 +165,7 @@ Other Barangays in DIFFUN
 ## ✅ Test Case 5: Responsive Design
 
 ### Mobile (< 640px):
+
 ```
 1. Open DevTools (F12)
 2. Toggle device toolbar (Ctrl+Shift+M)
@@ -165,6 +178,7 @@ Other Barangays in DIFFUN
 ```
 
 ### Tablet (640-1024px):
+
 ```
 1. Set device to tablet size (768px width)
 2. Verify:
@@ -174,6 +188,7 @@ Other Barangays in DIFFUN
 ```
 
 ### Desktop (> 1024px):
+
 ```
 1. Set device to desktop size (1280px width)
 2. Verify:
@@ -187,6 +202,7 @@ Other Barangays in DIFFUN
 ## ✅ Test Case 6: Edge Cases
 
 ### No Data:
+
 ```
 If a municipality has 0 energized barangays:
 ✓ Energized Barangays (0)
@@ -197,11 +213,13 @@ Still Restoring (N)
 ```
 
 **Verification:**
+
 - [ ] Empty message appears when no energized barangays
 - [ ] Still restoring section shows all barangays
 - [ ] No layout breaks
 
 ### Single Barangay:
+
 ```
 If municipality has only 1 barangay:
 - [ ] Barangay detail shows (when viewing it)
@@ -210,6 +228,7 @@ If municipality has only 1 barangay:
 ```
 
 ### Many Barangays:
+
 ```
 If municipality has 30+ barangays:
 - [ ] All appear in grid (may be tall)
@@ -225,6 +244,7 @@ If municipality has 30+ barangays:
 ### Issue: "Loading barangays..." appears forever
 
 **Solution:**
+
 1. Check Supabase connection (should show in Network tab)
 2. Verify `barangays` table has data
 3. Verify `barangay_updates` table has records
@@ -237,6 +257,7 @@ If municipality has 30+ barangays:
 ### Issue: Barangay names don't appear
 
 **Solution:**
+
 1. Verify `barangays` table is populated:
    ```sql
    SELECT COUNT(*) FROM barangays WHERE municipality = 'DIFFUN';
@@ -247,10 +268,11 @@ If municipality has 30+ barangays:
 ### Issue: Status badges are wrong
 
 **Solution:**
+
 1. Verify `barangay_updates` table has data:
    ```sql
-   SELECT * FROM barangay_updates 
-   WHERE is_published = true 
+   SELECT * FROM barangay_updates
+   WHERE is_published = true
    ORDER BY created_at DESC LIMIT 10;
    ```
 2. Check that `power_status` is one of: 'energized', 'partial', 'no_power'
@@ -259,6 +281,7 @@ If municipality has 30+ barangays:
 ### Issue: Related barangays not showing
 
 **Solution:**
+
 1. Verify barangay detail page loads
 2. Check that municipality has multiple barangays
 3. Verify barangay you're viewing is in the database
@@ -272,17 +295,20 @@ If municipality has 30+ barangays:
 ### Measure Load Time:
 
 **Steps:**
+
 1. Open DevTools (F12)
 2. Go to Network tab
 3. Expand a municipality
 4. Check how long the network requests take
 
 **Expected Performance:**
+
 - Network requests: < 1 second
 - Rendering: < 500ms
 - Total: < 2 seconds
 
 **Check Console for Warnings:**
+
 ```bash
 # Should have NO errors like:
 # ❌ Cannot read property 'map' of undefined
@@ -313,6 +339,7 @@ If municipality has 30+ barangays:
 ## 🚀 Ready for Production?
 
 Once all tests pass, the app is ready to:
+
 1. ✅ Deploy to Vercel
 2. ✅ Share with stakeholders
 3. ✅ Go live
@@ -321,13 +348,17 @@ Once all tests pass, the app is ready to:
 
 ## 📝 Log Results
 
-### Test Date: _____________
-### Tester Name: _____________
-### Device/Browser: _____________
+### Test Date: ******\_******
 
-#### Tests Passed: ___/10
-#### Issues Found: _________
-#### Notes: _________
+### Tester Name: ******\_******
+
+### Device/Browser: ******\_******
+
+#### Tests Passed: \_\_\_/10
+
+#### Issues Found: ****\_****
+
+#### Notes: ****\_****
 
 ---
 
