@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { Card, StatusBadge } from "../components";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, MapPin } from "lucide-react";
 
 interface BarangayUpdate {
   id: string;
@@ -23,6 +23,13 @@ interface Report {
   created_at: string;
 }
 
+interface BarangayItem {
+  id: string;
+  name: string;
+  municipality: string;
+  latestStatus?: "no_power" | "partial" | "energized";
+}
+
 export function BarangayView() {
   const { barangayId } = useParams();
   const navigate = useNavigate();
@@ -30,6 +37,7 @@ export function BarangayView() {
   const [updates, setUpdates] = useState<BarangayUpdate[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
+  const [relatedBarangays, setRelatedBarangays] = useState<BarangayItem[]>([]);
 
   useEffect(() => {
     async function loadData() {
@@ -70,6 +78,45 @@ export function BarangayView() {
 
         if (reportsError) throw reportsError;
         setReports(reportsData || []);
+
+        // Load related barangays from same municipality
+        if (barangayData) {
+          const { data: relatedData, error: relatedError } = await supabase
+            .from("barangays")
+            .select("id, name, municipality")
+            .eq("municipality", barangayData.municipality)
+            .order("name", { ascending: true });
+
+          if (relatedError) throw relatedError;
+
+          // Get latest updates for related barangays
+          if (relatedData && relatedData.length > 0) {
+            const { data: updatesForRelated } = await supabase
+              .from("barangay_updates")
+              .select("barangay_id, power_status")
+              .in(
+                "barangay_id",
+                relatedData.map((b) => b.id)
+              )
+              .eq("is_published", true)
+              .order("created_at", { ascending: false });
+
+            // Map latest status to each barangay (get most recent)
+            const statusMap = new Map();
+            (updatesForRelated || []).forEach((update) => {
+              if (!statusMap.has(update.barangay_id)) {
+                statusMap.set(update.barangay_id, update.power_status);
+              }
+            });
+
+            const relatedWithStatus = relatedData.map((b) => ({
+              ...b,
+              latestStatus: statusMap.get(b.id) as any,
+            }));
+
+            setRelatedBarangays(relatedWithStatus);
+          }
+        }
       } catch (err) {
         console.error("Failed to load barangay view:", err);
       } finally {
@@ -169,6 +216,43 @@ export function BarangayView() {
                           </p>
                         </div>
                         <StatusBadge status={update.power_status} size="sm" />
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Related Barangays in Same Municipality */}
+            {relatedBarangays.length > 1 && (
+              <div className="mb-8">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-power-600" />
+                  Other Barangays in {barangay.municipality}
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {relatedBarangays.map((brgy) => (
+                    <Card
+                      key={brgy.id}
+                      className="cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() => navigate(`/barangay/${brgy.id}`)}
+                      padding="md"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">
+                            {brgy.name}
+                          </p>
+                          {brgy.latestStatus && (
+                            <div className="mt-2 flex items-center gap-2">
+                              <StatusBadge
+                                status={brgy.latestStatus}
+                                size="sm"
+                              />
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-xl text-gray-400">→</div>
                       </div>
                     </Card>
                   ))}

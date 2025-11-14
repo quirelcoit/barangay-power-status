@@ -85,8 +85,15 @@ export function PowerProgress() {
   const [households, setHouseholds] = useState<HouseholdStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [latestTimestamp, setLatestTimestamp] = useState<string>("");
-  const [expandedMunicipality, setExpandedMunicipality] = useState<string | null>(null);
-  const [barangayDetails, setBarangayDetails] = useState<Map<string, BarangayStatus[]>>(new Map());
+  const [expandedMunicipality, setExpandedMunicipality] = useState<
+    string | null
+  >(null);
+  const [barangayDetails, setBarangayDetails] = useState<
+    Map<string, BarangayStatus[]>
+  >(new Map());
+  const [loadingBarangays, setLoadingBarangays] = useState<Set<string>>(
+    new Set()
+  );
 
   useEffect(() => {
     loadBarangays();
@@ -230,43 +237,59 @@ export function PowerProgress() {
 
   const loadBarangayDetails = async (municipality: string) => {
     try {
-      // Get barangay records from municipality_updates that have this municipality
-      const { data, error } = await supabase
-        .from("municipality_updates")
-        .select("*")
+      setLoadingBarangays((prev) => new Set(prev).add(municipality));
+
+      // Get all barangays for this municipality
+      const { data: muniBarangays, error: bErr } = await supabase
+        .from("barangays")
+        .select("id, name")
         .eq("municipality", municipality)
-        .order("as_of_time", { ascending: false })
-        .limit(1);
+        .order("name", { ascending: true });
 
-      if (error) throw error;
+      if (bErr) throw bErr;
 
-      if (data && data.length > 0) {
-        // Get all barangays for this municipality
-        const { data: muniBarangays, error: bErr } = await supabase
-          .from("barangays")
-          .select("id, name")
-          .eq("municipality", municipality);
+      if (muniBarangays && muniBarangays.length > 0) {
+        // Get the latest barangay updates for each barangay in this municipality
+        const { data: updates, error: updatesErr } = await supabase
+          .from("barangay_updates")
+          .select("barangay_id, power_status")
+          .in(
+            "barangay_id",
+            muniBarangays.map((b) => b.id)
+          )
+          .eq("is_published", true)
+          .order("created_at", { ascending: false });
 
-        if (bErr) throw bErr;
+        if (updatesErr) throw updatesErr;
 
-        if (muniBarangays) {
-          // For demo purposes, randomly mark some as energized
-          // In production, you'd get this from a barangay_status table
-          const energizedCount = municipalities.find(m => m.municipality.toUpperCase() === municipality.toUpperCase())?.energized_barangays || 0;
-          
-          const barangayStatuses: BarangayStatus[] = muniBarangays.map((b, idx) => ({
-            barangay_id: b.id,
-            barangay_name: b.name,
-            is_energized: idx < energizedCount,
-          }));
+        // Map updates to barangays (get latest power_status for each)
+        const updateMap = new Map();
+        (updates || []).forEach((update) => {
+          if (!updateMap.has(update.barangay_id)) {
+            updateMap.set(update.barangay_id, update.power_status);
+          }
+        });
 
-          const newDetails = new Map(barangayDetails);
-          newDetails.set(municipality, barangayStatuses);
-          setBarangayDetails(newDetails);
-        }
+        // Create barangay statuses based on latest power status
+        const barangayStatuses: BarangayStatus[] = muniBarangays.map((b) => ({
+          barangay_id: b.id,
+          barangay_name: b.name,
+          is_energized: updateMap.get(b.id) === "energized" || false,
+        }));
+
+        const newDetails = new Map(barangayDetails);
+        newDetails.set(municipality, barangayStatuses);
+        setBarangayDetails(newDetails);
       }
     } catch (err) {
       console.warn("Could not load barangay details:", err);
+      addToast("Failed to load barangay details", "error");
+    } finally {
+      setLoadingBarangays((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(municipality);
+        return newSet;
+      });
     }
   };
 
@@ -440,12 +463,18 @@ export function PowerProgress() {
                         <>
                           <tr
                             key={muni.municipality}
-                            onClick={() => toggleExpandedMunicipality(muni.municipality)}
+                            onClick={() =>
+                              toggleExpandedMunicipality(muni.municipality)
+                            }
                             className={`${bgColor} border-b border-gray-200 hover:bg-blue-50 transition cursor-pointer`}
                           >
                             <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-900 text-xs sm:text-base">
                               <div className="flex items-center gap-2">
-                                <span>{expandedMunicipality === muni.municipality ? "▼" : "▶"}</span>
+                                <span>
+                                  {expandedMunicipality === muni.municipality
+                                    ? "▼"
+                                    : "▶"}
+                                </span>
                                 {muni.municipality.toUpperCase()}
                               </div>
                             </td>
@@ -469,44 +498,92 @@ export function PowerProgress() {
                                         ? "bg-green-500"
                                         : muni.percent_energized >= 75
                                         ? "bg-lime-500"
-                                      : muni.percent_energized >= 50
-                                      ? "bg-yellow-500"
-                                      : muni.percent_energized >= 25
-                                      ? "bg-orange-500"
-                                      : "bg-red-500"
-                                  } transition-all duration-500`}
-                                  style={{
-                                    width: `${muni.percent_energized}%`,
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          </td>
-                          </tr>
-                          
-                          {/* Expanded Barangay List */}
-                          {expandedMunicipality === muni.municipality && barangayDetails.has(muni.municipality) && (
-                            <tr className="bg-blue-50 border-b border-blue-200">
-                              <td colSpan={4} className="px-3 sm:px-6 py-4">
-                                <div>
-                                  <p className="font-semibold text-sm mb-3 text-gray-900">
-                                    Energized Barangays ({muni.energized_barangays}):
-                                  </p>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                                    {barangayDetails.get(muni.municipality)?.map((brgy) => (
-                                      <div
-                                        key={brgy.barangay_id}
-                                        className={`p-2 rounded text-xs sm:text-sm ${
-                                          brgy.is_energized
-                                            ? "bg-green-100 text-green-800 border border-green-300"
-                                            : "bg-gray-100 text-gray-600"
-                                        }`}
-                                      >
-                                        {brgy.is_energized && "✓ "}{brgy.barangay_name}
-                                      </div>
-                                    ))}
-                                  </div>
+                                        : muni.percent_energized >= 50
+                                        ? "bg-yellow-500"
+                                        : muni.percent_energized >= 25
+                                        ? "bg-orange-500"
+                                        : "bg-red-500"
+                                    } transition-all duration-500`}
+                                    style={{
+                                      width: `${muni.percent_energized}%`,
+                                    }}
+                                  />
                                 </div>
+                              </div>
+                            </td>
+                          </tr>
+
+                          {/* Expanded Barangay List */}
+                          {expandedMunicipality === muni.municipality && (
+                            <tr className="bg-gradient-to-r from-green-50 to-blue-50 border-b-2 border-green-200">
+                              <td colSpan={4} className="px-3 sm:px-6 py-4">
+                                {loadingBarangays.has(muni.municipality) ? (
+                                  <div className="text-center py-6">
+                                    <p className="text-gray-600 font-medium">
+                                      Loading barangays...
+                                    </p>
+                                  </div>
+                                ) : barangayDetails.has(muni.municipality) ? (
+                                  <div className="space-y-4">
+                                    {/* Energized Barangays */}
+                                    <div>
+                                      <p className="font-bold text-base text-green-700 mb-3 flex items-center gap-2">
+                                        <span className="text-lg">✓</span>
+                                        Energized Barangays (
+                                        {muni.energized_barangays})
+                                      </p>
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                        {barangayDetails
+                                          .get(muni.municipality)
+                                          ?.filter((b) => b.is_energized)
+                                          .map((brgy) => (
+                                            <div
+                                              key={brgy.barangay_id}
+                                              className="p-3 rounded-lg text-sm font-medium bg-green-100 text-green-800 border-2 border-green-300 shadow-sm hover:shadow-md transition-shadow"
+                                            >
+                                              <span className="text-lg mr-2">
+                                                ⚡
+                                              </span>
+                                              {brgy.barangay_name}
+                                            </div>
+                                          ))}
+                                        {muni.energized_barangays === 0 && (
+                                          <p className="text-gray-500 italic text-sm col-span-full">
+                                            No energized barangays yet
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {/* Non-Energized Barangays */}
+                                    {muni.partial_barangays > 0 ||
+                                    muni.no_power_barangays > 0 ? (
+                                      <div>
+                                        <p className="font-bold text-base text-gray-700 mb-3">
+                                          Still Restoring (
+                                          {barangayDetails
+                                            .get(muni.municipality)
+                                            ?.filter((b) => !b.is_energized)
+                                            .length || 0}
+                                          )
+                                        </p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                          {barangayDetails
+                                            .get(muni.municipality)
+                                            ?.filter((b) => !b.is_energized)
+                                            .map((brgy) => (
+                                              <div
+                                                key={brgy.barangay_id}
+                                                className="p-2 rounded text-xs sm:text-sm bg-gray-100 text-gray-700 border border-gray-300"
+                                              >
+                                                {brgy.barangay_name}
+                                              </div>
+                                            ))}
+                                        </div>
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                ) : null}
                               </td>
                             </tr>
                           )}
