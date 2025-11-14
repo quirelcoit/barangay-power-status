@@ -136,7 +136,9 @@ USING (
 );
 
 -- Insert barangay household data
--- San Agustin
+-- Note: These INSERT statements use SELECT to match barangay IDs
+-- If a barangay doesn't exist in the barangays table, the row won't be inserted (due to foreign key constraint)
+-- San Agustin (18 barangays)
 INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
 SELECT 'SAN AGUSTIN, ISABELA', id, name, 247 FROM public.barangays WHERE name = 'Bautista' AND municipality = 'SAN AGUSTIN, ISABELA'
 ON CONFLICT (barangay_id) DO UPDATE SET total_households = 247, updated_at = now();
@@ -208,6 +210,8 @@ ON CONFLICT (barangay_id) DO UPDATE SET total_households = 170, updated_at = now
 INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
 SELECT 'SAN AGUSTIN, ISABELA', id, name, 300 FROM public.barangays WHERE name = 'Virgoneza' AND municipality = 'SAN AGUSTIN, ISABELA'
 ON CONFLICT (barangay_id) DO UPDATE SET total_households = 300, updated_at = now();
+
+-- DIFFUN BARANGAYS (33 barangays)
 
 -- AGLIPAY BARANGAYS (25 barangays)
 INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households) 
