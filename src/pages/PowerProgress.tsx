@@ -28,6 +28,15 @@ interface BarangayStatus {
   is_energized: boolean;
 }
 
+interface BarangayHouseholdData {
+  barangay_id: string;
+  barangay_name: string;
+  total_households: number;
+  restored_households: number;
+  for_restoration_households: number;
+  percent_restored: number;
+}
+
 // Define the correct order of municipalities as shown in the dashboard
 const MUNICIPALITY_ORDER = [
   "DIFFUN",
@@ -91,6 +100,9 @@ export function PowerProgress() {
   const [loadingBarangays, setLoadingBarangays] = useState<Set<string>>(
     new Set()
   );
+  const [barangayHouseholds, setBarangayHouseholds] = useState<
+    Map<string, BarangayHouseholdData[]>
+  >(new Map());
 
   useEffect(() => {
     loadBarangays();
@@ -297,7 +309,39 @@ export function PowerProgress() {
       setExpandedMunicipality(municipality);
       if (!barangayDetails.has(municipality)) {
         loadBarangayDetails(municipality);
+        loadBarangayHouseholds(municipality);
       }
+    }
+  };
+
+  const loadBarangayHouseholds = async (municipality: string) => {
+    try {
+      // Query the barangay_household_status view which joins barangay_households with latest updates
+      const { data: hhData, error: hhErr } = await supabase
+        .from("barangay_household_status")
+        .select("barangay_id, barangay_name, total_households, restored_households, for_restoration_households, percent_restored")
+        .eq("municipality", municipality)
+        .order("barangay_name", { ascending: true });
+
+      if (hhErr) throw hhErr;
+
+      if (hhData && hhData.length > 0) {
+        const householdData: BarangayHouseholdData[] = hhData.map((hh: any) => ({
+          barangay_id: hh.barangay_id,
+          barangay_name: hh.barangay_name,
+          total_households: hh.total_households,
+          restored_households: hh.restored_households,
+          for_restoration_households: hh.for_restoration_households,
+          percent_restored: hh.percent_restored,
+        }));
+
+        const newHouseholds = new Map(barangayHouseholds);
+        newHouseholds.set(municipality, householdData);
+        setBarangayHouseholds(newHouseholds);
+      }
+    } catch (err) {
+      console.warn("Could not load barangay household data:", err);
+      // Don't show error toast - household data is optional
     }
   };
 
@@ -580,21 +624,80 @@ export function PowerProgress() {
                                         .length || 0}
                                       )
                                     </p>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                    <div className="space-y-2">
                                       {barangayDetails
                                         .get(muni.municipality)
                                         ?.filter((b) => b.is_energized)
-                                        .map((brgy) => (
-                                          <div
-                                            key={brgy.barangay_id}
-                                            className="p-3 rounded-lg text-sm font-medium bg-green-100 text-green-800 border-2 border-green-300 shadow-sm hover:shadow-md transition-shadow"
-                                          >
-                                            <span className="text-lg mr-2">
-                                              ⚡
-                                            </span>
-                                            {brgy.barangay_name}
-                                          </div>
-                                        ))}
+                                        .map((brgy) => {
+                                          const householdInfo = barangayHouseholds
+                                            .get(muni.municipality)
+                                            ?.find((hh) => hh.barangay_id === brgy.barangay_id);
+
+                                          const hhPercentColor =
+                                            householdInfo && householdInfo.percent_restored === 100
+                                              ? "text-green-600 bg-green-50"
+                                              : householdInfo && householdInfo.percent_restored >= 75
+                                              ? "text-lime-600 bg-lime-50"
+                                              : householdInfo && householdInfo.percent_restored >= 50
+                                              ? "text-yellow-600 bg-yellow-50"
+                                              : householdInfo && householdInfo.percent_restored >= 25
+                                              ? "text-orange-600 bg-orange-50"
+                                              : "text-red-600 bg-red-50";
+
+                                          return (
+                                            <div
+                                              key={brgy.barangay_id}
+                                              className="p-3 rounded-lg bg-green-50 border-2 border-green-300"
+                                            >
+                                              <div className="flex items-center gap-2 mb-2">
+                                                <span className="text-lg">⚡</span>
+                                                <span className="font-semibold text-gray-900">{brgy.barangay_name}</span>
+                                              </div>
+                                              {householdInfo ? (
+                                                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs sm:text-sm">
+                                                  <div>
+                                                    <p className="text-gray-600">Total HH</p>
+                                                    <p className="font-bold text-gray-900">{householdInfo.total_households.toLocaleString()}</p>
+                                                  </div>
+                                                  <div>
+                                                    <p className="text-gray-600">Restored</p>
+                                                    <p className="font-bold text-green-700">{householdInfo.restored_households.toLocaleString()}</p>
+                                                  </div>
+                                                  <div>
+                                                    <p className="text-gray-600">For Restoration</p>
+                                                    <p className="font-bold text-orange-700">{householdInfo.for_restoration_households.toLocaleString()}</p>
+                                                  </div>
+                                                  <div className="col-span-2 sm:col-span-1">
+                                                    <p className="text-gray-600">% Restored</p>
+                                                    <div className="space-y-1 mt-1">
+                                                      <div className={`text-center font-bold text-xs rounded ${hhPercentColor} py-0.5`}>
+                                                        {householdInfo.percent_restored.toFixed(1)}%
+                                                      </div>
+                                                      <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                                                        <div
+                                                          className={`h-full ${
+                                                            householdInfo.percent_restored === 100
+                                                              ? "bg-green-500"
+                                                              : householdInfo.percent_restored >= 75
+                                                              ? "bg-lime-500"
+                                                              : householdInfo.percent_restored >= 50
+                                                              ? "bg-yellow-500"
+                                                              : householdInfo.percent_restored >= 25
+                                                              ? "bg-orange-500"
+                                                              : "bg-red-500"
+                                                          }`}
+                                                          style={{ width: `${householdInfo.percent_restored}%` }}
+                                                        />
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              ) : (
+                                                <p className="text-gray-600 italic text-xs">No household data available</p>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
                                       {muni.energized_barangays === 0 && (
                                         <p className="text-gray-500 italic text-sm col-span-full">
                                           No energized barangays yet
