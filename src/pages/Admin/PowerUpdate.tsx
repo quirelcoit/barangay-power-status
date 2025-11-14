@@ -2,12 +2,25 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { useToast } from "../../components";
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown } from "lucide-react";
 
 interface Municipality {
   value: string;
   label: string;
   totalBarangays: number;
+}
+
+interface Barangay {
+  id: string;
+  name: string;
+}
+
+interface UpdateState {
+  energized: number;
+  remarks: string;
+  photo: File | null;
+  energizedHouseholds: number;
+  energizedBarangayIds: string[];
 }
 
 const MUNICIPALITIES: Municipality[] = [
@@ -41,25 +54,24 @@ export function PowerUpdate() {
   const [activeTab, setActiveTab] = useState<"barangay" | "household">(
     "barangay"
   );
+  const [expandedMunicipality, setExpandedMunicipality] = useState<string | null>(null);
+  const [barangays, setBarangays] = useState<{ [key: string]: Barangay[] }>({});
+  const [loadingBarangays, setLoadingBarangays] = useState<Set<string>>(new Set());
 
   const [updates, setUpdates] = useState<{
-    [key: string]: {
-      energized: number;
-      remarks: string;
-      photo: File | null;
-      energizedHouseholds: number;
-    };
+    [key: string]: UpdateState;
   }>(() => {
     // Try to restore from localStorage on initial mount
     try {
       const saved = localStorage.getItem("powerUpdateFormData");
       if (saved) {
         const parsed = JSON.parse(saved) as { [key: string]: any };
-        const restored: { [key: string]: any } = {};
+        const restored: { [key: string]: UpdateState } = {};
         for (const [key, value] of Object.entries(parsed)) {
           restored[key] = {
             ...(value as any),
             photo: null,
+            energizedBarangayIds: (value as any).energizedBarangayIds || [],
           };
         }
         console.log("✅ Restored form data from localStorage:", restored);
@@ -89,6 +101,78 @@ export function PowerUpdate() {
     checkAdmin();
   }, []);
 
+  const loadBarangaysForMunicipality = async (municipality: string) => {
+    try {
+      setLoadingBarangays(prev => new Set(prev).add(municipality));
+
+      // Find the municipality label from MUNICIPALITIES array
+      const muniObj = MUNICIPALITIES.find(m => m.value === municipality);
+      if (!muniObj) return;
+
+      const { data: brgyData, error } = await supabase
+        .from("barangays")
+        .select("id, name")
+        .eq("municipality", muniObj.label)
+        .eq("is_active", true)
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+
+      setBarangays(prev => ({
+        ...prev,
+        [municipality]: brgyData || [],
+      }));
+    } catch (err) {
+      console.warn("Could not load barangays:", err);
+      addToast("Failed to load barangays", "error");
+    } finally {
+      setLoadingBarangays(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(municipality);
+        return newSet;
+      });
+    }
+  };
+
+  const toggleMunicipalityExpand = (municipality: string) => {
+    if (expandedMunicipality === municipality) {
+      setExpandedMunicipality(null);
+    } else {
+      setExpandedMunicipality(municipality);
+      if (!barangays[municipality]) {
+        loadBarangaysForMunicipality(municipality);
+      }
+    }
+  };
+
+  const toggleBarangaySelection = (municipality: string, barangayId: string) => {
+    setUpdates(prev => {
+      const muniUpdate = prev[municipality] || {
+        energized: 0,
+        remarks: "",
+        photo: null,
+        energizedHouseholds: 0,
+        energizedBarangayIds: [],
+      };
+
+      const energizedBarangayIds = muniUpdate.energizedBarangayIds || [];
+      const isSelected = energizedBarangayIds.includes(barangayId);
+
+      const newBarangayIds = isSelected
+        ? energizedBarangayIds.filter(id => id !== barangayId)
+        : [...energizedBarangayIds, barangayId];
+
+      return {
+        ...prev,
+        [municipality]: {
+          ...muniUpdate,
+          energizedBarangayIds: newBarangayIds,
+          energized: newBarangayIds.length,
+        },
+      };
+    });
+  };
+
   // Save form data to localStorage whenever updates change
   useEffect(() => {
     if (Object.keys(updates).length > 0) {
@@ -100,6 +184,7 @@ export function PowerUpdate() {
             energized: value.energized,
             remarks: value.remarks,
             energizedHouseholds: value.energizedHouseholds,
+            energizedBarangayIds: value.energizedBarangayIds || [],
             // Exclude photo field since File objects can't be serialized
           };
         }
@@ -154,11 +239,12 @@ export function PowerUpdate() {
             [key: string]: any;
           };
           // Restore photo field as null since it was excluded from serialization
-          const restoredUpdates: { [key: string]: any } = {};
+          const restoredUpdates: { [key: string]: UpdateState } = {};
           for (const [key, value] of Object.entries(parsedUpdates)) {
             restoredUpdates[key] = {
               ...(value as any),
               photo: null,
+              energizedBarangayIds: (value as any).energizedBarangayIds || [],
             };
           }
           setUpdates(restoredUpdates);
@@ -170,13 +256,14 @@ export function PowerUpdate() {
       }
 
       // If no saved data, initialize with empty values
-      const newUpdates: { [key: string]: any } = {};
+      const newUpdates: { [key: string]: UpdateState } = {};
       MUNICIPALITIES.forEach((muni) => {
         newUpdates[muni.value] = {
           energized: 0,
           remarks: "",
           photo: null,
           energizedHouseholds: 0,
+          energizedBarangayIds: [],
         };
       });
 
@@ -203,7 +290,7 @@ export function PowerUpdate() {
     const hasUpdates = Object.values(updates).some((u) => u.energized > 0);
     if (!hasUpdates) {
       addToast(
-        "Please enter at least one municipality's energized barangays",
+        "Please select at least one energized barangay",
         "error"
       );
       return;
@@ -270,6 +357,54 @@ export function PowerUpdate() {
         ]);
 
         if (error) throw error;
+
+        // Now insert individual barangay updates for energized barangays
+        // Get all barangays for this municipality
+        const muniObj = MUNICIPALITIES.find(m => m.value === muni.value);
+        if (!muniObj) continue;
+
+        const { data: allBarangays } = await supabase
+          .from("barangays")
+          .select("id")
+          .eq("municipality", muniObj.label);
+
+        if (allBarangays) {
+          const energizedIds = update.energizedBarangayIds || [];
+
+          // Insert energized updates
+          for (const barangayId of energizedIds) {
+            await supabase.from("barangay_updates").insert([
+              {
+                barangay_id: barangayId,
+                headline: `Power Status Update - ${asOfDateTime}`,
+                body: update.remarks || null,
+                power_status: "energized",
+                eta: null,
+                author_uid: session?.session?.user?.id,
+                is_published: true,
+              },
+            ]);
+          }
+
+          // Insert no_power updates for non-energized barangays
+          const nonEnergizedIds = (allBarangays || [])
+            .filter(b => !energizedIds.includes(b.id))
+            .map(b => b.id);
+
+          for (const barangayId of nonEnergizedIds) {
+            await supabase.from("barangay_updates").insert([
+              {
+                barangay_id: barangayId,
+                headline: `Power Status Update - ${asOfDateTime}`,
+                body: update.remarks || null,
+                power_status: "no_power",
+                eta: null,
+                author_uid: session?.session?.user?.id,
+                is_published: true,
+              },
+            ]);
+          }
+        }
       }
 
       setSubmitted(true);
@@ -442,8 +577,7 @@ export function PowerUpdate() {
               {/* Instructions & Date/Time Picker */}
               <div className="p-3 sm:p-6 bg-blue-50 border-b border-blue-200 space-y-3 sm:space-y-4">
                 <p className="text-xs sm:text-sm text-blue-900">
-                  ℹ️ Enter the number of energized barangays for each
-                  municipality. Leave blank or zero to skip.
+                  ℹ️ Click on a municipality to expand and select which barangays are energized. The count will update automatically.
                 </p>
                 <div>
                   <label
@@ -462,175 +596,151 @@ export function PowerUpdate() {
                 </div>
               </div>
 
-              {/* Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-gray-100 border-b-2 border-gray-300">
-                      <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-bold text-gray-900 text-xs sm:text-base">
-                        Municipality / Town
-                      </th>
-                      <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
-                        Total
-                      </th>
-                      <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
-                        Energized *
-                      </th>
-                      <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-green-600 text-xs sm:text-base">
-                        %
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {MUNICIPALITIES.map((muni, idx) => {
-                      const bgColor = idx % 2 === 0 ? "bg-white" : "bg-gray-50";
-                      const energized = updates[muni.value]?.energized || 0;
-                      const percentage =
-                        energized > 0
-                          ? ((energized / muni.totalBarangays) * 100).toFixed(2)
-                          : (0).toFixed(2);
+              {/* Municipalities List */}
+              <div className="space-y-2 p-3 sm:p-6">
+                {MUNICIPALITIES.map((muni) => {
+                  const energized = updates[muni.value]?.energized || 0;
+                  const percentage =
+                    energized > 0
+                      ? ((energized / muni.totalBarangays) * 100).toFixed(2)
+                      : (0).toFixed(2);
+                  const isExpanded = expandedMunicipality === muni.value;
+                  const muniBarangays = barangays[muni.value] || [];
+                  const energizedBarangayIds = updates[muni.value]?.energizedBarangayIds || [];
+                  const isLoading = loadingBarangays.has(muni.value);
 
-                      return (
-                        <tr
-                          key={muni.value}
-                          className={`${bgColor} border-b border-gray-200`}
-                        >
-                          <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-900 text-xs sm:text-base">
-                            {muni.label}
-                          </td>
-                          <td className="px-2 sm:px-6 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base">
-                            {muni.totalBarangays}
-                          </td>
-                          <td className="px-2 sm:px-6 py-3 sm:py-4 text-center">
-                            <input
-                              type="number"
-                              min="0"
-                              max={muni.totalBarangays}
-                              value={energized === 0 ? "" : energized}
-                              placeholder="0"
-                              onChange={(e) => {
-                                const val = Math.max(
-                                  0,
-                                  Math.min(
-                                    muni.totalBarangays,
-                                    parseInt(e.target.value) || 0
-                                  )
-                                );
-                                setUpdates({
-                                  ...updates,
-                                  [muni.value]: {
-                                    energized: val,
-                                    remarks: updates[muni.value]?.remarks || "",
-                                    photo: updates[muni.value]?.photo || null,
-                                    energizedHouseholds:
-                                      updates[muni.value]
-                                        ?.energizedHouseholds || 0,
-                                  },
-                                });
-                              }}
-                              onFocus={(e) => {
-                                // Clear the field on focus for better UX
-                                if (energized === 0) {
-                                  e.target.value = "";
-                                }
-                              }}
-                              onBlur={(e) => {
-                                // Reset to 0 if empty on blur
-                                if (e.target.value === "") {
-                                  setUpdates({
-                                    ...updates,
-                                    [muni.value]: {
-                                      energized: 0,
-                                      remarks:
-                                        updates[muni.value]?.remarks || "",
-                                      photo: updates[muni.value]?.photo || null,
-                                      energizedHouseholds:
-                                        updates[muni.value]
-                                          ?.energizedHouseholds || 0,
-                                    },
-                                  });
-                                }
-                              }}
-                              className="w-16 sm:w-20 mx-auto px-2 sm:px-3 py-2 sm:py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-center text-sm sm:text-base"
+                  return (
+                    <div key={muni.value} className="border border-gray-200 rounded-lg overflow-hidden">
+                      {/* Municipality Header - Clickable */}
+                      <button
+                        type="button"
+                        onClick={() => toggleMunicipalityExpand(muni.value)}
+                        className="w-full bg-gray-50 hover:bg-blue-50 transition px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between"
+                      >
+                        <div className="text-left flex-1">
+                          <p className="font-semibold text-gray-900 text-sm sm:text-base flex items-center gap-2">
+                            <ChevronDown
+                              className={`w-4 h-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
                             />
-                          </td>
-                          <td
-                            className={`px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-xs sm:text-lg ${
+                            {muni.label}
+                          </p>
+                          <p className="text-xs sm:text-sm text-gray-600">
+                            Total: {muni.totalBarangays} | Energized: {energized} | {percentage}%
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <span
+                            className={`text-xs sm:text-sm font-bold px-2 py-1 rounded ${
                               parseFloat(percentage) === 100
-                                ? "text-green-600 bg-green-50"
+                                ? "bg-green-100 text-green-800"
                                 : parseFloat(percentage) >= 75
-                                ? "text-lime-600"
+                                ? "bg-lime-100 text-lime-800"
                                 : parseFloat(percentage) >= 50
-                                ? "text-yellow-600"
+                                ? "bg-yellow-100 text-yellow-800"
                                 : parseFloat(percentage) > 0
-                                ? "text-orange-600"
-                                : "text-gray-400"
+                                ? "bg-orange-100 text-orange-800"
+                                : "bg-gray-100 text-gray-800"
                             }`}
                           >
                             {percentage}%
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    {/* Total Row */}
-                    <tr className="bg-gray-200 border-t-2 border-gray-300 font-bold">
-                      <td className="px-6 py-4 text-gray-900">TOTAL</td>
-                      <td className="px-6 py-4 text-center text-gray-900">
-                        {MUNICIPALITIES.reduce(
-                          (sum, m) => sum + m.totalBarangays,
-                          0
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-center text-gray-900">
-                        {MUNICIPALITIES.reduce(
-                          (sum, m) => sum + (updates[m.value]?.energized || 0),
-                          0
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-center font-bold text-lg">
-                        {(() => {
-                          const totalBgy = MUNICIPALITIES.reduce(
+                          </span>
+                        </div>
+                      </button>
+
+                      {/* Expanded Barangay List */}
+                      {isExpanded && (
+                        <div className="bg-white border-t border-gray-200 p-3 sm:p-6">
+                          {isLoading ? (
+                            <p className="text-center text-gray-600 py-4">Loading barangays...</p>
+                          ) : muniBarangays.length === 0 ? (
+                            <p className="text-center text-gray-600 py-4">No barangays found</p>
+                          ) : (
+                            <div className="space-y-2">
+                              <p className="text-xs sm:text-sm text-gray-600 mb-4">
+                                Click checkboxes to mark energized barangays:
+                              </p>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-96 overflow-y-auto">
+                                {muniBarangays.map((brgy) => {
+                                  const isChecked = energizedBarangayIds.includes(brgy.id);
+                                  return (
+                                    <label
+                                      key={brgy.id}
+                                      className="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-blue-50 transition"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={isChecked}
+                                        onChange={() =>
+                                          toggleBarangaySelection(muni.value, brgy.id)
+                                        }
+                                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                      />
+                                      <span
+                                        className={`text-sm ${
+                                          isChecked
+                                            ? "font-medium text-blue-900"
+                                            : "text-gray-700"
+                                        }`}
+                                      >
+                                        {brgy.name}
+                                      </span>
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                              <p className="text-xs text-gray-500 mt-3">
+                                Selected: {energizedBarangayIds.length} / {muniBarangays.length}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Summary */}
+                <div className="mt-4 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-xs sm:text-sm font-semibold text-blue-900">
+                    Total Energized Barangays:{" "}
+                    <span className="text-lg font-bold">
+                      {MUNICIPALITIES.reduce(
+                        (sum, m) => sum + (updates[m.value]?.energized || 0),
+                        0
+                      )}
+                    </span>
+                    {" "}/
+                    {" "}
+                    <span>
+                      {MUNICIPALITIES.reduce(
+                        (sum, m) => sum + m.totalBarangays,
+                        0
+                      )}
+                    </span>
+                  </p>
+                  <div className="mt-2 bg-gray-200 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="h-full bg-green-500 transition-all"
+                      style={{
+                        width: `${
+                          MUNICIPALITIES.reduce(
+                            (sum, m) => sum + (updates[m.value]?.energized || 0),
+                            0
+                          ) / MUNICIPALITIES.reduce(
                             (sum, m) => sum + m.totalBarangays,
                             0
-                          );
-                          const energizedBgy = MUNICIPALITIES.reduce(
-                            (sum, m) =>
-                              sum + (updates[m.value]?.energized || 0),
-                            0
-                          );
-                          const totalPercent =
-                            totalBgy > 0
-                              ? ((energizedBgy / totalBgy) * 100).toFixed(2)
-                              : (0).toFixed(2);
-                          return (
-                            <span
-                              className={
-                                parseFloat(totalPercent) === 100
-                                  ? "text-green-600 bg-green-50 px-2 py-1 rounded"
-                                  : parseFloat(totalPercent) >= 75
-                                  ? "text-lime-600"
-                                  : parseFloat(totalPercent) >= 50
-                                  ? "text-yellow-600"
-                                  : parseFloat(totalPercent) > 0
-                                  ? "text-orange-600"
-                                  : "text-gray-400"
-                              }
-                            >
-                              {totalPercent}%
-                            </span>
-                          );
-                        })()}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                          ) * 100
+                        }%`,
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Notes & Submit */}
               <div className="p-3 sm:p-6 bg-gray-50 border-t border-gray-200">
                 <p className="text-xs sm:text-xs text-gray-600 mb-3 sm:mb-4 leading-relaxed">
-                  * Percentage calculates automatically. Leave energized
-                  barangays empty or zero to skip that municipality.
+                  * Select energized barangays using checkboxes. Count updates automatically. These selections will sync with the main dashboard.
                 </p>
 
                 {/* Submit Button */}
@@ -737,6 +847,7 @@ export function PowerUpdate() {
                                     remarks: updates[muni.value]?.remarks || "",
                                     photo: updates[muni.value]?.photo || null,
                                     energizedHouseholds: val,
+                                    energizedBarangayIds: updates[muni.value]?.energizedBarangayIds || [],
                                   },
                                 });
                               }}
@@ -758,6 +869,7 @@ export function PowerUpdate() {
                                         updates[muni.value]?.remarks || "",
                                       photo: updates[muni.value]?.photo || null,
                                       energizedHouseholds: 0,
+                                      energizedBarangayIds: updates[muni.value]?.energizedBarangayIds || [],
                                     },
                                   });
                                 }
