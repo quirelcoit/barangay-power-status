@@ -825,6 +825,41 @@ export function PowerUpdate() {
           .map(([barangayId]) => barangayId);
 
         if (energizedBarangayIds.length > 0) {
+          // Get barangay names for the inserts
+          const barangayArray = barangayHouseholdData[municipality] || [];
+          const municipalityObj = MUNICIPALITIES.find((m) => m.value === municipality);
+          
+          // Insert energized status into barangay_updates table for each barangay
+          for (const barangayId of energizedBarangayIds) {
+            const barangay = barangayArray.find((b) => b.barangay_id === barangayId);
+            if (!barangay) continue;
+
+            // Check if already marked as energized in database
+            const { data: existingUpdate } = await supabase
+              .from("barangay_updates")
+              .select("id, power_status")
+              .eq("barangay_id", barangayId)
+              .eq("is_published", true)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .single();
+
+            // Only insert if not already energized
+            if (!existingUpdate || existingUpdate.power_status !== "energized") {
+              await supabase.from("barangay_updates").insert([
+                {
+                  municipality: municipalityObj?.label || municipality,
+                  barangay_id: barangayId,
+                  barangay_name: barangay.barangay_name,
+                  headline: `Power restored to ${barangay.barangay_name}`,
+                  power_status: "energized",
+                  is_published: true,
+                  updated_by: session?.session?.user?.id,
+                },
+              ]);
+            }
+          }
+
           // Update the local state to mark these barangays as energized
           setUpdates((prev) => ({
             ...prev,
