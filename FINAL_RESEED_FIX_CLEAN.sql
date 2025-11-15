@@ -1,10 +1,11 @@
--- SIMPLE FIX: Just populate the household tables from existing barangays
--- No need to touch the barangays table at all
+-- CLEAN RESEED: Direct exact matching to eliminate 300 defaults
+-- Using barangay name equality (exact) and municipality name equality (exact)
 
 -- Step 1: Clear old household data
 DELETE FROM public.barangay_households;
 DELETE FROM public.barangay_household_updates;
 
+-- Step 2: Populate with exact provided values; any unmatched defaults to 300
 WITH provided_totals(municipality, barangay_name, total_households) AS (
   VALUES
     ('SAN AGUSTIN, ISABELA','BAUTISTA',247),
@@ -154,11 +155,11 @@ WITH provided_totals(municipality, barangay_name, total_households) AS (
     ('SAGUDAY','LA PAZ',743),
     ('SAGUDAY','MAGSAYSAY (POB.)',935),
     ('SAGUDAY','RIZAL (POB.)',898),
-      ('SAGUDAY','SALVACION',395),
-      ('SAGUDAY','SANTO TOMAS',375),
-      ('SAGUDAY','TRES REYES',244)
-WITH provided_totals(municipality, barangay_name, total_households) AS (
-  VALUES
+    ('SAGUDAY','SALVACION',395),
+    ('SAGUDAY','SANTO TOMAS',375),
+    ('SAGUDAY','TRES REYES',244)
+)
+INSERT INTO public.barangay_household_updates (municipality, barangay_id, barangay_name, total_households, restored_households, as_of_time)
 SELECT 
   b.municipality,
   b.id,
@@ -192,8 +193,15 @@ SELECT '=== Grand Totals ===' as check;
 SELECT COUNT(*) as total_barangays, SUM(total_households) as total_households 
 FROM public.barangay_households;
 
-SELECT '=== Sample from SAN AGUSTIN, ISABELA ===' as check;
+SELECT '=== Sample from DIFFUN ===' as check;
 SELECT barangay_name, total_households 
 FROM public.barangay_household_status 
-WHERE municipality = 'SAN AGUSTIN, ISABELA'
-ORDER BY barangay_name;
+WHERE municipality = 'DIFFUN, QUIRINO'
+ORDER BY barangay_name
+LIMIT 10;
+
+SELECT '=== Any barangay still at 300 default ===' as check;
+SELECT municipality, barangay_name, total_households
+FROM public.barangay_household_status
+WHERE total_households = 300
+ORDER BY municipality, barangay_name;

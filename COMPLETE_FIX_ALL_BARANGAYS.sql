@@ -4,12 +4,13 @@
 -- ============================================================
 -- STEP 1: Insert ALL barangays into barangays table
 -- ============================================================
--- Clear household tables (no foreign key constraints)
+-- Clear household tables first (they depend on barangays)
 DELETE FROM public.barangay_households;
 DELETE FROM public.barangay_household_updates;
 
--- Clear barangays but keep references safe
-TRUNCATE TABLE public.barangays CASCADE;
+-- Now we can safely work with barangays
+-- Don't delete barangays - just insert if they don't exist
+-- This way we preserve the IDs and foreign key references
 
 ALTER TABLE public.barangays DISABLE ROW LEVEL SECURITY;
 

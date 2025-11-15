@@ -49,10 +49,15 @@ async function reseedWithActualBarangays() {
         .insert(batch);
 
       if (error) {
-        console.error(`Error in batch ${Math.floor(i / batchSize) + 1}:`, error);
+        console.error(
+          `Error in batch ${Math.floor(i / batchSize) + 1}:`,
+          error
+        );
       } else {
         console.log(
-          `✅ Batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(toInsert.length / batchSize)}: inserted ${batch.length} rows`
+          `✅ Batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(
+            toInsert.length / batchSize
+          )}: inserted ${batch.length} rows`
         );
       }
     }
@@ -99,7 +104,9 @@ async function reseedWithActualBarangays() {
       }
     }
 
-    console.log("\n🎉 DONE! Your app should now work. Try reloading the admin page.");
+    console.log(
+      "\n🎉 DONE! Your app should now work. Try reloading the admin page."
+    );
   } catch (error) {
     console.error("Error:", error);
     process.exit(1);

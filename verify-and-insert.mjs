@@ -208,7 +208,9 @@ async function verifyAndInsert() {
     }
 
     // Clear and insert
-    console.log(`\n🔄 Clearing old data and inserting ${toInsert.length} records...\n`);
+    console.log(
+      `\n🔄 Clearing old data and inserting ${toInsert.length} records...\n`
+    );
     await supabase.from("barangay_household_updates").delete().neq("id", "");
     await supabase.from("barangay_households").delete().neq("id", "");
 
@@ -220,10 +222,15 @@ async function verifyAndInsert() {
         .insert(batch);
 
       if (error) {
-        console.error(`❌ Batch ${Math.floor(i / batchSize) + 1} error:`, error);
+        console.error(
+          `❌ Batch ${Math.floor(i / batchSize) + 1} error:`,
+          error
+        );
       } else {
         console.log(
-          `✅ Batch ${Math.floor(i / batchSize) + 1}: ${batch.length} rows inserted`
+          `✅ Batch ${Math.floor(i / batchSize) + 1}: ${
+            batch.length
+          } rows inserted`
         );
       }
     }

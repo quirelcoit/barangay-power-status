@@ -28,6 +28,8 @@ interface BarangayHouseholdData {
   barangay_name: string;
   total_households: number;
   restoredHouseholds: number;
+  manual_total_households: number | null;
+  baseline_total_households: number;
 }
 
 const MUNICIPALITIES: Municipality[] = [
@@ -88,6 +90,12 @@ export function PowerUpdate() {
   const [loadingBarangayHouseholds, setLoadingBarangayHouseholds] = useState<
     Set<string>
   >(new Set());
+  const [manualTotalInputs, setManualTotalInputs] = useState<{
+    [barangayId: string]: string;
+  }>({});
+  const [manualTotalSavingIds, setManualTotalSavingIds] = useState<Set<string>>(
+    new Set()
+  );
 
   const [updates, setUpdates] = useState<{
     [key: string]: UpdateState;
@@ -220,7 +228,7 @@ export function PowerUpdate() {
       const { data, error } = await supabase
         .from("barangay_household_status")
         .select(
-          "barangay_id, barangay_name, total_households, restored_households"
+          "barangay_id, barangay_name, total_households, restored_households, manual_total_households, baseline_total_households"
         )
         .eq("municipality", fullMuniName)
         .order("barangay_name", { ascending: true });
@@ -233,11 +241,22 @@ export function PowerUpdate() {
           barangay_name: item.barangay_name,
           total_households: item.total_households,
           restoredHouseholds: item.restored_households || 0,
+          manual_total_households: item.manual_total_households ?? null,
+          baseline_total_households:
+            item.baseline_total_households ?? item.total_households,
         }));
 
         setBarangayHouseholdData((prev) => ({
           ...prev,
           [municipalityLabel]: barangayData,
+        }));
+
+        setManualTotalInputs((prev) => ({
+          ...prev,
+          ...barangayData.reduce<Record<string, string>>((map, barangay) => {
+            map[barangay.barangay_id] = String(barangay.total_households);
+            return map;
+          }, {}),
         }));
 
         // Initialize updates for this municipality if not already done
@@ -552,6 +571,149 @@ export function PowerUpdate() {
     if (!data[municipality]) data[municipality] = {};
     data[municipality][barangayId] = Math.max(0, restoredCount);
     localStorage.setItem(storageKey, JSON.stringify(data));
+  };
+
+  const handleManualTotalInputChange = (barangayId: string, value: string) => {
+    setManualTotalInputs((prev) => ({
+      ...prev,
+      [barangayId]: value,
+    }));
+  };
+
+  const handleManualTotalBlur = (
+    municipality: string,
+    barangay: BarangayHouseholdData
+  ) => {
+    const rawValue = manualTotalInputs[barangay.barangay_id];
+    const trimmed = rawValue?.trim();
+
+    if (!trimmed) {
+      saveManualTotalOverride(
+        municipality,
+        barangay,
+        barangay.baseline_total_households
+      );
+      return;
+    }
+
+    const parsed = parseInt(trimmed, 10);
+    if (Number.isNaN(parsed) || parsed <= 0) {
+      addToast("Total households must be a positive number", "error");
+      setManualTotalInputs((prev) => ({
+        ...prev,
+        [barangay.barangay_id]: String(barangay.total_households),
+      }));
+      return;
+    }
+
+    if (parsed < (barangay.restoredHouseholds || 0)) {
+      addToast(
+        `${barangay.barangay_name} already has ${barangay.restoredHouseholds} restored households`,
+        "error"
+      );
+      setManualTotalInputs((prev) => ({
+        ...prev,
+        [barangay.barangay_id]: String(barangay.total_households),
+      }));
+      return;
+    }
+
+    saveManualTotalOverride(municipality, barangay, parsed);
+  };
+
+  const saveManualTotalOverride = async (
+    municipality: string,
+    barangay: BarangayHouseholdData,
+    newTotal: number
+  ) => {
+    const baseline = barangay.baseline_total_households;
+    const shouldRemoveOverride = newTotal === baseline;
+    const noActionNeeded =
+      barangay.manual_total_households === null && newTotal === baseline;
+
+    if (noActionNeeded) {
+      setManualTotalInputs((prev) => ({
+        ...prev,
+        [barangay.barangay_id]: String(baseline),
+      }));
+      return;
+    }
+
+    setManualTotalSavingIds((prev) => {
+      const next = new Set(prev);
+      next.add(barangay.barangay_id);
+      return next;
+    });
+
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const updatedBy = session?.session?.user?.id || null;
+
+      if (shouldRemoveOverride) {
+        const { error } = await supabase
+          .from("barangay_household_overrides")
+          .delete()
+          .eq("barangay_id", barangay.barangay_id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("barangay_household_overrides")
+          .upsert(
+            {
+              barangay_id: barangay.barangay_id,
+              override_total_households: newTotal,
+              updated_by: updatedBy,
+            },
+            { onConflict: "barangay_id" }
+          );
+        if (error) throw error;
+      }
+
+      setBarangayHouseholdData((prev) => ({
+        ...prev,
+        [municipality]:
+          prev[municipality]?.map((b) => {
+            if (b.barangay_id !== barangay.barangay_id) return b;
+            return {
+              ...b,
+              total_households: shouldRemoveOverride ? baseline : newTotal,
+              manual_total_households: shouldRemoveOverride ? null : newTotal,
+            };
+          }) || [],
+      }));
+
+      setManualTotalInputs((prev) => ({
+        ...prev,
+        [barangay.barangay_id]: String(
+          shouldRemoveOverride ? baseline : newTotal
+        ),
+      }));
+
+      addToast(
+        shouldRemoveOverride
+          ? `${barangay.barangay_name} reverted to baseline total`
+          : `${barangay.barangay_name} total households updated`,
+        "success"
+      );
+    } catch (err) {
+      console.error("Manual total update error:", err);
+      addToast(
+        err instanceof Error
+          ? err.message
+          : "Failed to save manual total households",
+        "error"
+      );
+      setManualTotalInputs((prev) => ({
+        ...prev,
+        [barangay.barangay_id]: String(barangay.total_households),
+      }));
+    } finally {
+      setManualTotalSavingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(barangay.barangay_id);
+        return next;
+      });
+    }
   };
 
   const submitBarangayHouseholdUpdates = async () => {
@@ -1354,9 +1516,68 @@ export function PowerUpdate() {
 
                                     {/* Total HH */}
                                     <div className="col-span-2">
-                                      <p className="text-xs sm:text-sm text-gray-700 text-center font-semibold">
-                                        {barangay.total_households}
-                                      </p>
+                                      <div className="space-y-1">
+                                        <input
+                                          type="number"
+                                          min="1"
+                                          value={
+                                            manualTotalInputs[
+                                              barangay.barangay_id
+                                            ] ??
+                                            String(barangay.total_households)
+                                          }
+                                          onChange={(e) =>
+                                            handleManualTotalInputChange(
+                                              barangay.barangay_id,
+                                              e.target.value
+                                            )
+                                          }
+                                          onBlur={() =>
+                                            handleManualTotalBlur(
+                                              muni.value,
+                                              barangay
+                                            )
+                                          }
+                                          onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                              e.preventDefault();
+                                              handleManualTotalBlur(
+                                                muni.value,
+                                                barangay
+                                              );
+                                              (
+                                                e.target as HTMLInputElement
+                                              ).blur();
+                                            }
+                                          }}
+                                          disabled={
+                                            loading ||
+                                            manualTotalSavingIds.has(
+                                              barangay.barangay_id
+                                            )
+                                          }
+                                          className="w-full px-1 py-1 text-xs sm:text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-center"
+                                        />
+                                        {manualTotalSavingIds.has(
+                                          barangay.barangay_id
+                                        ) && (
+                                          <p className="text-[10px] text-blue-600">
+                                            Saving…
+                                          </p>
+                                        )}
+                                        {barangay.manual_total_households !==
+                                          null &&
+                                          barangay.baseline_total_households &&
+                                          barangay.manual_total_households !==
+                                            barangay.baseline_total_households && (
+                                            <p className="text-[10px] text-gray-500">
+                                              Original{" "}
+                                              {
+                                                barangay.baseline_total_households
+                                              }
+                                            </p>
+                                          )}
+                                      </div>
                                     </div>
 
                                     {/* Restored HH Input */}

@@ -1,7 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = "https://dragaqmmigajbjxlmafm.supabase.co";
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyYWdhcW1taWdhamJqeGxtYWZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4Mjc4NDEsImV4cCI6MjA3ODQwMzg0MX0.bHp-E5LTUcrWi1lfbTXzi5qIbj03cACQhSgb4mY8Ef8";
+const supabaseAnonKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRyYWdhcW1taWdhamJqeGxtYWZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI4Mjc4NDEsImV4cCI6MjA3ODQwMzg0MX0.bHp-E5LTUcrWi1lfbTXzi5qIbj03cACQhSgb4mY8Ef8";
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -20,7 +21,7 @@ async function reseedData() {
 
     // Direct approach: Use fetch to execute SQL via HTTP
     console.log("Executing reseed query via direct SQL...");
-    
+
     const householdDataSQL = `
 WITH household_data AS (
   SELECT 'SAN AGUSTIN, ISABELA' as municipality, 'Bautista' as barangay_name, 247 as total_households
@@ -229,7 +230,7 @@ ON CONFLICT (barangay_id) DO UPDATE SET total_households = EXCLUDED.total_househ
 
     // Step 2: Verify data - just try querying what exists
     console.log("\n✅ Checking what's currently in the database...\n");
-    
+
     const { data: allHouseholds, error: err1 } = await supabase
       .from("barangay_households")
       .select("municipality, COUNT(*) as count")
@@ -238,7 +239,11 @@ ON CONFLICT (barangay_id) DO UPDATE SET total_households = EXCLUDED.total_househ
     if (err1) {
       console.log("Error querying barangay_households:", err1.message);
     } else {
-      console.log("Current barangay_households table:", allHouseholds ? allHouseholds.length : 0, "rows");
+      console.log(
+        "Current barangay_households table:",
+        allHouseholds ? allHouseholds.length : 0,
+        "rows"
+      );
     }
 
     // Try to get a count by municipality
@@ -258,13 +263,19 @@ ON CONFLICT (barangay_id) DO UPDATE SET total_households = EXCLUDED.total_househ
     if (viewErr) {
       console.log("Error querying view:", viewErr.message);
     } else {
-      console.log(`Barangay household status view for DIFFUN: ${viewData ? viewData.length : 0} records`);
+      console.log(
+        `Barangay household status view for DIFFUN: ${
+          viewData ? viewData.length : 0
+        } records`
+      );
       if (viewData && viewData.length > 0) {
         console.log("Sample:", viewData[0]);
       }
     }
 
-    console.log("\n🎉 Done! Now try clicking municipalities in the admin form.");
+    console.log(
+      "\n🎉 Done! Now try clicking municipalities in the admin form."
+    );
   } catch (error) {
     console.error("Error during reseed:", error);
     process.exit(1);

@@ -9,7 +9,7 @@ const supabase = createClient(
 async function testInsert() {
   try {
     console.log("Testing direct insert...");
-    
+
     // Get a test barangay
     const { data: barangay } = await supabase
       .from("barangays")
@@ -20,20 +20,22 @@ async function testInsert() {
     console.log("Test barangay:", barangay);
 
     // Try to insert
-    const { data, error } = await supabase
-      .from("barangay_households")
-      .insert({
-        municipality: barangay.municipality,
-        barangay_id: barangay.id,
-        barangay_name: barangay.name,
-        total_households: 250,
-      });
+    const { data, error } = await supabase.from("barangay_households").insert({
+      municipality: barangay.municipality,
+      barangay_id: barangay.id,
+      barangay_name: barangay.name,
+      total_households: 250,
+    });
 
     if (error) {
       console.error("Insert error:", error);
-      console.log("\nThis means RLS is blocking non-authenticated or unauthorized inserts.");
+      console.log(
+        "\nThis means RLS is blocking non-authenticated or unauthorized inserts."
+      );
       console.log("You need to either:");
-      console.log("1. Go to Supabase > SQL Editor and run: ALTER TABLE public.barangay_households DISABLE ROW LEVEL SECURITY;");
+      console.log(
+        "1. Go to Supabase > SQL Editor and run: ALTER TABLE public.barangay_households DISABLE ROW LEVEL SECURITY;"
+      );
       console.log("2. Or update the RLS policy to allow inserts");
       console.log("3. Or use a service role key for this script");
     } else {

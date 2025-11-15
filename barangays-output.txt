@@ -1,0 +1,9 @@
+Error: {
+  message: 'TypeError: fetch failed',
+  details: 'TypeError: fetch failed\n' +
+    '    at node:internal/deps/undici/undici:13510:13\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+    '    at async file:///C:/Users/kaloy/OneDrive/Desktop/Office/Apps/brgy-power-stat-reporter-v1/get-barangays.mjs:8:25',
+  hint: '',
+  code: ''
+}

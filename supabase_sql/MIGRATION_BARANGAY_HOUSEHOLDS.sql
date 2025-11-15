@@ -47,6 +47,20 @@ ON public.barangay_household_updates(municipality);
 CREATE INDEX IF NOT EXISTS idx_barangay_household_updates_updated_at 
 ON public.barangay_household_updates(updated_at desc);
 
+-- Create override table to persist manual totals without touching the base seed
+CREATE TABLE IF NOT EXISTS public.barangay_household_overrides (
+  id uuid primary key default uuid_generate_v4(),
+  barangay_id uuid not null references public.barangays(id) on delete cascade,
+  override_total_households integer not null check (override_total_households > 0),
+  updated_by uuid references auth.users(id),
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  UNIQUE(barangay_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_barangay_household_overrides_barangay_id
+ON public.barangay_household_overrides(barangay_id);
+
 -- Create view to get latest household update per barangay
 DROP VIEW IF EXISTS public.barangay_household_status;
 
@@ -69,21 +83,25 @@ SELECT
   bh.municipality,
   bh.barangay_id,
   bh.barangay_name,
-  bh.total_households,
+  COALESCE(bho.override_total_households, bh.total_households) as total_households,
+  bho.override_total_households as manual_total_households,
+  bh.total_households as baseline_total_households,
   COALESCE(bhu.restored_households, 0) as restored_households,
-  bh.total_households - COALESCE(bhu.restored_households, 0) as for_restoration_households,
-  ROUND((COALESCE(bhu.restored_households, 0)::numeric / bh.total_households) * 100, 2) as percent_restored,
+  COALESCE(bho.override_total_households, bh.total_households) - COALESCE(bhu.restored_households, 0) as for_restoration_households,
+  ROUND((COALESCE(bhu.restored_households, 0)::numeric / COALESCE(bho.override_total_households, bh.total_households)) * 100, 2) as percent_restored,
   bhu.as_of_time,
   bhu.updated_at as last_updated
 FROM public.barangay_households bh
 LEFT JOIN (
   SELECT * FROM ranked_updates WHERE rn = 1
 ) bhu ON bh.barangay_id = bhu.barangay_id
+LEFT JOIN public.barangay_household_overrides bho ON bh.barangay_id = bho.barangay_id
 ORDER BY bh.municipality, bh.barangay_name;
 
 -- Enable RLS
 ALTER TABLE public.barangay_households ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.barangay_household_updates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.barangay_household_overrides ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for barangay_households (read-only)
 DROP POLICY IF EXISTS "Allow public to read barangay households" ON public.barangay_households;
@@ -95,6 +113,18 @@ USING (true);
 DROP POLICY IF EXISTS "Allow authenticated staff to manage barangay households" ON public.barangay_households;
 CREATE POLICY "Allow authenticated staff to manage barangay households"
 ON public.barangay_households FOR ALL
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.staff_profiles 
+    WHERE uid = auth.uid() 
+    AND (role = 'moderator' OR role = 'admin')
+  )
+);
+
+DROP POLICY IF EXISTS "Allow authenticated staff to manage barangay household overrides" ON public.barangay_household_overrides;
+CREATE POLICY "Allow authenticated staff to manage barangay household overrides"
+ON public.barangay_household_overrides FOR ALL
 TO authenticated
 USING (
   EXISTS (
