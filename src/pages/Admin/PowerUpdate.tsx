@@ -855,7 +855,6 @@ export function PowerUpdate() {
           .insert([{
             municipality: municipalityObj?.label || municipality,
             barangay_id: barangayId,
-            barangay_name: barangayData.name,
             headline: `Power restored to ${barangayData.name}`,
             power_status: "energized",
             is_published: true,
