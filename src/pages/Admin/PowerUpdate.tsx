@@ -39,7 +39,7 @@ const MUNICIPALITIES: Municipality[] = [
   { value: "nagtipunan", label: "Nagtipunan", totalBarangays: 16 },
   {
     value: "san_agustin_isabela",
-    label: "San Agustin, Isabela",
+    label: "SAN AGUSTIN, ISABELA",
     totalBarangays: 18,
   },
 ];
