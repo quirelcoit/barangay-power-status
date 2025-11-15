@@ -764,11 +764,15 @@ export function PowerUpdate() {
           }
 
           // Insert barangay household update
-          const { error } = await supabase
+          const municipalityObj = MUNICIPALITIES.find((m) => m.value === municipality);
+          const { error} = await supabase
             .from("barangay_household_updates")
             .insert([
               {
+                municipality: municipalityObj?.label || municipality,
                 barangay_id: barangayId,
+                barangay_name: barangay.barangay_name,
+                total_households: barangay.total_households,
                 restored_households: restoredCount,
                 as_of_time: asOfDateTime,
                 updated_by: session?.session?.user?.id,
