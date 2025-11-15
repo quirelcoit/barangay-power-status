@@ -32,6 +32,7 @@ interface EnergizedBarangay {
   total_households: number;
   restored_households: number;
   percentage: number;
+  has_household_data: boolean;
 }
 
 export function Home() {
@@ -58,29 +59,38 @@ export function Home() {
 
       if (barangayError) throw barangayError;
 
-      // Load latest energized barangays from barangay_updates
+      // Load latest energized barangays from barangay_updates (most recent per barangay)
       const { data: updatesData, error: updatesError } = await supabase
         .from("barangay_updates")
-        .select("barangay_id, power_status")
+        .select("barangay_id, power_status, created_at")
         .eq("is_published", true)
         .order("created_at", { ascending: false });
 
       if (updatesError) throw updatesError;
 
-      // Get unique energized barangays per municipality
-      const energizedByBarangay = new Map();
+      // Get unique energized barangays (latest status wins)
+      const energizedByBarangay = new Map<string, boolean>();
       updatesData?.forEach((update) => {
         if (!energizedByBarangay.has(update.barangay_id)) {
           energizedByBarangay.set(update.barangay_id, update.power_status === "energized");
         }
       });
 
-      // Load household-level statistics
-      const { data: householdData, error: householdError } = await supabase
-        .from("barangay_household_status")
-        .select("municipality, total_households, restored_households");
+      // Load household-level statistics from latest updates
+      const { data: householdUpdates, error: householdError } = await supabase
+        .from("barangay_household_updates")
+        .select("municipality, barangay_id, barangay_name, total_households, restored_households, updated_at")
+        .order("updated_at", { ascending: false });
 
       if (householdError) throw householdError;
+
+      // Get latest household data per barangay
+      const latestHouseholdByBarangay = new Map();
+      householdUpdates?.forEach((update) => {
+        if (!latestHouseholdByBarangay.has(update.barangay_id)) {
+          latestHouseholdByBarangay.set(update.barangay_id, update);
+        }
+      });
 
       // Group by municipality
       const municipalityMap = new Map<string, MunicipalityStats>();
@@ -102,17 +112,16 @@ export function Home() {
         const stats = municipalityMap.get(muni)!;
         stats.totalBarangays++;
         
+        // Count energized barangays from barangay_updates
         if (energizedByBarangay.get(barangay.id)) {
           stats.energizedBarangays++;
         }
-      });
 
-      // Add household stats
-      householdData?.forEach((household) => {
-        const stats = municipalityMap.get(household.municipality);
-        if (stats) {
-          stats.totalHouseholds += household.total_households;
-          stats.restoredHouseholds += household.restored_households || 0;
+        // Add household stats from barangay_household_updates
+        const householdData = latestHouseholdByBarangay.get(barangay.id);
+        if (householdData) {
+          stats.totalHouseholds += householdData.total_households || 0;
+          stats.restoredHouseholds += householdData.restored_households || 0;
         }
       });
 
@@ -141,24 +150,73 @@ export function Home() {
     try {
       setLoadingDetails((prev) => new Set(prev).add(municipality));
 
-      const { data, error } = await supabase
-        .from("barangay_household_status")
-        .select("barangay_id, barangay_name, total_households, restored_households")
+      // Get all energized barangays from barangay_updates
+      const { data: barangayData, error: barangayError } = await supabase
+        .from("barangays")
+        .select("id, name")
         .eq("municipality", municipality)
-        .gt("restored_households", 0)
-        .order("barangay_name");
+        .eq("is_active", true);
 
-      if (error) throw error;
+      if (barangayError) throw barangayError;
 
-      const energized: EnergizedBarangay[] = (data || []).map((b) => ({
-        barangay_id: b.barangay_id,
-        barangay_name: b.barangay_name,
-        total_households: b.total_households,
-        restored_households: b.restored_households,
-        percentage: b.total_households > 0 
-          ? (b.restored_households / b.total_households) * 100 
-          : 0,
-      }));
+      // Get latest power status per barangay
+      const { data: updatesData, error: updatesError } = await supabase
+        .from("barangay_updates")
+        .select("barangay_id, power_status")
+        .eq("is_published", true)
+        .order("created_at", { ascending: false });
+
+      if (updatesError) throw updatesError;
+
+      const energizedIds = new Set<string>();
+      updatesData?.forEach((update) => {
+        if (!energizedIds.has(update.barangay_id) && update.power_status === "energized") {
+          energizedIds.add(update.barangay_id);
+        }
+      });
+
+      // Get latest household data
+      const { data: householdData, error: householdError } = await supabase
+        .from("barangay_household_updates")
+        .select("barangay_id, barangay_name, total_households, restored_households, updated_at")
+        .eq("municipality", municipality)
+        .order("updated_at", { ascending: false });
+
+      if (householdError) throw householdError;
+
+      // Get latest household data per barangay
+      const householdByBarangay = new Map();
+      householdData?.forEach((update) => {
+        if (!householdByBarangay.has(update.barangay_id)) {
+          householdByBarangay.set(update.barangay_id, update);
+        }
+      });
+
+      // Build energized barangays list
+      const energized: EnergizedBarangay[] = [];
+      
+      barangayData?.forEach((barangay) => {
+        if (energizedIds.has(barangay.id)) {
+          const household = householdByBarangay.get(barangay.id);
+          energized.push({
+            barangay_id: barangay.id,
+            barangay_name: barangay.name,
+            total_households: household?.total_households || 0,
+            restored_households: household?.restored_households || 0,
+            percentage: household && household.total_households > 0
+              ? (household.restored_households / household.total_households) * 100
+              : 0,
+            has_household_data: !!household,
+          });
+        }
+      });
+
+      // Sort: barangays with household data first, then by name
+      energized.sort((a, b) => {
+        if (a.has_household_data && !b.has_household_data) return -1;
+        if (!a.has_household_data && b.has_household_data) return 1;
+        return a.barangay_name.localeCompare(b.barangay_name);
+      });
 
       setEnergizedBarangays((prev) => ({
         ...prev,
@@ -312,57 +370,90 @@ export function Home() {
                     {loadingDetails.has(stats.municipality) ? (
                       <p className="text-gray-600 text-center py-4">Loading...</p>
                     ) : energizedBarangays[stats.municipality]?.length > 0 ? (
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Barangay
-                              </th>
-                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Total HH
-                              </th>
-                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Restored
-                              </th>
-                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Progress
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {energizedBarangays[stats.municipality].map((brgy) => (
-                              <tr key={brgy.barangay_id} className="hover:bg-gray-50">
-                                <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                                  {brgy.barangay_name}
-                                </td>
-                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 text-right">
-                                  {brgy.total_households.toLocaleString()}
-                                </td>
-                                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 text-right">
-                                  {brgy.restored_households.toLocaleString()}
-                                </td>
-                                <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                                  <div className="flex items-center justify-end gap-2">
-                                    <span className={`font-semibold ${getPercentageTextColor(brgy.percentage)}`}>
-                                      {brgy.percentage.toFixed(1)}%
-                                    </span>
-                                    <div className="w-24 bg-gray-200 rounded-full h-2 overflow-hidden">
-                                      <div
-                                        className={`h-full ${getPercentageColor(brgy.percentage)} transition-all`}
-                                        style={{ width: `${brgy.percentage}%` }}
-                                      />
-                                    </div>
+                      <div className="space-y-6">
+                        {/* Barangays with household data */}
+                        {energizedBarangays[stats.municipality].filter(b => b.has_household_data).length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-gray-700 mb-2 uppercase">
+                              With Household Restoration Data
+                            </h4>
+                            <div className="overflow-x-auto">
+                              <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                  <tr>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      Barangay
+                                    </th>
+                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      Total HH
+                                    </th>
+                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      Restored
+                                    </th>
+                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      Progress
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                  {energizedBarangays[stats.municipality]
+                                    .filter(b => b.has_household_data)
+                                    .map((brgy) => (
+                                      <tr key={brgy.barangay_id} className="hover:bg-gray-50">
+                                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                                          {brgy.barangay_name}
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 text-right">
+                                          {brgy.total_households.toLocaleString()}
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 text-right">
+                                          {brgy.restored_households.toLocaleString()}
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                                          <div className="flex items-center justify-end gap-2">
+                                            <span className={`font-semibold ${getPercentageTextColor(brgy.percentage)}`}>
+                                              {brgy.percentage.toFixed(1)}%
+                                            </span>
+                                            <div className="w-24 bg-gray-200 rounded-full h-2 overflow-hidden">
+                                              <div
+                                                className={`h-full ${getPercentageColor(brgy.percentage)} transition-all`}
+                                                style={{ width: `${brgy.percentage}%` }}
+                                              />
+                                            </div>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Barangays without household data */}
+                        {energizedBarangays[stats.municipality].filter(b => !b.has_household_data).length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-semibold text-gray-700 mb-2 uppercase">
+                              Without Household Data
+                            </h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                              {energizedBarangays[stats.municipality]
+                                .filter(b => !b.has_household_data)
+                                .map((brgy) => (
+                                  <div
+                                    key={brgy.barangay_id}
+                                    className="px-3 py-2 bg-green-50 border border-green-200 rounded text-sm text-green-800"
+                                  >
+                                    {brgy.barangay_name}
                                   </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                                ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <p className="text-gray-600 text-center py-4">
-                        No energized barangays with household restoration data yet
+                        No energized barangays yet
                       </p>
                     )}
                   </div>
