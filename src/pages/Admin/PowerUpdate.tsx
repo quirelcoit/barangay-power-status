@@ -835,17 +835,18 @@ export function PowerUpdate() {
             if (!barangay) continue;
 
             // Check if already marked as energized in database
-            const { data: existingUpdate } = await supabase
+            const { data: existingUpdates } = await supabase
               .from("barangay_updates")
               .select("id, power_status")
               .eq("barangay_id", barangayId)
               .eq("is_published", true)
               .order("created_at", { ascending: false })
-              .limit(1)
-              .single();
+              .limit(1);
+
+            const latestUpdate = existingUpdates?.[0];
 
             // Only insert if not already energized
-            if (!existingUpdate || existingUpdate.power_status !== "energized") {
+            if (!latestUpdate || latestUpdate.power_status !== "energized") {
               await supabase.from("barangay_updates").insert([
                 {
                   municipality: municipalityObj?.label || municipality,
