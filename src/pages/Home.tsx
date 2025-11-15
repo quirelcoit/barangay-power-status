@@ -1,20 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { Card, StatusBadge } from "../components";
-import { Search, ChevronDown, ChevronUp } from "lucide-react";
-
-interface BarangayWithUpdate {
-  id: string;
-  name: string;
-  municipality: string;
-  latestUpdate?: {
-    id: string;
-    headline: string;
-    power_status: "no_power" | "partial" | "energized";
-    created_at: string;
-  };
-}
+import { Card } from "../components";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface MunicipalityStats {
   municipality: string;
