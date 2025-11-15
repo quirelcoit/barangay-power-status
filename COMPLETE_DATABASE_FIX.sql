@@ -1,8 +1,118 @@
 -- ============================================================================
 -- COMPLETE FIX FOR BARANGAY HOUSEHOLD TOTALS
 -- Run this ENTIRE script in Supabase SQL Editor
--- This will diagnose and then fix the 300 defaults issue
+-- This will create tables (if missing), diagnose, and fix the 300 defaults issue
 -- ============================================================================
+
+-- STEP 0: CREATE TABLES IF THEY DON'T EXIST
+-- ============================================================================
+SELECT '========== Creating tables if missing ==========' as step;
+
+-- Create barangay_households table
+CREATE TABLE IF NOT EXISTS public.barangay_households (
+  id uuid primary key default uuid_generate_v4(),
+  municipality text not null,
+  barangay_id uuid not null references public.barangays(id),
+  barangay_name text not null,
+  total_households integer not null check (total_households > 0),
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  UNIQUE(barangay_id)
+);
+
+-- Create barangay_household_updates table
+CREATE TABLE IF NOT EXISTS public.barangay_household_updates (
+  id uuid primary key default uuid_generate_v4(),
+  municipality text not null,
+  barangay_id uuid not null references public.barangays(id),
+  barangay_name text not null,
+  total_households integer not null,
+  restored_households integer not null check (restored_households >= 0 and restored_households <= total_households),
+  remarks text,
+  photo_url text,
+  updated_by uuid references auth.users(id),
+  is_published boolean default true,
+  as_of_time timestamptz,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- Create override table
+CREATE TABLE IF NOT EXISTS public.barangay_household_overrides (
+  id uuid primary key default uuid_generate_v4(),
+  barangay_id uuid not null references public.barangays(id) on delete cascade,
+  override_total_households integer not null check (override_total_households > 0),
+  updated_by uuid references auth.users(id),
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  UNIQUE(barangay_id)
+);
+
+-- Create indexes
+CREATE INDEX IF NOT EXISTS idx_barangay_households_municipality ON public.barangay_households(municipality);
+CREATE INDEX IF NOT EXISTS idx_barangay_households_barangay_id ON public.barangay_households(barangay_id);
+CREATE INDEX IF NOT EXISTS idx_barangay_household_updates_barangay_id ON public.barangay_household_updates(barangay_id);
+CREATE INDEX IF NOT EXISTS idx_barangay_household_updates_municipality ON public.barangay_household_updates(municipality);
+CREATE INDEX IF NOT EXISTS idx_barangay_household_updates_updated_at ON public.barangay_household_updates(updated_at desc);
+CREATE INDEX IF NOT EXISTS idx_barangay_household_overrides_barangay_id ON public.barangay_household_overrides(barangay_id);
+
+-- Create view
+DROP VIEW IF EXISTS public.barangay_household_status;
+CREATE VIEW public.barangay_household_status AS
+WITH ranked_updates AS (
+  SELECT 
+    id, municipality, barangay_id, barangay_name, total_households,
+    restored_households, as_of_time, updated_at,
+    ROW_NUMBER() OVER (PARTITION BY barangay_id ORDER BY updated_at DESC, id DESC) as rn
+  FROM public.barangay_household_updates
+  WHERE is_published = true
+)
+SELECT 
+  bh.municipality,
+  bh.barangay_id,
+  bh.barangay_name,
+  COALESCE(bho.override_total_households, bh.total_households) as total_households,
+  bho.override_total_households as manual_total_households,
+  bh.total_households as baseline_total_households,
+  COALESCE(bhu.restored_households, 0) as restored_households,
+  COALESCE(bho.override_total_households, bh.total_households) - COALESCE(bhu.restored_households, 0) as for_restoration_households,
+  ROUND((COALESCE(bhu.restored_households, 0)::numeric / COALESCE(bho.override_total_households, bh.total_households)) * 100, 2) as percent_restored,
+  bhu.as_of_time,
+  bhu.updated_at as last_updated
+FROM public.barangay_households bh
+LEFT JOIN (SELECT * FROM ranked_updates WHERE rn = 1) bhu ON bh.barangay_id = bhu.barangay_id
+LEFT JOIN public.barangay_household_overrides bho ON bh.barangay_id = bho.barangay_id
+ORDER BY bh.municipality, bh.barangay_name;
+
+-- Enable RLS
+ALTER TABLE public.barangay_households ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.barangay_household_updates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.barangay_household_overrides ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies
+DROP POLICY IF EXISTS "Allow public to read barangay households" ON public.barangay_households;
+CREATE POLICY "Allow public to read barangay households" ON public.barangay_households FOR SELECT TO public USING (true);
+
+DROP POLICY IF EXISTS "Allow authenticated staff to manage barangay households" ON public.barangay_households;
+CREATE POLICY "Allow authenticated staff to manage barangay households" ON public.barangay_households FOR ALL TO authenticated
+USING (EXISTS (SELECT 1 FROM public.staff_profiles WHERE uid = auth.uid() AND (role = 'moderator' OR role = 'admin')));
+
+DROP POLICY IF EXISTS "Allow authenticated staff to manage barangay household overrides" ON public.barangay_household_overrides;
+CREATE POLICY "Allow authenticated staff to manage barangay household overrides" ON public.barangay_household_overrides FOR ALL TO authenticated
+USING (EXISTS (SELECT 1 FROM public.staff_profiles WHERE uid = auth.uid() AND (role = 'moderator' OR role = 'admin')));
+
+DROP POLICY IF EXISTS "Allow public to read published barangay household updates" ON public.barangay_household_updates;
+CREATE POLICY "Allow public to read published barangay household updates" ON public.barangay_household_updates FOR SELECT TO public USING (is_published = true);
+
+DROP POLICY IF EXISTS "Allow authenticated staff to insert barangay household updates" ON public.barangay_household_updates;
+CREATE POLICY "Allow authenticated staff to insert barangay household updates" ON public.barangay_household_updates FOR INSERT TO authenticated
+WITH CHECK (EXISTS (SELECT 1 FROM public.staff_profiles WHERE uid = auth.uid() AND (role = 'moderator' OR role = 'admin')));
+
+DROP POLICY IF EXISTS "Allow authenticated staff to update barangay household updates" ON public.barangay_household_updates;
+CREATE POLICY "Allow authenticated staff to update barangay household updates" ON public.barangay_household_updates FOR UPDATE TO authenticated
+USING (EXISTS (SELECT 1 FROM public.staff_profiles WHERE uid = auth.uid() AND (role = 'moderator' OR role = 'admin')));
+
+SELECT 'Tables and view created successfully' as status;
 
 -- STEP 1: DIAGNOSE CURRENT STATE
 -- ============================================================================
@@ -14,33 +124,7 @@ FROM public.barangays
 GROUP BY municipality
 ORDER BY municipality;
 
-SELECT 'Current data in barangay_households table:' as info;
-SELECT municipality, COUNT(*) as count, 
-       MIN(total_households) as min_total, 
-       MAX(total_households) as max_total,
-       COUNT(CASE WHEN total_households = 300 THEN 1 END) as count_with_300
-FROM public.barangay_households
-GROUP BY municipality
-ORDER BY municipality;
-
--- STEP 2: BACKUP EXISTING DATA (just in case)
--- ============================================================================
-SELECT '========== Creating backup tables ==========' as step;
-
-DROP TABLE IF EXISTS barangay_households_backup;
-CREATE TABLE barangay_households_backup AS 
-SELECT * FROM public.barangay_households;
-
-DROP TABLE IF EXISTS barangay_household_updates_backup;
-CREATE TABLE barangay_household_updates_backup AS 
-SELECT * FROM public.barangay_household_updates;
-
-SELECT 'Backup created. Rows backed up:' as info;
-SELECT 
-  (SELECT COUNT(*) FROM barangay_households_backup) as households_backup,
-  (SELECT COUNT(*) FROM barangay_household_updates_backup) as updates_backup;
-
--- STEP 3: CLEAR OLD DATA
+-- STEP 2: CLEAR OLD DATA (safe now that tables exist)
 -- ============================================================================
 SELECT '========== Clearing old data ==========' as step;
 
@@ -50,7 +134,7 @@ DELETE FROM public.barangay_household_updates;
 
 SELECT 'Old data cleared' as info;
 
--- STEP 4: INSERT CORRECT DATA
+-- STEP 3: INSERT CORRECT DATA
 -- ============================================================================
 SELECT '========== Inserting correct barangay household data ==========' as step;
 
@@ -223,7 +307,7 @@ LEFT JOIN provided_totals pt
 SELECT 'Inserted into barangay_household_updates:' as info, COUNT(*) as row_count
 FROM public.barangay_household_updates;
 
--- STEP 5: SYNC TO barangay_households
+-- STEP 4: SYNC TO barangay_households
 -- ============================================================================
 INSERT INTO public.barangay_households (municipality, barangay_id, barangay_name, total_households)
 SELECT DISTINCT ON (barangay_id)
@@ -237,7 +321,7 @@ ORDER BY barangay_id, updated_at DESC;
 SELECT 'Inserted into barangay_households:' as info, COUNT(*) as row_count
 FROM public.barangay_households;
 
--- STEP 6: VERIFICATION
+-- STEP 5: VERIFICATION
 -- ============================================================================
 SELECT '========== VERIFICATION: Results ==========' as step;
 
