@@ -33,7 +33,7 @@ interface BarangayHouseholdData {
 }
 
 const MUNICIPALITIES: Municipality[] = [
-  { value: "diffun", label: "Diffun", totalBarangays: 33 },
+  { value: "diffun", label: "DIFFUN, QUIRINO", totalBarangays: 33 },
   { value: "cabarroguis", label: "Cabarroguis", totalBarangays: 17 },
   { value: "saguday", label: "Saguday", totalBarangays: 9 },
   { value: "maddela", label: "Maddela", totalBarangays: 32 },
