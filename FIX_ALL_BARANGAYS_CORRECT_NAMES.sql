@@ -150,7 +150,7 @@ WITH provided_totals(municipality, barangay_name, total_households) AS (
     ('Nagtipunan','La Conwap (Guingin)',60),
     ('Nagtipunan','Landigan',347),
     ('Nagtipunan','Mataddi',60),
-    ('Nagtipunan','Matmad',0),
+    ('Nagtipunan','Matmad',1),
     ('Nagtipunan','Old Gumiad',60),
     ('Nagtipunan','Ponggo',975),
     ('Nagtipunan','San Dionisio II',744),
