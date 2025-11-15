@@ -3,6 +3,10 @@
 -- This uses the ACTUAL municipality names from your database
 -- ============================================================================
 
+-- First, drop the constraint that prevents 0 households
+ALTER TABLE public.barangay_households DROP CONSTRAINT IF EXISTS barangay_households_total_households_check;
+ALTER TABLE public.barangay_households ADD CONSTRAINT barangay_households_total_households_check CHECK (total_households >= 0);
+
 -- Clear existing data
 DELETE FROM public.barangay_household_overrides;
 DELETE FROM public.barangay_households;
@@ -150,7 +154,7 @@ WITH provided_totals(municipality, barangay_name, total_households) AS (
     ('Nagtipunan','La Conwap (Guingin)',60),
     ('Nagtipunan','Landigan',347),
     ('Nagtipunan','Mataddi',60),
-    ('Nagtipunan','Matmad',1),
+    ('Nagtipunan','Matmad',0),
     ('Nagtipunan','Old Gumiad',60),
     ('Nagtipunan','Ponggo',975),
     ('Nagtipunan','San Dionisio II',744),
