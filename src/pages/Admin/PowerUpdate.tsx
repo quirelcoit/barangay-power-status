@@ -271,6 +271,39 @@ export function PowerUpdate() {
           });
           return newUpdates;
         });
+
+        // Auto-sync: Mark barangays with restored > 0 as energized in Barangay Updates tab
+        const energizedBarangayIds = barangayData
+          .filter((b) => b.restoredHouseholds > 0)
+          .map((b) => b.barangay_id);
+
+        if (energizedBarangayIds.length > 0) {
+          setUpdates((prev) => {
+            const existing = prev[municipalityLabel]?.energizedBarangayIds || [];
+            const merged = [...new Set([...existing, ...energizedBarangayIds])];
+            
+            return {
+              ...prev,
+              [municipalityLabel]: {
+                ...prev[municipalityLabel],
+                energizedBarangayIds: merged,
+                energized: merged.length,
+              },
+            };
+          });
+
+          // Also update localStorage
+          const savedUpdates = JSON.parse(localStorage.getItem("powerUpdates") || "{}");
+          const existingIds = savedUpdates[municipalityLabel]?.energizedBarangayIds || [];
+          const mergedIds = [...new Set([...existingIds, ...energizedBarangayIds])];
+          
+          savedUpdates[municipalityLabel] = {
+            ...savedUpdates[municipalityLabel],
+            energizedBarangayIds: mergedIds,
+            energized: mergedIds.length,
+          };
+          localStorage.setItem("powerUpdates", JSON.stringify(savedUpdates));
+        }
       }
     } catch (err) {
       console.warn("Could not load barangay household data:", err);
