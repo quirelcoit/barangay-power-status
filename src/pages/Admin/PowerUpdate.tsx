@@ -817,12 +817,16 @@ export function PowerUpdate() {
       }
 
       // Auto-sync to Barangay Updates tab: mark barangays with restored > 0 as energized
+      console.log("🔄 Starting auto-sync...", barangayHouseholdUpdates);
+      
       for (const [municipality, barangayUpdates] of Object.entries(
         barangayHouseholdUpdates
       )) {
         const energizedBarangayIds = Object.entries(barangayUpdates)
           .filter(([_, restoredCount]) => restoredCount > 0)
           .map(([barangayId]) => barangayId);
+
+        console.log(`📍 ${municipality}: ${energizedBarangayIds.length} energized barangays`, energizedBarangayIds);
 
         if (energizedBarangayIds.length === 0) continue;
 
@@ -831,13 +835,23 @@ export function PowerUpdate() {
         // Insert energized status into barangay_updates table for each barangay
         for (const barangayId of energizedBarangayIds) {
           // Get barangay name from database
-          const { data: barangayData } = await supabase
+          const { data: barangayData, error: fetchError } = await supabase
             .from("barangays")
             .select("name")
             .eq("id", barangayId)
             .single();
 
-          if (!barangayData) continue;
+          if (fetchError) {
+            console.error("❌ Failed to fetch barangay name:", barangayId, fetchError);
+            continue;
+          }
+
+          if (!barangayData) {
+            console.error("❌ No barangay data found for:", barangayId);
+            continue;
+          }
+
+          console.log(`✅ Found barangay: ${barangayData.name}`);
 
           // Check if already marked as energized in database
           const { data: existingUpdates } = await supabase
@@ -850,23 +864,29 @@ export function PowerUpdate() {
 
           const latestUpdate = existingUpdates?.[0];
 
-          // Only insert if not already energized
-          if (!latestUpdate || latestUpdate.power_status !== "energized") {
-            const { error: insertError } = await supabase.from("barangay_updates").insert([
-              {
-                municipality: municipalityObj?.label || municipality,
-                barangay_id: barangayId,
-                barangay_name: barangayData.name,
-                headline: `Power restored to ${barangayData.name}`,
-                power_status: "energized",
-                is_published: true,
-                updated_by: session?.session?.user?.id,
-              },
-            ]);
+          if (latestUpdate?.power_status === "energized") {
+            console.log(`⏭️ ${barangayData.name} already energized, skipping`);
+            continue;
+          }
 
-            if (insertError) {
-              console.error("Failed to auto-sync energized status:", insertError);
-            }
+          // Insert energized status
+          console.log(`💾 Inserting energized status for ${barangayData.name}...`);
+          const { error: insertError } = await supabase.from("barangay_updates").insert([
+            {
+              municipality: municipalityObj?.label || municipality,
+              barangay_id: barangayId,
+              barangay_name: barangayData.name,
+              headline: `Power restored to ${barangayData.name}`,
+              power_status: "energized",
+              is_published: true,
+              updated_by: session?.session?.user?.id,
+            },
+          ]);
+
+          if (insertError) {
+            console.error("❌ Failed to insert energized status:", barangayData.name, insertError);
+          } else {
+            console.log(`✅ Successfully marked ${barangayData.name} as energized!`);
           }
         }
 
