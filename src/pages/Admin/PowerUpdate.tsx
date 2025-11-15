@@ -824,70 +824,78 @@ export function PowerUpdate() {
           .filter(([_, restoredCount]) => restoredCount > 0)
           .map(([barangayId]) => barangayId);
 
-        if (energizedBarangayIds.length > 0) {
-          // Get barangay names for the inserts
-          const barangayArray = barangayHouseholdData[municipality] || [];
-          const municipalityObj = MUNICIPALITIES.find((m) => m.value === municipality);
-          
-          // Insert energized status into barangay_updates table for each barangay
-          for (const barangayId of energizedBarangayIds) {
-            const barangay = barangayArray.find((b) => b.barangay_id === barangayId);
-            if (!barangay) continue;
+        if (energizedBarangayIds.length === 0) continue;
 
-            // Check if already marked as energized in database
-            const { data: existingUpdates } = await supabase
-              .from("barangay_updates")
-              .select("id, power_status")
-              .eq("barangay_id", barangayId)
-              .eq("is_published", true)
-              .order("created_at", { ascending: false })
-              .limit(1);
+        const municipalityObj = MUNICIPALITIES.find((m) => m.value === municipality);
+        
+        // Insert energized status into barangay_updates table for each barangay
+        for (const barangayId of energizedBarangayIds) {
+          // Get barangay name from database
+          const { data: barangayData } = await supabase
+            .from("barangays")
+            .select("name")
+            .eq("id", barangayId)
+            .single();
 
-            const latestUpdate = existingUpdates?.[0];
+          if (!barangayData) continue;
 
-            // Only insert if not already energized
-            if (!latestUpdate || latestUpdate.power_status !== "energized") {
-              await supabase.from("barangay_updates").insert([
-                {
-                  municipality: municipalityObj?.label || municipality,
-                  barangay_id: barangayId,
-                  barangay_name: barangay.barangay_name,
-                  headline: `Power restored to ${barangay.barangay_name}`,
-                  power_status: "energized",
-                  is_published: true,
-                  updated_by: session?.session?.user?.id,
-                },
-              ]);
+          // Check if already marked as energized in database
+          const { data: existingUpdates } = await supabase
+            .from("barangay_updates")
+            .select("id, power_status")
+            .eq("barangay_id", barangayId)
+            .eq("is_published", true)
+            .order("created_at", { ascending: false })
+            .limit(1);
+
+          const latestUpdate = existingUpdates?.[0];
+
+          // Only insert if not already energized
+          if (!latestUpdate || latestUpdate.power_status !== "energized") {
+            const { error: insertError } = await supabase.from("barangay_updates").insert([
+              {
+                municipality: municipalityObj?.label || municipality,
+                barangay_id: barangayId,
+                barangay_name: barangayData.name,
+                headline: `Power restored to ${barangayData.name}`,
+                power_status: "energized",
+                is_published: true,
+                updated_by: session?.session?.user?.id,
+              },
+            ]);
+
+            if (insertError) {
+              console.error("Failed to auto-sync energized status:", insertError);
             }
           }
+        }
 
-          // Update the local state to mark these barangays as energized
-          setUpdates((prev) => ({
-            ...prev,
-            [municipality]: {
-              ...prev[municipality],
-              energizedBarangayIds: [
-                ...(prev[municipality]?.energizedBarangayIds || []),
-                ...energizedBarangayIds.filter(
-                  (id) => !prev[municipality]?.energizedBarangayIds?.includes(id)
-                ),
-              ],
-            },
-          }));
-
-          // Save to localStorage
-          const savedUpdates = JSON.parse(localStorage.getItem("powerUpdates") || "{}");
-          savedUpdates[municipality] = {
-            ...savedUpdates[municipality],
+        // Update the local state to mark these barangays as energized
+        setUpdates((prev) => ({
+          ...prev,
+          [municipality]: {
+            ...prev[municipality],
             energizedBarangayIds: [
-              ...(savedUpdates[municipality]?.energizedBarangayIds || []),
+              ...(prev[municipality]?.energizedBarangayIds || []),
               ...energizedBarangayIds.filter(
-                (id) => !savedUpdates[municipality]?.energizedBarangayIds?.includes(id)
+                (id) => !prev[municipality]?.energizedBarangayIds?.includes(id)
               ),
             ],
-          };
-          localStorage.setItem("powerUpdates", JSON.stringify(savedUpdates));
-        }
+          },
+        }));
+
+        // Save to localStorage
+        const savedUpdates = JSON.parse(localStorage.getItem("powerUpdates") || "{}");
+        savedUpdates[municipality] = {
+          ...savedUpdates[municipality],
+          energizedBarangayIds: [
+            ...(savedUpdates[municipality]?.energizedBarangayIds || []),
+            ...energizedBarangayIds.filter(
+              (id) => !savedUpdates[municipality]?.energizedBarangayIds?.includes(id)
+            ),
+          ],
+        };
+        localStorage.setItem("powerUpdates", JSON.stringify(savedUpdates));
       }
 
       setSubmitted(true);
