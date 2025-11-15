@@ -783,6 +783,44 @@ export function PowerUpdate() {
         }
       }
 
+      // Auto-sync to Barangay Updates tab: mark barangays with restored > 0 as energized
+      for (const [municipality, barangayUpdates] of Object.entries(
+        barangayHouseholdUpdates
+      )) {
+        const energizedBarangayIds = Object.entries(barangayUpdates)
+          .filter(([_, restoredCount]) => restoredCount > 0)
+          .map(([barangayId]) => barangayId);
+
+        if (energizedBarangayIds.length > 0) {
+          // Update the local state to mark these barangays as energized
+          setUpdates((prev) => ({
+            ...prev,
+            [municipality]: {
+              ...prev[municipality],
+              energizedBarangayIds: [
+                ...(prev[municipality]?.energizedBarangayIds || []),
+                ...energizedBarangayIds.filter(
+                  (id) => !prev[municipality]?.energizedBarangayIds?.includes(id)
+                ),
+              ],
+            },
+          }));
+
+          // Save to localStorage
+          const savedUpdates = JSON.parse(localStorage.getItem("powerUpdates") || "{}");
+          savedUpdates[municipality] = {
+            ...savedUpdates[municipality],
+            energizedBarangayIds: [
+              ...(savedUpdates[municipality]?.energizedBarangayIds || []),
+              ...energizedBarangayIds.filter(
+                (id) => !savedUpdates[municipality]?.energizedBarangayIds?.includes(id)
+              ),
+            ],
+          };
+          localStorage.setItem("powerUpdates", JSON.stringify(savedUpdates));
+        }
+      }
+
       setSubmitted(true);
       addToast(
         "✅ Barangay household restoration updates submitted successfully!",
