@@ -765,14 +765,19 @@ export function PowerUpdate() {
 
     setLoading(true);
 
+    console.log("🚀 SUBMIT STARTED - barangayHouseholdUpdates:", barangayHouseholdUpdates);
+
     try {
       const { data: session } = await supabase.auth.getSession();
       const asOfDateTime = new Date(`${asOfTime}:00`).toISOString();
+
+      console.log("📅 Session and time:", { session: session?.session?.user?.id, asOfDateTime });
 
       // Process each municipality and barangay
       for (const [municipality, barangayUpdates] of Object.entries(
         barangayHouseholdUpdates
       )) {
+        console.log(`🏘️ Processing ${municipality}:`, barangayUpdates);
         for (const [barangayId, restoredCount] of Object.entries(
           barangayUpdates
         )) {
