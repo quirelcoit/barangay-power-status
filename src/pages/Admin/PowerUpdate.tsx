@@ -834,9 +834,7 @@ export function PowerUpdate() {
 
       console.log("🔄 Auto-sync energizing", allBarangaysToEnergize.length, "barangays", allBarangaysToEnergize);
 
-      for (const { municipality, barangayId } of allBarangaysToEnergize) {
-        const municipalityObj = MUNICIPALITIES.find((m) => m.value === municipality);
-        
+      for (const { barangayId } of allBarangaysToEnergize) {
         const { data: barangayData } = await supabase
           .from("barangays")
           .select("name")
@@ -853,12 +851,13 @@ export function PowerUpdate() {
         const { error: insertError } = await supabase
           .from("barangay_updates")
           .insert([{
-            municipality: municipalityObj?.label || municipality,
             barangay_id: barangayId,
             headline: `Power restored to ${barangayData.name}`,
+            body: null,
             power_status: "energized",
+            eta: null,
+            author_uid: session?.session?.user?.id,
             is_published: true,
-            updated_by: session?.session?.user?.id,
           }]);
 
         if (insertError) {
