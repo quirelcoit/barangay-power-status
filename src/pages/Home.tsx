@@ -45,6 +45,8 @@ export function Home() {
     try {
       setLoading(true);
 
+      console.log("🏠 HOME: Loading municipality stats...");
+
       // Load household data - get ALL records ordered by updated_at
       const { data: householdUpdates, error: householdError } = await supabase
         .from("barangay_household_updates")
@@ -55,6 +57,8 @@ export function Home() {
 
       if (householdError) throw householdError;
 
+      console.log("🏠 HOME: Total household records:", householdUpdates?.length);
+
       // Get LATEST record per barangay (handles duplicates)
       const latestByBarangay = new Map();
       householdUpdates?.forEach((update) => {
@@ -63,7 +67,16 @@ export function Home() {
         }
       });
 
-      console.log("🔍 Latest household data per barangay:", latestByBarangay.size);
+      console.log("🏠 HOME: Unique barangays:", latestByBarangay.size);
+
+      // Count how many Aglipay barangays have restored > 0
+      let aglipayEnergizedCount = 0;
+      latestByBarangay.forEach((update) => {
+        if (update.municipality === "Aglipay" && update.restored_households > 0) {
+          aglipayEnergizedCount++;
+        }
+      });
+      console.log("🏠 HOME: Aglipay energized count:", aglipayEnergizedCount);
 
       // Group by municipality and count
       const municipalityMap = new Map<string, MunicipalityStats>();
