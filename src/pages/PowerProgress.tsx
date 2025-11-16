@@ -59,17 +59,6 @@ const MUNICIPALITY_TOTALS: { [key: string]: number } = {
   "SAN AGUSTIN, ISABELA": 18,
 };
 
-// Define fixed total households for each municipality (must match PowerUpdate.tsx)
-const HOUSEHOLD_TOTALS: { [key: string]: number } = {
-  DIFFUN: 15013,
-  CABARROGUIS: 9204,
-  SAGUDAY: 4468,
-  MADDELA: 10102,
-  AGLIPAY: 7308,
-  NAGTIPUNAN: 4701,
-  "SAN AGUSTIN, ISABELA": 4194,
-};
-
 const formatTimestamp = (dateString: string): string => {
   const date = new Date(dateString);
   const options: Intl.DateTimeFormatOptions = {
@@ -209,11 +198,10 @@ export function PowerProgress() {
           };
         }
 
-        // Return default data with fixed household totals
-        const totalHH = HOUSEHOLD_TOTALS[municipality] || 0;
+        // Return default data
         return {
           municipality,
-          total_households: totalHH,
+          total_households: 0,
           energized_households: 0,
           percent_energized: 0,
           as_of_time: null,
@@ -573,7 +561,7 @@ export function PowerProgress() {
                               <div
                                 className={`text-center font-bold text-xs sm:text-sm rounded ${barangayPercentColor} py-1`}
                               >
-                                {muni.percent_energized.toFixed(1)}%
+                                {muni.percent_energized.toFixed(2)}%
                               </div>
                               <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                                 <div
@@ -608,7 +596,7 @@ export function PowerProgress() {
                               <div
                                 className={`text-center font-bold text-xs sm:text-sm rounded ${householdPercentColor} py-1`}
                               >
-                                {hhPercent.toFixed(1)}%
+                                {hhPercent.toFixed(2)}%
                               </div>
                               <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                                 <div

@@ -36,7 +36,7 @@ SELECT
   partial_barangays,
   no_power_barangays,
   CASE 
-    WHEN total_barangays > 0 THEN ROUND((energized_barangays::numeric / total_barangays::numeric) * 100, 1)
+    WHEN total_barangays > 0 THEN ROUND((energized_barangays::numeric / total_barangays::numeric) * 100, 2)
     ELSE 0 
   END as percent_energized,
   as_of_time,
@@ -63,7 +63,7 @@ SELECT
   SUM(restored_households) as energized_households,
   CASE 
     WHEN SUM(total_households) > 0 
-    THEN ROUND((SUM(restored_households)::numeric / SUM(total_households)::numeric) * 100, 1)
+    THEN ROUND((SUM(restored_households)::numeric / SUM(total_households)::numeric) * 100, 2)
     ELSE 0 
   END as percent_energized,
   MAX(updated_at) as as_of_time,

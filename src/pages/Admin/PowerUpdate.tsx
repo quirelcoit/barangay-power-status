@@ -1571,9 +1571,13 @@ export function PowerUpdate() {
                               {/* Barangay Grid Header */}
                               <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-gray-700 pb-2 border-b border-gray-200">
                                 <div className="col-span-3">Barangay</div>
-                                <div className="col-span-2">Total Households</div>
+                                <div className="col-span-2">
+                                  Total Households
+                                </div>
                                 <div className="col-span-2">Restored</div>
-                                <div className="col-span-2">For Restoration</div>
+                                <div className="col-span-2">
+                                  For Restoration
+                                </div>
                                 <div className="col-span-3">%</div>
                               </div>
 
