@@ -26,6 +26,8 @@ interface EnergizedBarangay {
 }
 
 export function Home() {
+  console.log("🎯 HOME COMPONENT LOADED - VERSION 2024-11-16");
+  
   const navigate = useNavigate();
   const [municipalityStats, setMunicipalityStats] = useState<
     MunicipalityStats[]
@@ -40,6 +42,7 @@ export function Home() {
   const [loadingDetails, setLoadingDetails] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    console.log("🎯 useEffect TRIGGERED - calling loadMunicipalityStats");
     loadMunicipalityStats();
   }, []);
 
