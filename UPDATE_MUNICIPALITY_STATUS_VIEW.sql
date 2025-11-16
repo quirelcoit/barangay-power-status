@@ -5,27 +5,17 @@
 DROP VIEW IF EXISTS municipality_status;
 
 CREATE VIEW municipality_status AS
-WITH latest_household_data AS (
-  SELECT DISTINCT ON (barangay_id)
-    municipality,
-    barangay_id,
-    restored_households,
-    total_households,
-    updated_at as as_of_time
-  FROM barangay_household_updates
-  ORDER BY barangay_id, updated_at DESC
-),
-municipality_counts AS (
+WITH barangay_counts AS (
   SELECT 
     b.municipality,
     COUNT(DISTINCT b.id) as total_barangays,
-    COUNT(DISTINCT CASE WHEN h.restored_households > 0 THEN b.id END) as energized_barangays,
+    COUNT(DISTINCT CASE WHEN bhs.restored_households > 0 THEN b.id END) as energized_barangays,
     0 as partial_barangays,
-    COUNT(DISTINCT CASE WHEN h.restored_households = 0 OR h.restored_households IS NULL THEN b.id END) as no_power_barangays,
-    MAX(h.as_of_time) as as_of_time,
-    MAX(h.as_of_time) as last_updated
+    COUNT(DISTINCT CASE WHEN bhs.restored_households = 0 OR bhs.restored_households IS NULL THEN b.id END) as no_power_barangays,
+    MAX(bhs.last_updated) as as_of_time,
+    MAX(bhs.last_updated) as last_updated
   FROM barangays b
-  LEFT JOIN latest_household_data h ON b.id = h.barangay_id
+  LEFT JOIN barangay_household_status bhs ON b.id = bhs.barangay_id
   WHERE b.is_active = true
   GROUP BY b.municipality
 )
@@ -41,22 +31,12 @@ SELECT
   END as percent_energized,
   as_of_time,
   last_updated
-FROM municipality_counts;
+FROM barangay_counts;
 
 -- 2. Drop and recreate household_status view  
 DROP VIEW IF EXISTS household_status;
 
 CREATE VIEW household_status AS
-WITH latest_household_data AS (
-  SELECT DISTINCT ON (barangay_id)
-    municipality,
-    barangay_id,
-    total_households,
-    restored_households,
-    updated_at
-  FROM barangay_household_updates
-  ORDER BY barangay_id, updated_at DESC
-)
 SELECT 
   municipality,
   SUM(total_households) as total_households,
@@ -66,7 +46,7 @@ SELECT
     THEN ROUND((SUM(restored_households)::numeric / SUM(total_households)::numeric) * 100, 2)
     ELSE 0 
   END as percent_energized,
-  MAX(updated_at) as as_of_time,
-  MAX(updated_at) as updated_at
-FROM latest_household_data
+  MAX(last_updated) as as_of_time,
+  MAX(last_updated) as updated_at
+FROM barangay_household_status
 GROUP BY municipality;
