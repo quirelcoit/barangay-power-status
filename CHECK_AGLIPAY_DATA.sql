@@ -1,32 +1,32 @@
--- Find out EXACTLY what's in the database for Aglipay
+-- SIMPLE: Show me all Aglipay barangays with their latest restored_households value
+WITH latest_data AS (
+  SELECT DISTINCT ON (barangay_id)
+    barangay_id,
+    barangay_name,
+    restored_households,
+    total_households,
+    updated_at
+  FROM barangay_household_updates
+  WHERE municipality = 'Aglipay'
+  ORDER BY barangay_id, updated_at DESC
+)
 SELECT 
-  barangay_id,
   barangay_name,
   restored_households,
   total_households,
-  updated_at
-FROM barangay_household_updates
-WHERE municipality = 'Aglipay'
-ORDER BY barangay_name, updated_at DESC;
+  CASE WHEN restored_households > 0 THEN '✅ ENERGIZED' ELSE '❌ NOT ENERGIZED' END as status
+FROM latest_data
+ORDER BY barangay_name;
 
--- Count ALL rows for Aglipay
-SELECT COUNT(*) as total_rows
-FROM barangay_household_updates
-WHERE municipality = 'Aglipay';
-
--- Count unique barangays (total)
-SELECT COUNT(DISTINCT barangay_id) as unique_barangays
-FROM barangay_household_updates
-WHERE municipality = 'Aglipay';
-
--- Count unique barangays with restored > 0
-SELECT COUNT(DISTINCT barangay_id) as energized_count
-FROM barangay_household_updates
-WHERE municipality = 'Aglipay' AND restored_households > 0;
-
--- Find duplicates
-SELECT barangay_id, barangay_name, COUNT(*) as duplicate_count
-FROM barangay_household_updates
-WHERE municipality = 'Aglipay'
-GROUP BY barangay_id, barangay_name
-HAVING COUNT(*) > 1;
+-- Count energized
+WITH latest_data AS (
+  SELECT DISTINCT ON (barangay_id)
+    barangay_id,
+    restored_households
+  FROM barangay_household_updates
+  WHERE municipality = 'Aglipay'
+  ORDER BY barangay_id, updated_at DESC
+)
+SELECT COUNT(*) as energized_count
+FROM latest_data
+WHERE restored_households > 0;

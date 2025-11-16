@@ -57,7 +57,10 @@ export function Home() {
 
       if (householdError) throw householdError;
 
-      console.log("🏠 HOME: Total household records:", householdUpdates?.length);
+      console.log(
+        "🏠 HOME: Total household records:",
+        householdUpdates?.length
+      );
 
       // Get LATEST record per barangay (handles duplicates)
       const latestByBarangay = new Map();
@@ -72,7 +75,10 @@ export function Home() {
       // Count how many Aglipay barangays have restored > 0
       let aglipayEnergizedCount = 0;
       latestByBarangay.forEach((update) => {
-        if (update.municipality === "Aglipay" && update.restored_households > 0) {
+        if (
+          update.municipality === "Aglipay" &&
+          update.restored_households > 0
+        ) {
           aglipayEnergizedCount++;
         }
       });
