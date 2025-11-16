@@ -269,7 +269,7 @@ export function Home() {
         {/* Hero */}
         <div className="mb-8 text-center">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-            Power Restoration Status
+            Power Restoration Status (v2024-11-16)
           </h1>
           <p className="text-sm sm:text-base text-gray-600">
             Real-time power restoration updates across all municipalities
