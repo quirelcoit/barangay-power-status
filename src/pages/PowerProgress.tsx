@@ -246,32 +246,27 @@ export function PowerProgress() {
       if (bErr) throw bErr;
 
       if (muniBarangays && muniBarangays.length > 0) {
-        // Get the latest barangay updates for each barangay in this municipality
-        const { data: updates, error: updatesErr } = await supabase
-          .from("barangay_updates")
-          .select("barangay_id, power_status")
-          .in(
-            "barangay_id",
-            muniBarangays.map((b) => b.id)
-          )
-          .eq("is_published", true)
-          .order("created_at", { ascending: false });
+        // Get household data to determine energized status
+        const { data: hhData, error: hhErr } = await supabase
+          .from("barangay_household_status")
+          .select("barangay_id, restored_households")
+          .eq("municipality", municipality);
 
-        if (updatesErr) throw updatesErr;
+        if (hhErr) throw hhErr;
 
-        // Map updates to barangays (get latest power_status for each)
-        const updateMap = new Map();
-        (updates || []).forEach((update) => {
-          if (!updateMap.has(update.barangay_id)) {
-            updateMap.set(update.barangay_id, update.power_status);
-          }
-        });
+        // Map household data to check if energized (restored_households > 0)
+        const hhMap = new Map(
+          (hhData || []).map((hh) => [
+            hh.barangay_id,
+            hh.restored_households > 0,
+          ])
+        );
 
-        // Create barangay statuses based on latest power status
+        // Create barangay statuses based on household restoration data
         const barangayStatuses: BarangayStatus[] = muniBarangays.map((b) => ({
           barangay_id: b.id,
           barangay_name: b.name,
-          is_energized: updateMap.get(b.id) === "energized" || false,
+          is_energized: hhMap.get(b.id) || false,
         }));
 
         const newDetails = new Map(barangayDetails);
@@ -678,13 +673,13 @@ export function PowerProgress() {
                                           return (
                                             <div
                                               key={brgy.barangay_id}
-                                              className="p-3 rounded-lg bg-green-50 border-2 border-green-300"
+                                              className="p-3 sm:p-4 rounded-lg bg-green-50 border-2 border-green-300"
                                             >
-                                              <div className="flex items-center gap-2 mb-2">
-                                                <span className="text-lg">
+                                              <div className="flex items-center gap-2 mb-3">
+                                                <span className="text-base sm:text-lg flex-shrink-0">
                                                   ⚡
                                                 </span>
-                                                <span className="font-semibold text-gray-900">
+                                                <span className="font-semibold text-gray-900 text-sm sm:text-base break-words">
                                                   {brgy.barangay_name}
                                                 </span>
                                               </div>
@@ -692,7 +687,7 @@ export function PowerProgress() {
                                                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5 text-xs sm:text-sm">
                                                   <div>
                                                     <p className="text-gray-600">
-                                                      Total HH
+                                                      Total Households
                                                     </p>
                                                     <p className="font-bold text-gray-900">
                                                       {householdInfo.total_households.toLocaleString()}
