@@ -45,37 +45,30 @@ export function Home() {
     try {
       setLoading(true);
 
-      // Load barangay-level statistics
-      const { data: barangayData, error: barangayError } = await supabase
-        .from("barangays")
-        .select("id, name, municipality")
-        .eq("is_active", true);
-
-      if (barangayError) throw barangayError;
-
-      // Load household-level statistics from latest updates
+      // Load household data - this is the source of truth for energized barangays
       const { data: householdUpdates, error: householdError } = await supabase
         .from("barangay_household_updates")
-        .select(
-          "municipality, barangay_id, barangay_name, total_households, restored_households, updated_at"
-        )
-        .order("updated_at", { ascending: false });
+        .select("municipality, barangay_id, total_households, restored_households")
+        .gt("restored_households", 0); // Only get barangays with restoration data
 
       if (householdError) throw householdError;
 
-      // Get latest household data per barangay
-      const latestHouseholdByBarangay = new Map();
-      householdUpdates?.forEach((update) => {
-        if (!latestHouseholdByBarangay.has(update.barangay_id)) {
-          latestHouseholdByBarangay.set(update.barangay_id, update);
-        }
-      });
+      console.log("🔍 Household data:", householdUpdates);
 
-      // Group by municipality
+      // Group by municipality and count
       const municipalityMap = new Map<string, MunicipalityStats>();
 
-      barangayData?.forEach((barangay) => {
-        const muni = barangay.municipality;
+      // Get total barangays per municipality
+      const { data: allBarangays, error: barangaysError } = await supabase
+        .from("barangays")
+        .select("municipality")
+        .eq("is_active", true);
+
+      if (barangaysError) throw barangaysError;
+
+      // Initialize municipalities with total counts
+      allBarangays?.forEach((brgy) => {
+        const muni = brgy.municipality;
         if (!municipalityMap.has(muni)) {
           municipalityMap.set(muni, {
             municipality: muni,
@@ -87,21 +80,28 @@ export function Home() {
             householdPercentage: 0,
           });
         }
+        municipalityMap.get(muni)!.totalBarangays++;
+      });
+
+      // Count energized barangays and household stats
+      const countedBarangays = new Set<string>();
+      householdUpdates?.forEach((update) => {
+        const muni = update.municipality;
+        if (!municipalityMap.has(muni)) return;
 
         const stats = municipalityMap.get(muni)!;
-        stats.totalBarangays++;
-
-        // Count energized barangays based on household restoration data
-        const householdData = latestHouseholdByBarangay.get(barangay.id);
-        if (householdData) {
-          // A barangay is energized if it has restored_households > 0
-          if (householdData.restored_households > 0) {
-            stats.energizedBarangays++;
-          }
-          stats.totalHouseholds += householdData.total_households || 0;
-          stats.restoredHouseholds += householdData.restored_households || 0;
+        
+        // Count each barangay only once
+        if (!countedBarangays.has(update.barangay_id)) {
+          stats.energizedBarangays++;
+          countedBarangays.add(update.barangay_id);
         }
+        
+        stats.totalHouseholds += update.total_households || 0;
+        stats.restoredHouseholds += update.restored_households || 0;
       });
+
+      console.log("📊 Municipality stats:", Array.from(municipalityMap.values()));
 
       // Calculate percentages
       const statsArray = Array.from(municipalityMap.values())
