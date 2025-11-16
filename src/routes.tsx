@@ -21,8 +21,8 @@ export function AppRoutes() {
     <Router>
       <Navbar />
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/progress" element={<PowerProgress />} />
+        <Route path="/" element={<PowerProgress />} />
+        <Route path="/home-new" element={<Home />} />
         <Route path="/report" element={<ReportNew />} />
         <Route path="/barangay/:barangayId" element={<BarangayView />} />
         <Route path="/admin/login" element={<AdminLogin />} />
