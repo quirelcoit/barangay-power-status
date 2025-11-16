@@ -1,10 +1,7 @@
--- UPDATE municipality_status view to count from household restoration data
+-- UPDATE municipality_status AND household_status views to count from household restoration data
 -- Run this in Supabase SQL editor
 
--- First, let's see what the current view definition is
--- (This is just to check - you might need to recreate the view)
-
--- Drop and recreate the municipality_status view to use household data
+-- 1. Drop and recreate municipality_status view
 DROP VIEW IF EXISTS municipality_status;
 
 CREATE VIEW municipality_status AS
@@ -45,3 +42,31 @@ SELECT
   as_of_time,
   last_updated
 FROM municipality_counts;
+
+-- 2. Drop and recreate household_status view  
+DROP VIEW IF EXISTS household_status;
+
+CREATE VIEW household_status AS
+WITH latest_household_data AS (
+  SELECT DISTINCT ON (barangay_id)
+    municipality,
+    barangay_id,
+    total_households,
+    restored_households,
+    updated_at
+  FROM barangay_household_updates
+  ORDER BY barangay_id, updated_at DESC
+)
+SELECT 
+  municipality,
+  SUM(total_households) as total_households,
+  SUM(restored_households) as energized_households,
+  CASE 
+    WHEN SUM(total_households) > 0 
+    THEN ROUND((SUM(restored_households)::numeric / SUM(total_households)::numeric) * 100, 1)
+    ELSE 0 
+  END as percent_energized,
+  MAX(updated_at) as as_of_time,
+  MAX(updated_at) as updated_at
+FROM latest_household_data
+GROUP BY municipality;

@@ -1630,7 +1630,7 @@ export function PowerUpdate() {
                                       <div className="space-y-1">
                                         <input
                                           type="number"
-                                          min="1"
+                                          min="0"
                                           value={
                                             manualTotalInputs[
                                               barangay.barangay_id
