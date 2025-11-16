@@ -4,6 +4,8 @@ import { supabase } from "../lib/supabase";
 import { Card } from "../components";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
+// BUILD TIMESTAMP: 2025-11-16-FIX-COUNT
+
 interface MunicipalityStats {
   municipality: string;
   totalBarangays: number;
