@@ -608,7 +608,7 @@ export function PowerUpdate() {
     const stored = localStorage.getItem(storageKey);
     const data = stored ? JSON.parse(stored) : {};
     if (!data[municipality]) data[municipality] = {};
-    data[municipality][barangayId] = Math.max(0, restoredCount);
+    data[municipality][barangayId] = restoredCount >= 0 ? restoredCount : 0;
     localStorage.setItem(storageKey, JSON.stringify(data));
   };
 
@@ -636,20 +636,8 @@ export function PowerUpdate() {
     }
 
     const parsed = parseInt(trimmed, 10);
-    if (Number.isNaN(parsed) || parsed <= 0) {
-      addToast("Total households must be a positive number", "error");
-      setManualTotalInputs((prev) => ({
-        ...prev,
-        [barangay.barangay_id]: String(barangay.total_households),
-      }));
-      return;
-    }
-
-    if (parsed < (barangay.restoredHouseholds || 0)) {
-      addToast(
-        `${barangay.barangay_name} already has ${barangay.restoredHouseholds} restored households`,
-        "error"
-      );
+    if (Number.isNaN(parsed) || parsed < 0) {
+      addToast("Total households must be zero or positive", "error");
       setManualTotalInputs((prev) => ({
         ...prev,
         [barangay.barangay_id]: String(barangay.total_households),
@@ -1583,9 +1571,9 @@ export function PowerUpdate() {
                               {/* Barangay Grid Header */}
                               <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-gray-700 pb-2 border-b border-gray-200">
                                 <div className="col-span-3">Barangay</div>
-                                <div className="col-span-2">Total HH</div>
+                                <div className="col-span-2">Total Households</div>
                                 <div className="col-span-2">Restored</div>
-                                <div className="col-span-2">For Restore</div>
+                                <div className="col-span-2">For Restoration</div>
                                 <div className="col-span-3">%</div>
                               </div>
 
@@ -1599,10 +1587,12 @@ export function PowerUpdate() {
                                   barangay.total_households - restoredCount;
                                 const percent =
                                   barangay.total_households > 0
-                                    ? Math.round(
-                                        (restoredCount /
-                                          barangay.total_households) *
+                                    ? parseFloat(
+                                        (
+                                          (restoredCount /
+                                            barangay.total_households) *
                                           100
+                                        ).toFixed(2)
                                       )
                                     : 0;
 

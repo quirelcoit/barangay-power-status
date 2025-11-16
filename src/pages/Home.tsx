@@ -27,7 +27,7 @@ interface EnergizedBarangay {
 
 export function Home() {
   console.log("🎯 HOME COMPONENT LOADED - VERSION 2024-11-16");
-  
+
   const navigate = useNavigate();
   const [municipalityStats, setMunicipalityStats] = useState<
     MunicipalityStats[]

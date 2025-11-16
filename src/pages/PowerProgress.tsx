@@ -470,20 +470,20 @@ export function PowerProgress() {
                   <th className="px-3 sm:px-6 py-2 sm:py-3"></th>
                   {/* Barangay sub-headers */}
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-gray-700 text-xs sm:text-sm border-l border-gray-300">
-                    Total
+                    Total Barangays
                   </th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-gray-700 text-xs sm:text-sm">
-                    Energized
+                    Energized Barangays
                   </th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-gray-700 text-xs sm:text-sm">
                     %
                   </th>
                   {/* Household sub-headers */}
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-gray-700 text-xs sm:text-sm border-l border-gray-300">
-                    Total
+                    Total Households
                   </th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-gray-700 text-xs sm:text-sm">
-                    Energized
+                    Energized Households
                   </th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-gray-700 text-xs sm:text-sm">
                     %
