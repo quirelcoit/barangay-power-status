@@ -689,7 +689,7 @@ export function PowerProgress() {
                                                 </span>
                                               </div>
                                               {householdInfo ? (
-                                                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs sm:text-sm">
+                                                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5 text-xs sm:text-sm">
                                                   <div>
                                                     <p className="text-gray-600">
                                                       Total HH
@@ -714,7 +714,7 @@ export function PowerProgress() {
                                                       {householdInfo.for_restoration_households.toLocaleString()}
                                                     </p>
                                                   </div>
-                                                  <div className="col-span-2 sm:col-span-1">
+                                                  <div className="col-span-2 sm:col-span-1 md:col-span-1">
                                                     <p className="text-gray-600">
                                                       % Restored
                                                     </p>
@@ -723,7 +723,7 @@ export function PowerProgress() {
                                                         className={`text-center font-bold text-xs rounded ${hhPercentColor} py-0.5`}
                                                       >
                                                         {householdInfo.percent_restored.toFixed(
-                                                          1
+                                                          2
                                                         )}
                                                         %
                                                       </div>
@@ -859,7 +859,7 @@ export function PowerProgress() {
                             <div
                               className={`text-center font-bold text-xs sm:text-lg ${percentColor}`}
                             >
-                              {totalPercent.toFixed(1)}%
+                              {totalPercent.toFixed(2)}%
                             </div>
                             <div className="w-full bg-gray-300 rounded-full h-2.5 overflow-hidden">
                               <div

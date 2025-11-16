@@ -62,7 +62,7 @@ export function PowerUpdate() {
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState<
     "barangay" | "household" | "barangay_household"
-  >("barangay");
+  >("barangay_household");
   const [expandedMunicipality, setExpandedMunicipality] = useState<
     string | null
   >(null);
@@ -1032,7 +1032,7 @@ export function PowerUpdate() {
         <div className="flex gap-2 mb-6 border-b border-gray-300">
           <button
             onClick={() => setActiveTab("barangay")}
-            className={`px-4 sm:px-6 py-2 sm:py-3 font-semibold text-sm sm:text-base transition-colors border-b-2 whitespace-nowrap ${
+            className={`hidden px-4 sm:px-6 py-2 sm:py-3 font-semibold text-sm sm:text-base transition-colors border-b-2 whitespace-nowrap ${
               activeTab === "barangay"
                 ? "border-blue-600 text-blue-600"
                 : "border-transparent text-gray-600 hover:text-gray-900"
@@ -1042,7 +1042,7 @@ export function PowerUpdate() {
           </button>
           <button
             onClick={() => setActiveTab("household")}
-            className={`px-4 sm:px-6 py-2 sm:py-3 font-semibold text-sm sm:text-base transition-colors border-b-2 whitespace-nowrap ${
+            className={`hidden px-4 sm:px-6 py-2 sm:py-3 font-semibold text-sm sm:text-base transition-colors border-b-2 whitespace-nowrap ${
               activeTab === "household"
                 ? "border-blue-600 text-blue-600"
                 : "border-transparent text-gray-600 hover:text-gray-900"
