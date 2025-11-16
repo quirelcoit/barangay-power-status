@@ -103,6 +103,14 @@ export function Home() {
         // Count if restored_households > 0
         if (update.restored_households > 0) {
           stats.energizedBarangays++;
+          if (muni === "Aglipay") {
+            console.log(
+              `✅ Aglipay energized #${stats.energizedBarangays}:`,
+              update.barangay_id,
+              "restored:",
+              update.restored_households
+            );
+          }
         }
 
         stats.totalHouseholds += update.total_households || 0;
