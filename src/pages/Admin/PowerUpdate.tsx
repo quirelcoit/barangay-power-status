@@ -279,9 +279,10 @@ export function PowerUpdate() {
 
         if (energizedBarangayIds.length > 0) {
           setUpdates((prev) => {
-            const existing = prev[municipalityLabel]?.energizedBarangayIds || [];
+            const existing =
+              prev[municipalityLabel]?.energizedBarangayIds || [];
             const merged = [...new Set([...existing, ...energizedBarangayIds])];
-            
+
             return {
               ...prev,
               [municipalityLabel]: {
@@ -293,10 +294,15 @@ export function PowerUpdate() {
           });
 
           // Also update localStorage
-          const savedUpdates = JSON.parse(localStorage.getItem("powerUpdates") || "{}");
-          const existingIds = savedUpdates[municipalityLabel]?.energizedBarangayIds || [];
-          const mergedIds = [...new Set([...existingIds, ...energizedBarangayIds])];
-          
+          const savedUpdates = JSON.parse(
+            localStorage.getItem("powerUpdates") || "{}"
+          );
+          const existingIds =
+            savedUpdates[municipalityLabel]?.energizedBarangayIds || [];
+          const mergedIds = [
+            ...new Set([...existingIds, ...energizedBarangayIds]),
+          ];
+
           savedUpdates[municipalityLabel] = {
             ...savedUpdates[municipalityLabel],
             energizedBarangayIds: mergedIds,
@@ -765,13 +771,19 @@ export function PowerUpdate() {
 
     setLoading(true);
 
-    console.log("🚀 SUBMIT STARTED - barangayHouseholdUpdates:", barangayHouseholdUpdates);
+    console.log(
+      "🚀 SUBMIT STARTED - barangayHouseholdUpdates:",
+      barangayHouseholdUpdates
+    );
 
     try {
       const { data: session } = await supabase.auth.getSession();
       const asOfDateTime = new Date(`${asOfTime}:00`).toISOString();
 
-      console.log("📅 Session and time:", { session: session?.session?.user?.id, asOfDateTime });
+      console.log("📅 Session and time:", {
+        session: session?.session?.user?.id,
+        asOfDateTime,
+      });
 
       // Process each municipality and barangay
       for (const [municipality, barangayUpdates] of Object.entries(
@@ -802,8 +814,10 @@ export function PowerUpdate() {
           }
 
           // Insert barangay household update
-          const municipalityObj = MUNICIPALITIES.find((m) => m.value === municipality);
-          const { error} = await supabase
+          const municipalityObj = MUNICIPALITIES.find(
+            (m) => m.value === municipality
+          );
+          const { error } = await supabase
             .from("barangay_household_updates")
             .insert([
               {
@@ -822,17 +836,34 @@ export function PowerUpdate() {
       }
 
       // Auto-sync: Insert energized status for all barangays with restored households
-      const allBarangaysToEnergize: { municipality: string; barangayId: string; restoredCount: number }[] = [];
-      
-      for (const [municipality, barangayUpdates] of Object.entries(barangayHouseholdUpdates)) {
-        for (const [barangayId, restoredCount] of Object.entries(barangayUpdates)) {
+      const allBarangaysToEnergize: {
+        municipality: string;
+        barangayId: string;
+        restoredCount: number;
+      }[] = [];
+
+      for (const [municipality, barangayUpdates] of Object.entries(
+        barangayHouseholdUpdates
+      )) {
+        for (const [barangayId, restoredCount] of Object.entries(
+          barangayUpdates
+        )) {
           if (restoredCount > 0) {
-            allBarangaysToEnergize.push({ municipality, barangayId, restoredCount });
+            allBarangaysToEnergize.push({
+              municipality,
+              barangayId,
+              restoredCount,
+            });
           }
         }
       }
 
-      console.log("🔄 Auto-sync energizing", allBarangaysToEnergize.length, "barangays", allBarangaysToEnergize);
+      console.log(
+        "🔄 Auto-sync energizing",
+        allBarangaysToEnergize.length,
+        "barangays",
+        allBarangaysToEnergize
+      );
 
       for (const { barangayId } of allBarangaysToEnergize) {
         const { data: barangayData } = await supabase
@@ -850,15 +881,17 @@ export function PowerUpdate() {
 
         const { error: insertError } = await supabase
           .from("barangay_updates")
-          .insert([{
-            barangay_id: barangayId,
-            headline: `Power restored to ${barangayData.name}`,
-            body: null,
-            power_status: "energized",
-            eta: null,
-            author_uid: session?.session?.user?.id,
-            is_published: true,
-          }]);
+          .insert([
+            {
+              barangay_id: barangayId,
+              headline: `Power restored to ${barangayData.name}`,
+              body: null,
+              power_status: "energized",
+              eta: null,
+              author_uid: session?.session?.user?.id,
+              is_published: true,
+            },
+          ]);
 
         if (insertError) {
           console.error("❌ Insert failed for", barangayData.name, insertError);
