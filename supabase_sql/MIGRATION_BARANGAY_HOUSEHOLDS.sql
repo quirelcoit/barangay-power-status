@@ -51,7 +51,8 @@ ON public.barangay_household_updates(updated_at desc);
 CREATE TABLE IF NOT EXISTS public.barangay_household_overrides (
   id uuid primary key default uuid_generate_v4(),
   barangay_id uuid not null references public.barangays(id) on delete cascade,
-  override_total_households integer not null check (override_total_households > 0),
+  override_total_households integer not null check (override_total_households >= 0),
+  override_energized boolean default false,
   updated_by uuid references auth.users(id),
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
@@ -88,7 +89,12 @@ SELECT
   bh.total_households as baseline_total_households,
   COALESCE(bhu.restored_households, 0) as restored_households,
   COALESCE(bho.override_total_households, bh.total_households) - COALESCE(bhu.restored_households, 0) as for_restoration_households,
-  ROUND((COALESCE(bhu.restored_households, 0)::numeric / COALESCE(bho.override_total_households, bh.total_households)) * 100, 2) as percent_restored,
+  CASE 
+    WHEN COALESCE(bho.override_total_households, bh.total_households) > 0 THEN
+      ROUND((COALESCE(bhu.restored_households, 0)::numeric / COALESCE(bho.override_total_households, bh.total_households)::numeric) * 100, 2)
+    ELSE 0
+  END as percent_restored,
+  COALESCE(bho.override_energized, false) as override_energized,
   bhu.as_of_time,
   bhu.updated_at as last_updated
 FROM public.barangay_households bh
