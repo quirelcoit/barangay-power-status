@@ -626,7 +626,8 @@ export function PowerUpdate() {
     const rawValue = manualTotalInputs[barangay.barangay_id];
     const trimmed = rawValue?.trim();
 
-    if (!trimmed) {
+    // If field is empty (undefined, null, or empty string after trim), reset to baseline
+    if (trimmed === undefined || trimmed === null || trimmed === "") {
       saveManualTotalOverride(
         municipality,
         barangay,
@@ -645,6 +646,7 @@ export function PowerUpdate() {
       return;
     }
 
+    // This correctly handles "0" as a valid override value
     saveManualTotalOverride(municipality, barangay, parsed);
   };
 
