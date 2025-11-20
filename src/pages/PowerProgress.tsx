@@ -28,6 +28,15 @@ interface BarangayStatus {
   is_energized: boolean;
 }
 
+interface BarangayHouseholdData {
+  barangay_id: string;
+  barangay_name: string;
+  total_households: number;
+  restored_households: number;
+  for_restoration_households: number;
+  percent_restored: number;
+}
+
 // Define the correct order of municipalities as shown in the dashboard
 const MUNICIPALITY_ORDER = [
   "DIFFUN",
@@ -50,17 +59,6 @@ const MUNICIPALITY_TOTALS: { [key: string]: number } = {
   "SAN AGUSTIN, ISABELA": 18,
 };
 
-// Define fixed total households for each municipality (must match PowerUpdate.tsx)
-const HOUSEHOLD_TOTALS: { [key: string]: number } = {
-  DIFFUN: 15013,
-  CABARROGUIS: 9204,
-  SAGUDAY: 4468,
-  MADDELA: 10102,
-  AGLIPAY: 7308,
-  NAGTIPUNAN: 4701,
-  "SAN AGUSTIN, ISABELA": 4194,
-};
-
 const formatTimestamp = (dateString: string): string => {
   const date = new Date(dateString);
   const options: Intl.DateTimeFormatOptions = {
@@ -76,17 +74,24 @@ const formatTimestamp = (dateString: string): string => {
 
 export function PowerProgress() {
   const { addToast } = useToast();
-  const [activeTab, setActiveTab] = useState<"barangay" | "household">(
-    "barangay"
-  );
   const [municipalities, setMunicipalities] = useState<MunicipalityStatus[]>(
     []
   );
   const [households, setHouseholds] = useState<HouseholdStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [latestTimestamp, setLatestTimestamp] = useState<string>("");
-  const [expandedMunicipality, setExpandedMunicipality] = useState<string | null>(null);
-  const [barangayDetails, setBarangayDetails] = useState<Map<string, BarangayStatus[]>>(new Map());
+  const [expandedMunicipality, setExpandedMunicipality] = useState<
+    string | null
+  >(null);
+  const [barangayDetails, setBarangayDetails] = useState<
+    Map<string, BarangayStatus[]>
+  >(new Map());
+  const [loadingBarangays, setLoadingBarangays] = useState<Set<string>>(
+    new Set()
+  );
+  const [barangayHouseholds, setBarangayHouseholds] = useState<
+    Map<string, BarangayHouseholdData[]>
+  >(new Map());
 
   useEffect(() => {
     loadBarangays();
@@ -193,11 +198,10 @@ export function PowerProgress() {
           };
         }
 
-        // Return default data with fixed household totals
-        const totalHH = HOUSEHOLD_TOTALS[municipality] || 0;
+        // Return default data
         return {
           municipality,
-          total_households: totalHH,
+          total_households: 0,
           energized_households: 0,
           percent_energized: 0,
           as_of_time: null,
@@ -230,43 +234,54 @@ export function PowerProgress() {
 
   const loadBarangayDetails = async (municipality: string) => {
     try {
-      // Get barangay records from municipality_updates that have this municipality
-      const { data, error } = await supabase
-        .from("municipality_updates")
-        .select("*")
+      setLoadingBarangays((prev) => new Set(prev).add(municipality));
+
+      // Get all barangays for this municipality
+      const { data: muniBarangays, error: bErr } = await supabase
+        .from("barangays")
+        .select("id, name")
         .eq("municipality", municipality)
-        .order("as_of_time", { ascending: false })
-        .limit(1);
+        .order("name", { ascending: true });
 
-      if (error) throw error;
+      if (bErr) throw bErr;
 
-      if (data && data.length > 0) {
-        // Get all barangays for this municipality
-        const { data: muniBarangays, error: bErr } = await supabase
-          .from("barangays")
-          .select("id, name")
+      if (muniBarangays && muniBarangays.length > 0) {
+        // Get household data to determine energized status
+        const { data: hhData, error: hhErr } = await supabase
+          .from("barangay_household_status")
+          .select("barangay_id, restored_households")
           .eq("municipality", municipality);
 
-        if (bErr) throw bErr;
+        if (hhErr) throw hhErr;
 
-        if (muniBarangays) {
-          // For demo purposes, randomly mark some as energized
-          // In production, you'd get this from a barangay_status table
-          const energizedCount = municipalities.find(m => m.municipality.toUpperCase() === municipality.toUpperCase())?.energized_barangays || 0;
-          
-          const barangayStatuses: BarangayStatus[] = muniBarangays.map((b, idx) => ({
-            barangay_id: b.id,
-            barangay_name: b.name,
-            is_energized: idx < energizedCount,
-          }));
+        // Map household data to check if energized (restored_households > 0)
+        const hhMap = new Map(
+          (hhData || []).map((hh) => [
+            hh.barangay_id,
+            hh.restored_households > 0,
+          ])
+        );
 
-          const newDetails = new Map(barangayDetails);
-          newDetails.set(municipality, barangayStatuses);
-          setBarangayDetails(newDetails);
-        }
+        // Create barangay statuses based on household restoration data
+        const barangayStatuses: BarangayStatus[] = muniBarangays.map((b) => ({
+          barangay_id: b.id,
+          barangay_name: b.name,
+          is_energized: hhMap.get(b.id) || false,
+        }));
+
+        const newDetails = new Map(barangayDetails);
+        newDetails.set(municipality, barangayStatuses);
+        setBarangayDetails(newDetails);
       }
     } catch (err) {
       console.warn("Could not load barangay details:", err);
+      addToast("Failed to load barangay details", "error");
+    } finally {
+      setLoadingBarangays((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(municipality);
+        return newSet;
+      });
     }
   };
 
@@ -277,7 +292,43 @@ export function PowerProgress() {
       setExpandedMunicipality(municipality);
       if (!barangayDetails.has(municipality)) {
         loadBarangayDetails(municipality);
+        loadBarangayHouseholds(municipality);
       }
+    }
+  };
+
+  const loadBarangayHouseholds = async (municipality: string) => {
+    try {
+      // Query the barangay_household_status view which joins barangay_households with latest updates
+      const { data: hhData, error: hhErr } = await supabase
+        .from("barangay_household_status")
+        .select(
+          "barangay_id, barangay_name, total_households, restored_households, for_restoration_households, percent_restored"
+        )
+        .eq("municipality", municipality)
+        .order("barangay_name", { ascending: true });
+
+      if (hhErr) throw hhErr;
+
+      if (hhData && hhData.length > 0) {
+        const householdData: BarangayHouseholdData[] = hhData.map(
+          (hh: any) => ({
+            barangay_id: hh.barangay_id,
+            barangay_name: hh.barangay_name,
+            total_households: hh.total_households,
+            restored_households: hh.restored_households,
+            for_restoration_households: hh.for_restoration_households,
+            percent_restored: hh.percent_restored,
+          })
+        );
+
+        const newHouseholds = new Map(barangayHouseholds);
+        newHouseholds.set(municipality, householdData);
+        setBarangayHouseholds(newHouseholds);
+      }
+    } catch (err) {
+      console.warn("Could not load barangay household data:", err);
+      // Don't show error toast - household data is optional
     }
   };
 
@@ -311,33 +362,11 @@ export function PowerProgress() {
           </p>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex gap-2 mb-6 sm:mb-8 border-b border-gray-300">
-          <button
-            onClick={() => setActiveTab("barangay")}
-            className={`px-4 sm:px-6 py-2 sm:py-3 font-semibold text-sm sm:text-base transition-colors border-b-2 whitespace-nowrap ${
-              activeTab === "barangay"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Barangay View
-          </button>
-          <button
-            onClick={() => setActiveTab("household")}
-            className={`px-4 sm:px-6 py-2 sm:py-3 font-semibold text-sm sm:text-base transition-colors border-b-2 whitespace-nowrap ${
-              activeTab === "household"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            House Connection View
-          </button>
-        </div>
+        {/* Tab Switcher - REMOVED: Now showing unified table */}
+        {/* Combined Table for Barangay and Household Data */}
 
-        {/* Summary Cards */}
-        {activeTab === "barangay" &&
-          municipalities.length > 0 &&
+        {/* Summary Cards - Combined Barangay Stats */}
+        {municipalities.length > 0 &&
           (() => {
             const totalBgy = municipalities.reduce(
               (sum, m) => sum + m.total_barangays,
@@ -355,7 +384,6 @@ export function PowerProgress() {
               (sum, m) => sum + m.no_power_barangays,
               0
             );
-            // Use exact same calculation as QUIRELCO FRANCHISE AREA row for consistency
             const overallPercent =
               totalBgy > 0 ? (energizedBgy / totalBgy) * 100 : 0;
 
@@ -365,7 +393,9 @@ export function PowerProgress() {
                   <div className="text-xl sm:text-2xl font-bold">
                     {energizedBgy}
                   </div>
-                  <div className="text-xs sm:text-sm opacity-90">Energized</div>
+                  <div className="text-xs sm:text-sm opacity-90">
+                    Barangays Energized
+                  </div>
                 </div>
                 <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 text-white p-3 sm:p-4 rounded-lg shadow">
                   <div className="text-xl sm:text-2xl font-bold">
@@ -379,96 +409,162 @@ export function PowerProgress() {
                   <div className="text-xl sm:text-2xl font-bold">
                     {noPowerBgy}
                   </div>
-                  <div className="text-xs sm:text-sm opacity-90">No Power</div>
+                  <div className="text-xs sm:text-sm opacity-90">
+                    Still Restoring
+                  </div>
                 </div>
                 <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-3 sm:p-4 rounded-lg shadow">
                   <div className="text-xl sm:text-2xl font-bold">
                     {overallPercent.toFixed(2)}%
                   </div>
-                  <div className="text-xs sm:text-sm opacity-90">Overall</div>
+                  <div className="text-xs sm:text-sm opacity-90">
+                    Barangay Overall
+                  </div>
                 </div>
               </div>
             );
           })()}
 
-        {/* Barangay Table - Mobile optimized */}
-        {activeTab === "barangay" && (
-          <div className="bg-white rounded-lg shadow overflow-hidden mb-6 sm:mb-8">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-100 border-b-2 border-gray-300">
-                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-bold text-gray-900 text-xs sm:text-base">
-                      Municipality / Town
-                    </th>
-                    <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
-                      Total
-                    </th>
-                    <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
-                      Energized
-                    </th>
-                    <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-green-600 text-xs sm:text-base">
-                      %
-                    </th>
+        {/* UNIFIED TABLE - Barangay and Household Data Side by Side */}
+        <div className="bg-white rounded-lg shadow overflow-hidden mb-6 sm:mb-8">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-100 border-b-2 border-gray-300">
+                  <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-bold text-gray-900 text-xs sm:text-base">
+                    Municipality / Town
+                  </th>
+                  {/* Barangay Level Columns */}
+                  <th
+                    colSpan={3}
+                    className="px-2 sm:px-4 py-3 sm:py-4 text-center font-bold text-green-700 text-xs sm:text-base border-l border-gray-300"
+                  >
+                    BARANGAY LEVEL
+                  </th>
+                  {/* Household Level Columns */}
+                  <th
+                    colSpan={3}
+                    className="px-2 sm:px-4 py-3 sm:py-4 text-center font-bold text-blue-700 text-xs sm:text-base border-l border-gray-300"
+                  >
+                    HOUSEHOLD LEVEL
+                  </th>
+                </tr>
+                <tr className="bg-gray-50 border-b border-gray-300">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3"></th>
+                  {/* Barangay sub-headers */}
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-gray-700 text-xs sm:text-sm border-l border-gray-300">
+                    Total Barangays
+                  </th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-gray-700 text-xs sm:text-sm">
+                    Energized Barangays
+                  </th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-gray-700 text-xs sm:text-sm">
+                    %
+                  </th>
+                  {/* Household sub-headers */}
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-gray-700 text-xs sm:text-sm border-l border-gray-300">
+                    Total Households
+                  </th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-gray-700 text-xs sm:text-sm">
+                    Energized Households
+                  </th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-gray-700 text-xs sm:text-sm">
+                    %
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {municipalities.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="px-3 sm:px-6 py-6 sm:py-8 text-center text-gray-600 text-sm"
+                    >
+                      No data available
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {municipalities.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={4}
-                        className="px-3 sm:px-6 py-6 sm:py-8 text-center text-gray-600 text-sm"
-                      >
-                        No data available
-                      </td>
-                    </tr>
-                  ) : (
-                    municipalities.map((muni, idx) => {
-                      const bgColor = idx % 2 === 0 ? "bg-white" : "bg-gray-50";
-                      const percentColor =
-                        muni.percent_energized === 100
-                          ? "text-green-600 bg-green-50"
-                          : muni.percent_energized >= 75
-                          ? "text-lime-600 bg-lime-50"
-                          : muni.percent_energized >= 50
-                          ? "text-yellow-600 bg-yellow-50"
-                          : muni.percent_energized >= 25
-                          ? "text-orange-600 bg-orange-50"
-                          : "text-red-600 bg-red-50";
+                ) : (
+                  municipalities.map((muni, idx) => {
+                    const bgColor = idx % 2 === 0 ? "bg-white" : "bg-gray-50";
 
-                      return (
-                        <>
-                          <tr
-                            key={muni.municipality}
-                            onClick={() => toggleExpandedMunicipality(muni.municipality)}
-                            className={`${bgColor} border-b border-gray-200 hover:bg-blue-50 transition cursor-pointer`}
-                          >
-                            <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-900 text-xs sm:text-base">
-                              <div className="flex items-center gap-2">
-                                <span>{expandedMunicipality === muni.municipality ? "▼" : "▶"}</span>
-                                {muni.municipality.toUpperCase()}
+                    // Get household data for this municipality
+                    const householdData = households.find(
+                      (h) =>
+                        h.municipality.toUpperCase() ===
+                        muni.municipality.toUpperCase()
+                    );
+                    const hhTotal = householdData?.total_households || 0;
+                    const hhEnergized =
+                      householdData?.energized_households || 0;
+                    const hhPercent =
+                      hhTotal > 0 ? (hhEnergized / hhTotal) * 100 : 0;
+
+                    // Color coding for barangay percentage
+                    const barangayPercentColor =
+                      muni.percent_energized === 100
+                        ? "text-green-600 bg-green-50"
+                        : muni.percent_energized >= 75
+                        ? "text-lime-600 bg-lime-50"
+                        : muni.percent_energized >= 50
+                        ? "text-yellow-600 bg-yellow-50"
+                        : muni.percent_energized >= 25
+                        ? "text-orange-600 bg-orange-50"
+                        : "text-red-600 bg-red-50";
+
+                    // Color coding for household percentage
+                    const householdPercentColor =
+                      hhPercent === 100
+                        ? "text-green-600 bg-green-50"
+                        : hhPercent >= 75
+                        ? "text-lime-600 bg-lime-50"
+                        : hhPercent >= 50
+                        ? "text-yellow-600 bg-yellow-50"
+                        : hhPercent >= 25
+                        ? "text-orange-600 bg-orange-50"
+                        : "text-red-600 bg-red-50";
+
+                    return (
+                      <>
+                        <tr
+                          key={muni.municipality}
+                          onClick={() =>
+                            toggleExpandedMunicipality(muni.municipality)
+                          }
+                          className={`${bgColor} border-b border-gray-200 hover:bg-blue-50 transition cursor-pointer`}
+                        >
+                          {/* Municipality Name */}
+                          <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-900 text-xs sm:text-base">
+                            <div className="flex items-center gap-2">
+                              <span>
+                                {expandedMunicipality === muni.municipality
+                                  ? "▼"
+                                  : "▶"}
+                              </span>
+                              {muni.municipality.toUpperCase()}
+                            </div>
+                          </td>
+
+                          {/* BARANGAY LEVEL */}
+                          <td className="px-2 sm:px-4 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base border-l border-gray-300">
+                            {muni.total_barangays}
+                          </td>
+                          <td className="px-2 sm:px-4 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base">
+                            {muni.energized_barangays}
+                          </td>
+                          <td className="px-2 sm:px-4 py-3 sm:py-4">
+                            <div className="space-y-1">
+                              <div
+                                className={`text-center font-bold text-xs sm:text-sm rounded ${barangayPercentColor} py-1`}
+                              >
+                                {muni.percent_energized.toFixed(2)}%
                               </div>
-                            </td>
-                            <td className="px-2 sm:px-6 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base">
-                              {muni.total_barangays}
-                            </td>
-                            <td className="px-2 sm:px-6 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base">
-                              {muni.energized_barangays}
-                            </td>
-                            <td className={`px-2 sm:px-6 py-3 sm:py-4`}>
-                              <div className="space-y-1">
+                              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                                 <div
-                                  className={`text-center font-bold text-xs sm:text-lg ${percentColor}`}
-                                >
-                                  {muni.percent_energized.toFixed(2)}%
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                                  <div
-                                    className={`h-full ${
-                                      muni.percent_energized === 100
-                                        ? "bg-green-500"
-                                        : muni.percent_energized >= 75
-                                        ? "bg-lime-500"
+                                  className={`h-full ${
+                                    muni.percent_energized === 100
+                                      ? "bg-green-500"
+                                      : muni.percent_energized >= 75
+                                      ? "bg-lime-500"
                                       : muni.percent_energized >= 50
                                       ? "bg-yellow-500"
                                       : muni.percent_energized >= 25
@@ -482,274 +578,380 @@ export function PowerProgress() {
                               </div>
                             </div>
                           </td>
-                          </tr>
-                          
-                          {/* Expanded Barangay List */}
-                          {expandedMunicipality === muni.municipality && barangayDetails.has(muni.municipality) && (
-                            <tr className="bg-blue-50 border-b border-blue-200">
-                              <td colSpan={4} className="px-3 sm:px-6 py-4">
-                                <div>
-                                  <p className="font-semibold text-sm mb-3 text-gray-900">
-                                    Energized Barangays ({muni.energized_barangays}):
-                                  </p>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                                    {barangayDetails.get(muni.municipality)?.map((brgy) => (
-                                      <div
-                                        key={brgy.barangay_id}
-                                        className={`p-2 rounded text-xs sm:text-sm ${
-                                          brgy.is_energized
-                                            ? "bg-green-100 text-green-800 border border-green-300"
-                                            : "bg-gray-100 text-gray-600"
-                                        }`}
-                                      >
-                                        {brgy.is_energized && "✓ "}{brgy.barangay_name}
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                        </>
-                      );
-                    })
-                  )}
-                  {/* Franchise Total Row */}
-                  {municipalities.length > 0 && (
-                    <tr className="bg-gray-200 border-t-2 border-gray-300 font-bold">
-                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-900 text-xs sm:text-base">
-                        QUIRELCO FRANCHISE AREA
-                      </td>
-                      <td className="px-2 sm:px-6 py-3 sm:py-4 text-center text-gray-900 text-xs sm:text-base">
-                        {municipalities.reduce(
-                          (sum, m) => sum + m.total_barangays,
-                          0
-                        )}
-                      </td>
-                      <td className="px-2 sm:px-6 py-3 sm:py-4 text-center text-gray-900 text-xs sm:text-base">
-                        {municipalities.reduce(
-                          (sum, m) => sum + m.energized_barangays,
-                          0
-                        )}
-                      </td>
-                      <td className="px-2 sm:px-6 py-3 sm:py-4">
-                        {(() => {
-                          const totalBgy = municipalities.reduce(
-                            (sum, m) => sum + m.total_barangays,
-                            0
-                          );
-                          const energizedBgy = municipalities.reduce(
-                            (sum, m) => sum + m.energized_barangays,
-                            0
-                          );
-                          const totalPercent = (energizedBgy / totalBgy) * 100;
-                          const percentColor =
-                            totalPercent === 100
-                              ? "text-green-600 bg-green-50"
-                              : totalPercent >= 75
-                              ? "text-lime-600 bg-lime-50"
-                              : totalPercent >= 50
-                              ? "text-yellow-600 bg-yellow-50"
-                              : totalPercent >= 25
-                              ? "text-orange-600 bg-orange-50"
-                              : "text-red-600 bg-red-50";
 
-                          const barColor =
-                            totalPercent === 100
-                              ? "bg-green-500"
-                              : totalPercent >= 75
-                              ? "bg-lime-500"
-                              : totalPercent >= 50
-                              ? "bg-yellow-500"
-                              : totalPercent >= 25
-                              ? "bg-orange-500"
-                              : "bg-red-500";
-
-                          return (
+                          {/* HOUSEHOLD LEVEL */}
+                          <td className="px-2 sm:px-4 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base border-l border-gray-300">
+                            {hhTotal.toLocaleString()}
+                          </td>
+                          <td className="px-2 sm:px-4 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base">
+                            {hhEnergized.toLocaleString()}
+                          </td>
+                          <td className="px-2 sm:px-4 py-3 sm:py-4">
                             <div className="space-y-1">
                               <div
-                                className={`text-center font-bold text-xs sm:text-lg ${percentColor}`}
+                                className={`text-center font-bold text-xs sm:text-sm rounded ${householdPercentColor} py-1`}
                               >
-                                {totalPercent.toFixed(2)}%
+                                {hhPercent.toFixed(2)}%
                               </div>
-                              <div className="w-full bg-gray-300 rounded-full h-2.5 overflow-hidden">
-                                <div
-                                  className={`h-full ${barColor} transition-all duration-500`}
-                                  style={{ width: `${totalPercent}%` }}
-                                />
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Household View */}
-        {activeTab === "household" &&
-          households.length > 0 &&
-          (() => {
-            const totalHH = households.reduce(
-              (sum, h) => sum + h.total_households,
-              0
-            );
-            const energizedHH = households.reduce(
-              (sum, h) => sum + h.energized_households,
-              0
-            );
-            const overallPercent =
-              totalHH > 0
-                ? parseFloat(((energizedHH / totalHH) * 100).toFixed(2))
-                : 0;
-
-            return (
-              <>
-                {/* Household Table */}
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-gray-100 border-b-2 border-gray-300">
-                          <th className="px-3 sm:px-6 py-3 sm:py-4 text-left font-bold text-gray-900 text-xs sm:text-base">
-                            Municipality / Town
-                          </th>
-                          <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
-                            Total House Connections
-                          </th>
-                          <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
-                            Energized
-                          </th>
-                          <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-green-600 text-xs sm:text-base">
-                            %
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {households.map((household, idx) => {
-                          const bgColor =
-                            idx % 2 === 0 ? "bg-white" : "bg-gray-50";
-                          const percentage =
-                            household.total_households > 0
-                              ? (
-                                  (household.energized_households /
-                                    household.total_households) *
-                                  100
-                                ).toFixed(2)
-                              : (0).toFixed(2);
-
-                          // Color coding for progress bar
-                          let barColor = "bg-red-500";
-                          let percentColor = "text-red-600";
-                          if (parseFloat(percentage) === 100) {
-                            barColor = "bg-green-500";
-                            percentColor =
-                              "text-green-600 bg-green-50 px-1 rounded";
-                          } else if (parseFloat(percentage) >= 75) {
-                            barColor = "bg-lime-500";
-                            percentColor = "text-lime-600";
-                          } else if (parseFloat(percentage) >= 50) {
-                            barColor = "bg-yellow-500";
-                            percentColor = "text-yellow-600";
-                          } else if (parseFloat(percentage) > 0) {
-                            barColor = "bg-orange-500";
-                            percentColor = "text-orange-600";
-                          }
-
-                          return (
-                            <tr
-                              key={household.municipality}
-                              className={`${bgColor} border-b border-gray-200 hover:bg-blue-50 transition`}
-                            >
-                              <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-gray-900 text-xs sm:text-base">
-                                {household.municipality.toUpperCase()}
-                              </td>
-                              <td className="px-2 sm:px-6 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base">
-                                {household.total_households.toLocaleString()}
-                              </td>
-                              <td className="px-2 sm:px-6 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base">
-                                {household.energized_households.toLocaleString()}
-                              </td>
-                              <td className={`px-2 sm:px-6 py-3 sm:py-4`}>
-                                <div className="space-y-1">
-                                  <div
-                                    className={`text-center font-bold text-xs sm:text-lg ${percentColor}`}
-                                  >
-                                    {percentage}%
-                                  </div>
-                                  <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                                    <div
-                                      className={`h-full ${barColor} transition-all duration-500`}
-                                      style={{
-                                        width: `${percentage}%`,
-                                      }}
-                                    />
-                                  </div>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                        {/* Total Row */}
-                        <tr className="bg-gray-300 border-t-2 border-gray-400 font-bold">
-                          <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-900 text-xs sm:text-base">
-                            QUIRELCO FRANCHISE AREA
-                          </td>
-                          <td className="px-2 sm:px-6 py-3 sm:py-4 text-center text-gray-900 text-xs sm:text-base">
-                            {totalHH.toLocaleString()}
-                          </td>
-                          <td className="px-2 sm:px-6 py-3 sm:py-4 text-center text-gray-900 text-xs sm:text-base">
-                            {energizedHH.toLocaleString()}
-                          </td>
-                          <td className={`px-2 sm:px-6 py-3 sm:py-4`}>
-                            <div className="space-y-1">
-                              <div
-                                className={`text-center font-bold text-xs sm:text-lg ${
-                                  overallPercent === 100
-                                    ? "text-green-600"
-                                    : overallPercent >= 75
-                                    ? "text-lime-600"
-                                    : overallPercent >= 50
-                                    ? "text-yellow-600"
-                                    : overallPercent > 0
-                                    ? "text-orange-600"
-                                    : "text-gray-400"
-                                }`}
-                              >
-                                {overallPercent}%
-                              </div>
-                              <div className="w-full bg-gray-400 rounded-full h-2 overflow-hidden">
+                              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                                 <div
                                   className={`h-full ${
-                                    overallPercent === 100
+                                    hhPercent === 100
                                       ? "bg-green-500"
-                                      : overallPercent >= 75
+                                      : hhPercent >= 75
                                       ? "bg-lime-500"
-                                      : overallPercent >= 50
+                                      : hhPercent >= 50
                                       ? "bg-yellow-500"
-                                      : overallPercent > 0
+                                      : hhPercent >= 25
                                       ? "bg-orange-500"
                                       : "bg-red-500"
                                   } transition-all duration-500`}
-                                  style={{
-                                    width: `${overallPercent}%`,
-                                  }}
+                                  style={{ width: `${hhPercent}%` }}
                                 />
                               </div>
                             </div>
                           </td>
                         </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </>
-            );
-          })()}
+
+                        {/* Expanded Barangay Details Row */}
+                        {expandedMunicipality === muni.municipality && (
+                          <tr className={bgColor}>
+                            <td
+                              colSpan={7}
+                              className="px-3 sm:px-6 py-4 sm:py-6 border-b border-gray-200"
+                            >
+                              {loadingBarangays.has(muni.municipality) ? (
+                                <div className="text-center py-6 text-gray-600">
+                                  Loading barangay details...
+                                </div>
+                              ) : barangayDetails.get(muni.municipality)
+                                  ?.length ? (
+                                <div className="space-y-4">
+                                  <div>
+                                    <p className="font-bold text-base text-green-700 mb-3 flex items-center gap-2">
+                                      <span className="text-lg">✓</span>
+                                      Energized Barangays (
+                                      {barangayDetails
+                                        .get(muni.municipality)
+                                        ?.filter((b) => b.is_energized)
+                                        .length || 0}
+                                      )
+                                    </p>
+                                    <div className="space-y-2">
+                                      {barangayDetails
+                                        .get(muni.municipality)
+                                        ?.filter((b) => b.is_energized)
+                                        .map((brgy) => {
+                                          const householdInfo =
+                                            barangayHouseholds
+                                              .get(muni.municipality)
+                                              ?.find(
+                                                (hh) =>
+                                                  hh.barangay_id ===
+                                                  brgy.barangay_id
+                                              );
+
+                                          const hhPercentColor =
+                                            householdInfo &&
+                                            householdInfo.percent_restored ===
+                                              100
+                                              ? "text-green-600 bg-green-50"
+                                              : householdInfo &&
+                                                householdInfo.percent_restored >=
+                                                  75
+                                              ? "text-lime-600 bg-lime-50"
+                                              : householdInfo &&
+                                                householdInfo.percent_restored >=
+                                                  50
+                                              ? "text-yellow-600 bg-yellow-50"
+                                              : householdInfo &&
+                                                householdInfo.percent_restored >=
+                                                  25
+                                              ? "text-orange-600 bg-orange-50"
+                                              : "text-red-600 bg-red-50";
+
+                                          return (
+                                            <div
+                                              key={brgy.barangay_id}
+                                              className="p-3 sm:p-4 rounded-lg bg-green-50 border-2 border-green-300"
+                                            >
+                                              <div className="flex items-center gap-2 mb-3">
+                                                <span className="text-base sm:text-lg flex-shrink-0">
+                                                  ⚡
+                                                </span>
+                                                <span className="font-semibold text-gray-900 text-sm sm:text-base break-words">
+                                                  {brgy.barangay_name}
+                                                </span>
+                                              </div>
+                                              {householdInfo ? (
+                                                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5 text-xs sm:text-sm">
+                                                  <div>
+                                                    <p className="text-gray-600">
+                                                      Total Households
+                                                    </p>
+                                                    <p className="font-bold text-gray-900">
+                                                      {householdInfo.total_households.toLocaleString()}
+                                                    </p>
+                                                  </div>
+                                                  <div>
+                                                    <p className="text-gray-600">
+                                                      Restored
+                                                    </p>
+                                                    <p className="font-bold text-green-700">
+                                                      {householdInfo.restored_households.toLocaleString()}
+                                                    </p>
+                                                  </div>
+                                                  <div>
+                                                    <p className="text-gray-600">
+                                                      For Restoration
+                                                    </p>
+                                                    <p className="font-bold text-orange-700">
+                                                      {householdInfo.for_restoration_households.toLocaleString()}
+                                                    </p>
+                                                  </div>
+                                                  <div className="col-span-2 sm:col-span-1 md:col-span-1">
+                                                    <p className="text-gray-600">
+                                                      % Restored
+                                                    </p>
+                                                    <div className="space-y-1 mt-1">
+                                                      <div
+                                                        className={`text-center font-bold text-xs rounded ${hhPercentColor} py-0.5`}
+                                                      >
+                                                        {householdInfo.percent_restored.toFixed(
+                                                          2
+                                                        )}
+                                                        %
+                                                      </div>
+                                                      <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                                                        <div
+                                                          className={`h-full ${
+                                                            householdInfo.percent_restored ===
+                                                            100
+                                                              ? "bg-green-500"
+                                                              : householdInfo.percent_restored >=
+                                                                75
+                                                              ? "bg-lime-500"
+                                                              : householdInfo.percent_restored >=
+                                                                50
+                                                              ? "bg-yellow-500"
+                                                              : householdInfo.percent_restored >=
+                                                                25
+                                                              ? "bg-orange-500"
+                                                              : "bg-red-500"
+                                                          }`}
+                                                          style={{
+                                                            width: `${householdInfo.percent_restored}%`,
+                                                          }}
+                                                        />
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              ) : (
+                                                <p className="text-gray-600 italic text-xs">
+                                                  No household data available
+                                                </p>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      {muni.energized_barangays === 0 && (
+                                        <p className="text-gray-500 italic text-sm col-span-full">
+                                          No energized barangays yet
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Non-Energized Barangays */}
+                                  {muni.partial_barangays > 0 ||
+                                  muni.no_power_barangays > 0 ? (
+                                    <div>
+                                      <p className="font-bold text-base text-gray-700 mb-3">
+                                        Still Restoring (
+                                        {barangayDetails
+                                          .get(muni.municipality)
+                                          ?.filter((b) => !b.is_energized)
+                                          .length || 0}
+                                        )
+                                      </p>
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                        {barangayDetails
+                                          .get(muni.municipality)
+                                          ?.filter((b) => !b.is_energized)
+                                          .map((brgy) => (
+                                            <div
+                                              key={brgy.barangay_id}
+                                              className="p-2 rounded text-xs sm:text-sm bg-gray-100 text-gray-700 border border-gray-300"
+                                            >
+                                              <span className="text-sm mr-2">
+                                                ⚠️
+                                              </span>
+                                              {brgy.barangay_name}
+                                            </div>
+                                          ))}
+                                      </div>
+                                    </div>
+                                  ) : null}
+                                </div>
+                              ) : (
+                                <div className="text-center py-4 text-gray-600">
+                                  No barangay data available
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    );
+                  })
+                )}
+
+                {/* Franchise Total Row */}
+                {municipalities.length > 0 && (
+                  <tr className="bg-gray-200 border-t-2 border-gray-300 font-bold">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-gray-900 text-xs sm:text-base">
+                      QUIRELCO FRANCHISE AREA
+                    </td>
+
+                    {/* BARANGAY TOTALS */}
+                    <td className="px-2 sm:px-4 py-3 sm:py-4 text-center text-gray-900 text-xs sm:text-base border-l border-gray-300">
+                      {municipalities.reduce(
+                        (sum, m) => sum + m.total_barangays,
+                        0
+                      )}
+                    </td>
+                    <td className="px-2 sm:px-4 py-3 sm:py-4 text-center text-gray-900 text-xs sm:text-base">
+                      {municipalities.reduce(
+                        (sum, m) => sum + m.energized_barangays,
+                        0
+                      )}
+                    </td>
+                    <td className="px-2 sm:px-4 py-3 sm:py-4">
+                      {(() => {
+                        const totalBgy = municipalities.reduce(
+                          (sum, m) => sum + m.total_barangays,
+                          0
+                        );
+                        const energizedBgy = municipalities.reduce(
+                          (sum, m) => sum + m.energized_barangays,
+                          0
+                        );
+                        const totalPercent = (energizedBgy / totalBgy) * 100;
+                        const percentColor =
+                          totalPercent === 100
+                            ? "text-green-600 bg-green-50"
+                            : totalPercent >= 75
+                            ? "text-lime-600 bg-lime-50"
+                            : totalPercent >= 50
+                            ? "text-yellow-600 bg-yellow-50"
+                            : totalPercent >= 25
+                            ? "text-orange-600 bg-orange-50"
+                            : "text-red-600 bg-red-50";
+
+                        return (
+                          <div className="space-y-1">
+                            <div
+                              className={`text-center font-bold text-xs sm:text-lg ${percentColor}`}
+                            >
+                              {totalPercent.toFixed(2)}%
+                            </div>
+                            <div className="w-full bg-gray-300 rounded-full h-2.5 overflow-hidden">
+                              <div
+                                className={`h-full ${
+                                  totalPercent === 100
+                                    ? "bg-green-500"
+                                    : totalPercent >= 75
+                                    ? "bg-lime-500"
+                                    : totalPercent >= 50
+                                    ? "bg-yellow-500"
+                                    : totalPercent >= 25
+                                    ? "bg-orange-500"
+                                    : "bg-red-500"
+                                } transition-all duration-500`}
+                                style={{ width: `${totalPercent}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </td>
+
+                    {/* HOUSEHOLD TOTALS */}
+                    <td className="px-2 sm:px-4 py-3 sm:py-4 text-center text-gray-900 text-xs sm:text-base border-l border-gray-300">
+                      {households
+                        .reduce((sum, h) => sum + h.total_households, 0)
+                        .toLocaleString()}
+                    </td>
+                    <td className="px-2 sm:px-4 py-3 sm:py-4 text-center text-gray-900 text-xs sm:text-base">
+                      {households
+                        .reduce((sum, h) => sum + h.energized_households, 0)
+                        .toLocaleString()}
+                    </td>
+                    <td className="px-2 sm:px-4 py-3 sm:py-4">
+                      {(() => {
+                        const totalHH = households.reduce(
+                          (sum, h) => sum + h.total_households,
+                          0
+                        );
+                        const energizedHH = households.reduce(
+                          (sum, h) => sum + h.energized_households,
+                          0
+                        );
+                        const totalPercent =
+                          totalHH > 0
+                            ? parseFloat(
+                                ((energizedHH / totalHH) * 100).toFixed(2)
+                              )
+                            : 0;
+                        const percentColor =
+                          totalPercent === 100
+                            ? "text-green-600 bg-green-50"
+                            : totalPercent >= 75
+                            ? "text-lime-600 bg-lime-50"
+                            : totalPercent >= 50
+                            ? "text-yellow-600 bg-yellow-50"
+                            : totalPercent >= 25
+                            ? "text-orange-600 bg-orange-50"
+                            : totalPercent === 0
+                            ? "text-gray-400"
+                            : "text-orange-600 bg-orange-50";
+
+                        return (
+                          <div className="space-y-1">
+                            <div
+                              className={`text-center font-bold text-xs sm:text-lg ${percentColor}`}
+                            >
+                              {totalPercent}%
+                            </div>
+                            <div className="w-full bg-gray-400 rounded-full h-2 overflow-hidden">
+                              <div
+                                className={`h-full ${
+                                  totalPercent === 100
+                                    ? "bg-green-500"
+                                    : totalPercent >= 75
+                                    ? "bg-lime-500"
+                                    : totalPercent >= 50
+                                    ? "bg-yellow-500"
+                                    : totalPercent > 0
+                                    ? "bg-orange-500"
+                                    : "bg-red-500"
+                                } transition-all duration-500`}
+                                style={{
+                                  width: `${totalPercent}%`,
+                                }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
         {/* Legend */}
         <div className="mt-6 sm:mt-8 p-3 sm:p-4 bg-white rounded-lg shadow mb-4">
@@ -760,7 +962,7 @@ export function PowerProgress() {
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 sm:w-6 sm:h-6 bg-green-500 rounded flex-shrink-0"></div>
               <span className="text-xs sm:text-sm text-gray-700">
-                ENERGIZED
+                ENERGIZED (100%)
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -771,11 +973,19 @@ export function PowerProgress() {
             </div>
             <div className="flex items-center gap-2">
               <div className="w-5 h-5 sm:w-6 sm:h-6 bg-yellow-500 rounded flex-shrink-0"></div>
-              <span className="text-sm text-gray-700">50% - 74%</span>
+              <span className="text-xs sm:text-sm text-gray-700">
+                50% - 74%
+              </span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-red-500 rounded"></div>
-              <span className="text-sm text-gray-700">UNENERGIZED</span>
+              <div className="w-5 h-5 sm:w-6 sm:h-6 bg-orange-500 rounded flex-shrink-0"></div>
+              <span className="text-xs sm:text-sm text-gray-700">
+                25% - 49%
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 bg-red-500 rounded flex-shrink-0"></div>
+              <span className="text-xs sm:text-sm text-gray-700">0% - 24%</span>
             </div>
           </div>
         </div>

@@ -1,249 +1,479 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { Card, StatusBadge } from "../components";
-import { Search } from "lucide-react";
+import { Card } from "../components";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
-interface BarangayWithUpdate {
-  id: string;
-  name: string;
+// BUILD TIMESTAMP: 2025-11-16-FIX-COUNT
+
+interface MunicipalityStats {
   municipality: string;
-  latestUpdate?: {
-    id: string;
-    headline: string;
-    power_status: "no_power" | "partial" | "energized";
-    created_at: string;
-  };
+  totalBarangays: number;
+  energizedBarangays: number;
+  barangayPercentage: number;
+  totalHouseholds: number;
+  restoredHouseholds: number;
+  householdPercentage: number;
+}
+
+interface EnergizedBarangay {
+  barangay_id: string;
+  barangay_name: string;
+  total_households: number;
+  restored_households: number;
+  percentage: number;
+  has_household_data: boolean;
 }
 
 export function Home() {
+  console.log("🎯 HOME COMPONENT LOADED - VERSION 2024-11-16");
+
   const navigate = useNavigate();
-  const [barangays, setBarangays] = useState<BarangayWithUpdate[]>([]);
-  const [filtered, setFiltered] = useState<BarangayWithUpdate[]>([]);
+  const [municipalityStats, setMunicipalityStats] = useState<
+    MunicipalityStats[]
+  >([]);
+  const [expandedMunicipality, setExpandedMunicipality] = useState<
+    string | null
+  >(null);
+  const [energizedBarangays, setEnergizedBarangays] = useState<{
+    [key: string]: EnergizedBarangay[];
+  }>({});
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<
-    "all" | "no_power" | "partial" | "energized"
-  >("all");
-  const [municipalityFilter, setMunicipalityFilter] = useState<string>("all");
-  const [municipalities, setMunicipalities] = useState<string[]>([]);
+  const [loadingDetails, setLoadingDetails] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-        const { data: barangaysData, error: barangaysError } = await supabase
-          .from("barangays")
-          .select("id, name, municipality")
-          .eq("is_active", true)
-          .order("municipality")
-          .order("name");
-
-        if (barangaysError) throw barangaysError;
-
-        // Get latest updates for each barangay
-        const { data: updatesData, error: updatesError } = await supabase
-          .from("barangay_updates")
-          .select("id, barangay_id, headline, power_status, created_at")
-          .eq("is_published", true)
-          .order("created_at", { ascending: false });
-
-        if (updatesError) throw updatesError;
-
-        // Map updates to barangays
-        const barangaysWithUpdates: BarangayWithUpdate[] = (
-          barangaysData || []
-        ).map((b) => ({
-          ...b,
-          latestUpdate: (updatesData || []).find((u) => u.barangay_id === b.id),
-        }));
-
-        setBarangays(barangaysWithUpdates);
-
-        // Extract unique municipalities
-        const uniqueMunicipalities = Array.from(
-          new Set(barangaysWithUpdates.map((b) => b.municipality))
-        ).sort();
-        setMunicipalities(uniqueMunicipalities);
-
-        setFiltered(barangaysWithUpdates);
-      } catch (err) {
-        console.error("Failed to load barangays:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadData();
+    console.log("🎯 useEffect TRIGGERED - calling loadMunicipalityStats");
+    loadMunicipalityStats();
   }, []);
 
-  // Apply filters when any filter changes
-  useEffect(() => {
-    applyFilters(search, statusFilter, municipalityFilter);
-  }, [statusFilter, municipalityFilter]);
+  const loadMunicipalityStats = async () => {
+    try {
+      setLoading(true);
 
-  const handleSearch = (query: string) => {
-    setSearch(query);
-    applyFilters(query, statusFilter, municipalityFilter);
-  };
+      console.log("🏠 HOME: Loading municipality stats...");
 
-  const applyFilters = (
-    searchQuery: string,
-    status: string,
-    municipality: string
-  ) => {
-    let result = barangays;
+      // Load household data - get ALL records ordered by updated_at
+      const { data: householdUpdates, error: householdError } = await supabase
+        .from("barangay_household_updates")
+        .select(
+          "municipality, barangay_id, total_households, restored_households, updated_at"
+        )
+        .order("updated_at", { ascending: false });
 
-    // Search filter
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (b) =>
-          b.name.toLowerCase().includes(q) ||
-          b.municipality.toLowerCase().includes(q)
+      if (householdError) throw householdError;
+
+      console.log(
+        "🏠 HOME: Total household records:",
+        householdUpdates?.length
       );
-    }
 
-    // Status filter
-    if (status !== "all") {
-      result = result.filter((b) => b.latestUpdate?.power_status === status);
-    }
+      // Get LATEST record per barangay (handles duplicates)
+      const latestByBarangay = new Map();
+      householdUpdates?.forEach((update) => {
+        if (!latestByBarangay.has(update.barangay_id)) {
+          latestByBarangay.set(update.barangay_id, update);
+        }
+      });
 
-    // Municipality filter
-    if (municipality !== "all") {
-      result = result.filter((b) => b.municipality === municipality);
-    }
+      console.log("🏠 HOME: Unique barangays:", latestByBarangay.size);
 
-    setFiltered(result);
+      // Count how many Aglipay barangays have restored > 0
+      let aglipayEnergizedCount = 0;
+      latestByBarangay.forEach((update) => {
+        if (
+          update.municipality === "Aglipay" &&
+          update.restored_households > 0
+        ) {
+          aglipayEnergizedCount++;
+        }
+      });
+      console.log("🏠 HOME: Aglipay energized count:", aglipayEnergizedCount);
+
+      // Group by municipality and count
+      const municipalityMap = new Map<string, MunicipalityStats>();
+
+      // Get total barangays per municipality
+      const { data: allBarangays, error: barangaysError } = await supabase
+        .from("barangays")
+        .select("municipality")
+        .eq("is_active", true);
+
+      if (barangaysError) throw barangaysError;
+
+      // Initialize municipalities with total counts
+      allBarangays?.forEach((brgy) => {
+        const muni = brgy.municipality;
+        if (!municipalityMap.has(muni)) {
+          municipalityMap.set(muni, {
+            municipality: muni,
+            totalBarangays: 0,
+            energizedBarangays: 0,
+            barangayPercentage: 0,
+            totalHouseholds: 0,
+            restoredHouseholds: 0,
+            householdPercentage: 0,
+          });
+        }
+        municipalityMap.get(muni)!.totalBarangays++;
+      });
+
+      // Count energized barangays and household stats from LATEST data only
+      latestByBarangay.forEach((update) => {
+        const muni = update.municipality;
+        if (!municipalityMap.has(muni)) return;
+
+        const stats = municipalityMap.get(muni)!;
+
+        // Count if restored_households > 0
+        if (update.restored_households > 0) {
+          stats.energizedBarangays++;
+          if (muni === "Aglipay") {
+            console.log(
+              `✅ Aglipay energized #${stats.energizedBarangays}:`,
+              update.barangay_id,
+              "restored:",
+              update.restored_households
+            );
+          }
+        }
+
+        stats.totalHouseholds += update.total_households || 0;
+        stats.restoredHouseholds += update.restored_households || 0;
+      });
+
+      console.log(
+        "📊 Municipality stats:",
+        Array.from(municipalityMap.values())
+      );
+
+      // Calculate percentages
+      const statsArray = Array.from(municipalityMap.values())
+        .map((stats) => ({
+          ...stats,
+          barangayPercentage:
+            stats.totalBarangays > 0
+              ? (stats.energizedBarangays / stats.totalBarangays) * 100
+              : 0,
+          householdPercentage:
+            stats.totalHouseholds > 0
+              ? (stats.restoredHouseholds / stats.totalHouseholds) * 100
+              : 0,
+        }))
+        .sort((a, b) => a.municipality.localeCompare(b.municipality));
+
+      setMunicipalityStats(statsArray);
+    } catch (err) {
+      console.error("Failed to load municipality stats:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString();
+  const loadEnergizedBarangays = async (municipality: string) => {
+    if (energizedBarangays[municipality]) return; // Already loaded
+
+    try {
+      setLoadingDetails((prev) => new Set(prev).add(municipality));
+
+      // Get all barangays for this municipality
+      const { data: barangayData, error: barangayError } = await supabase
+        .from("barangays")
+        .select("id, name")
+        .eq("municipality", municipality)
+        .eq("is_active", true);
+
+      if (barangayError) throw barangayError;
+
+      // Get latest household data
+      const { data: householdData, error: householdError } = await supabase
+        .from("barangay_household_updates")
+        .select(
+          "barangay_id, barangay_name, total_households, restored_households, updated_at"
+        )
+        .eq("municipality", municipality)
+        .order("updated_at", { ascending: false });
+
+      if (householdError) throw householdError;
+
+      // Get latest household data per barangay
+      const householdByBarangay = new Map();
+      householdData?.forEach((update) => {
+        if (!householdByBarangay.has(update.barangay_id)) {
+          householdByBarangay.set(update.barangay_id, update);
+        }
+      });
+
+      // Build energized barangays list (barangays with restored_households > 0)
+      const energized: EnergizedBarangay[] = [];
+
+      barangayData?.forEach((barangay) => {
+        const household = householdByBarangay.get(barangay.id);
+        // A barangay is energized if it has restored_households > 0
+        if (household && household.restored_households > 0) {
+          energized.push({
+            barangay_id: barangay.id,
+            barangay_name: barangay.name,
+            total_households: household.total_households || 0,
+            restored_households: household.restored_households || 0,
+            percentage:
+              household.total_households > 0
+                ? (household.restored_households / household.total_households) *
+                  100
+                : 0,
+            has_household_data: true,
+          });
+        }
+      });
+
+      // Sort by barangay name
+      energized.sort((a, b) => a.barangay_name.localeCompare(b.barangay_name));
+
+      setEnergizedBarangays((prev) => ({
+        ...prev,
+        [municipality]: energized,
+      }));
+    } catch (err) {
+      console.error("Failed to load energized barangays:", err);
+    } finally {
+      setLoadingDetails((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(municipality);
+        return newSet;
+      });
+    }
+  };
+
+  const toggleMunicipalityExpand = (municipality: string) => {
+    if (expandedMunicipality === municipality) {
+      setExpandedMunicipality(null);
+    } else {
+      setExpandedMunicipality(municipality);
+      loadEnergizedBarangays(municipality);
+    }
+  };
+
+  const getPercentageColor = (percentage: number) => {
+    if (percentage >= 75) return "bg-green-500";
+    if (percentage >= 50) return "bg-yellow-500";
+    if (percentage >= 25) return "bg-orange-500";
+    return "bg-red-500";
+  };
+
+  const getPercentageTextColor = (percentage: number) => {
+    if (percentage >= 75) return "text-green-600";
+    if (percentage >= 50) return "text-yellow-600";
+    if (percentage >= 25) return "text-orange-600";
+    return "text-red-600";
   };
 
   return (
     <div className="min-h-screen bg-gray-50 py-6">
-      <div className="max-w-4xl mx-auto px-4">
+      <div className="max-w-6xl mx-auto px-4">
         {/* Hero */}
         <div className="mb-8 text-center">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-            Barangay Power Status
+            Power Restoration Status (v2024-11-16)
           </h1>
           <p className="text-sm sm:text-base text-gray-600">
-            Stay informed about power outages and hazard reports in your
-            barangay
+            Real-time power restoration updates across all municipalities
           </p>
         </div>
 
-        {/* Search */}
-        <Card className="mb-8" padding="lg">
-          <div className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-lg">
-            <Search className="w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search barangay or municipality..."
-              value={search}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="flex-1 bg-transparent outline-none text-gray-900 placeholder-gray-500"
-            />
-          </div>
-          <p className="text-sm text-gray-600 mt-2">
-            Found {filtered.length} barangay(s)
-          </p>
-        </Card>
-
-        {/* Filters */}
-        <Card className="mb-8" padding="lg">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Status Filter */}
-            <div className="space-y-2">
-              <label className="font-medium text-gray-700 text-sm">
-                Filter by Status
-              </label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-power-500 text-sm"
-              >
-                <option value="all">All Status</option>
-                <option value="no_power">⚠️ NO POWER</option>
-                <option value="partial">⚡ PARTIAL</option>
-                <option value="energized">✓ ENERGIZED</option>
-              </select>
-            </div>
-
-            {/* Municipality Filter */}
-            <div className="space-y-2">
-              <label className="font-medium text-gray-700 text-sm">
-                Filter by Municipality
-              </label>
-              <select
-                value={municipalityFilter}
-                onChange={(e) => setMunicipalityFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-power-500 text-sm"
-              >
-                <option value="all">All Municipalities</option>
-                {municipalities.map((mun) => (
-                  <option key={mun} value={mun}>
-                    {mun}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </Card>
         {loading ? (
           <div className="text-center py-12">
-            <p className="text-gray-600">Loading barangays...</p>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600">No barangays found</p>
+            <p className="text-gray-600">Loading statistics...</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {filtered.map((barangay) => (
+            {municipalityStats.map((stats) => (
               <Card
-                key={barangay.id}
-                className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => navigate(`/barangay/${barangay.id}`)}
-                padding="md"
+                key={stats.municipality}
+                padding="none"
+                className="overflow-hidden"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg text-gray-900">
-                      {barangay.name}
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      {barangay.municipality}
-                    </p>
+                <div
+                  className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => toggleMunicipalityExpand(stats.municipality)}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                      {stats.municipality}
+                      {expandedMunicipality === stats.municipality ? (
+                        <ChevronUp className="w-5 h-5" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5" />
+                      )}
+                    </h2>
+                  </div>
 
-                    {barangay.latestUpdate ? (
-                      <div className="mt-3 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <StatusBadge
-                            status={barangay.latestUpdate.power_status}
-                          />
-                          <span className="text-xs text-gray-500">
-                            Updated{" "}
-                            {formatTime(barangay.latestUpdate.created_at)}
-                          </span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Barangay Level */}
+                    <div className="space-y-2">
+                      <h3 className="text-sm font-semibold text-gray-700 uppercase">
+                        BARANGAY LEVEL
+                      </h3>
+                      <div className="grid grid-cols-3 gap-4 text-center">
+                        <div>
+                          <div className="text-xs text-gray-500">Total</div>
+                          <div className="text-2xl font-bold text-gray-900">
+                            {stats.totalBarangays}
+                          </div>
                         </div>
-                        <p className="text-sm text-gray-700">
-                          {barangay.latestUpdate.headline}
-                        </p>
+                        <div>
+                          <div className="text-xs text-gray-500">Energized</div>
+                          <div className="text-2xl font-bold text-gray-900">
+                            {stats.energizedBarangays}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-500">%</div>
+                          <div
+                            className={`text-2xl font-bold ${getPercentageTextColor(
+                              stats.barangayPercentage
+                            )}`}
+                          >
+                            {stats.barangayPercentage.toFixed(1)}%
+                          </div>
+                        </div>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                        <div
+                          className={`h-full ${getPercentageColor(
+                            stats.barangayPercentage
+                          )} transition-all duration-500`}
+                          style={{ width: `${stats.barangayPercentage}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Household Level */}
+                    <div className="space-y-2">
+                      <h3 className="text-sm font-semibold text-gray-700 uppercase">
+                        HOUSEHOLD LEVEL
+                      </h3>
+                      <div className="grid grid-cols-3 gap-4 text-center">
+                        <div>
+                          <div className="text-xs text-gray-500">Total</div>
+                          <div className="text-2xl font-bold text-gray-900">
+                            {stats.totalHouseholds.toLocaleString()}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-500">Energized</div>
+                          <div className="text-2xl font-bold text-gray-900">
+                            {stats.restoredHouseholds.toLocaleString()}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-500">%</div>
+                          <div
+                            className={`text-2xl font-bold ${getPercentageTextColor(
+                              stats.householdPercentage
+                            )}`}
+                          >
+                            {stats.householdPercentage.toFixed(1)}%
+                          </div>
+                        </div>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                        <div
+                          className={`h-full ${getPercentageColor(
+                            stats.householdPercentage
+                          )} transition-all duration-500`}
+                          style={{ width: `${stats.householdPercentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Expanded Details: Energized Barangays */}
+                {expandedMunicipality === stats.municipality && (
+                  <div className="border-t border-gray-200 bg-white p-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                      Energized Barangays
+                    </h3>
+                    {loadingDetails.has(stats.municipality) ? (
+                      <p className="text-gray-600 text-center py-4">
+                        Loading...
+                      </p>
+                    ) : energizedBarangays[stats.municipality]?.length > 0 ? (
+                      <div className="space-y-6">
+                        {/* All energized barangays have household data */}
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-700 mb-2 uppercase">
+                            Household Restoration Progress
+                          </h4>
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Barangay
+                                  </th>
+                                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Total HH
+                                  </th>
+                                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Restored
+                                  </th>
+                                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Progress
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {energizedBarangays[stats.municipality].map(
+                                  (brgy) => (
+                                    <tr
+                                      key={brgy.barangay_id}
+                                      className="hover:bg-gray-50"
+                                    >
+                                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        {brgy.barangay_name}
+                                      </td>
+                                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 text-right">
+                                        {brgy.total_households.toLocaleString()}
+                                      </td>
+                                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 text-right">
+                                        {brgy.restored_households.toLocaleString()}
+                                      </td>
+                                      <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                          <span
+                                            className={`font-semibold ${getPercentageTextColor(
+                                              brgy.percentage
+                                            )}`}
+                                          >
+                                            {brgy.percentage.toFixed(1)}%
+                                          </span>
+                                          <div className="w-24 bg-gray-200 rounded-full h-2 overflow-hidden">
+                                            <div
+                                              className={`h-full ${getPercentageColor(
+                                                brgy.percentage
+                                              )} transition-all`}
+                                              style={{
+                                                width: `${brgy.percentage}%`,
+                                              }}
+                                            />
+                                          </div>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  )
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
                       </div>
                     ) : (
-                      <p className="mt-3 text-sm text-gray-500 italic">
-                        No updates yet
+                      <p className="text-gray-600 text-center py-4">
+                        No energized barangays yet
                       </p>
                     )}
                   </div>
-                  <div className="ml-4 flex-shrink-0">
-                    <span className="text-2xl">→</span>
-                  </div>
-                </div>
+                )}
               </Card>
             ))}
           </div>
