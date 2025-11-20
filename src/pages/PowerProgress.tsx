@@ -466,7 +466,7 @@ export function PowerProgress() {
                     Total House Connections
                   </th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-gray-700 text-xs sm:text-sm">
-                    Energized Households
+                    Energized House Connections
                   </th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-gray-700 text-xs sm:text-sm">
                     %
