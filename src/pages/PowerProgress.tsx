@@ -436,14 +436,14 @@ export function PowerProgress() {
                   </th>
                   {/* Barangay Level Columns */}
                   <th
-                    colSpan={6}
+                    colSpan={3}
                     className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base border-r border-gray-300"
                   >
                     BARANGAY LEVEL
                   </th>
                   {/* House Connection Level Columns */}
                   <th
-                    colSpan={6}
+                    colSpan={3}
                     className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base"
                   >
                     HOUSE CONNECTION LEVEL
