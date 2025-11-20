@@ -249,7 +249,7 @@ export function PowerProgress() {
         // Get household data to determine energized status
         const { data: hhData, error: hhErr } = await supabase
           .from("barangay_household_status")
-          .select("barangay_id, restored_households")
+          .select("barangay_id, restored_households, override_energized")
           .eq("municipality", municipality);
 
         if (hhErr) throw hhErr;
@@ -258,7 +258,7 @@ export function PowerProgress() {
         const hhMap = new Map(
           (hhData || []).map((hh) => [
             hh.barangay_id,
-            hh.restored_households > 0,
+            (hh.override_energized ?? false) || (hh.restored_households > 0),
           ])
         );
 

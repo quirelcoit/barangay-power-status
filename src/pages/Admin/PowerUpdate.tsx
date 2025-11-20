@@ -30,6 +30,7 @@ interface BarangayHouseholdData {
   restoredHouseholds: number;
   manual_total_households: number | null;
   baseline_total_households: number;
+  override_energized?: boolean;
 }
 
 const MUNICIPALITIES: Municipality[] = [
@@ -228,7 +229,7 @@ export function PowerUpdate() {
       const { data, error } = await supabase
         .from("barangay_household_status")
         .select(
-          "barangay_id, barangay_name, total_households, restored_households, manual_total_households, baseline_total_households"
+          "barangay_id, barangay_name, total_households, restored_households, manual_total_households, baseline_total_households, override_energized"
         )
         .eq("municipality", fullMuniName)
         .order("barangay_name", { ascending: true });
@@ -244,6 +245,7 @@ export function PowerUpdate() {
           manual_total_households: item.manual_total_households ?? null,
           baseline_total_households:
             item.baseline_total_households ?? item.total_households,
+          override_energized: item.override_energized ?? false,
         }));
 
         setBarangayHouseholdData((prev) => ({
@@ -657,6 +659,7 @@ export function PowerUpdate() {
   ) => {
     const baseline = barangay.baseline_total_households;
     const shouldRemoveOverride = newTotal === baseline;
+    const shouldForceEnergized = newTotal === 0;
     const noActionNeeded =
       barangay.manual_total_households === null && newTotal === baseline;
 
@@ -691,12 +694,19 @@ export function PowerUpdate() {
             {
               barangay_id: barangay.barangay_id,
               override_total_households: newTotal,
+              override_energized: shouldForceEnergized,
               updated_by: updatedBy,
             },
             { onConflict: "barangay_id" }
           );
         if (error) throw error;
       }
+
+      const nextOverrideFlag = shouldRemoveOverride
+        ? false
+        : shouldForceEnergized
+        ? true
+        : false;
 
       setBarangayHouseholdData((prev) => ({
         ...prev,
@@ -707,6 +717,7 @@ export function PowerUpdate() {
               ...b,
               total_households: shouldRemoveOverride ? baseline : newTotal,
               manual_total_households: shouldRemoveOverride ? null : newTotal,
+              override_energized: nextOverrideFlag,
             };
           }) || [],
       }));
