@@ -331,7 +331,7 @@ export function PowerProgress() {
                 : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
           >
-            Household View
+            House Connection View
           </button>
         </div>
 
@@ -619,7 +619,7 @@ export function PowerProgress() {
                             Municipality / Town
                           </th>
                           <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
-                            Total
+                            Total House Connections
                           </th>
                           <th className="px-2 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base">
                             Energized
