@@ -436,17 +436,17 @@ export function PowerProgress() {
                   </th>
                   {/* Barangay Level Columns */}
                   <th
-                    colSpan={3}
-                    className="px-2 sm:px-4 py-3 sm:py-4 text-center font-bold text-green-700 text-xs sm:text-base border-l border-gray-300"
+                    colSpan={6}
+                    className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base border-r border-gray-300"
                   >
                     BARANGAY LEVEL
                   </th>
-                  {/* Household Level Columns */}
+                  {/* House Connection Level Columns */}
                   <th
-                    colSpan={3}
-                    className="px-2 sm:px-4 py-3 sm:py-4 text-center font-bold text-blue-700 text-xs sm:text-base border-l border-gray-300"
+                    colSpan={6}
+                    className="px-3 sm:px-6 py-3 sm:py-4 text-center font-bold text-gray-900 text-xs sm:text-base"
                   >
-                    HOUSEHOLD LEVEL
+                    HOUSE CONNECTION LEVEL
                   </th>
                 </tr>
                 <tr className="bg-gray-50 border-b border-gray-300">
@@ -461,9 +461,9 @@ export function PowerProgress() {
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-gray-700 text-xs sm:text-sm">
                     %
                   </th>
-                  {/* Household sub-headers */}
+                  {/* House connection sub-headers */}
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-gray-700 text-xs sm:text-sm border-l border-gray-300">
-                    Total Households
+                    Total House Connections
                   </th>
                   <th className="px-2 sm:px-4 py-2 sm:py-3 text-center font-semibold text-gray-700 text-xs sm:text-sm">
                     Energized Households
@@ -579,7 +579,7 @@ export function PowerProgress() {
                             </div>
                           </td>
 
-                          {/* HOUSEHOLD LEVEL */}
+                          {/* HOUSE CONNECTION LEVEL */}
                           <td className="px-2 sm:px-4 py-3 sm:py-4 text-center font-semibold text-gray-900 text-xs sm:text-base border-l border-gray-300">
                             {hhTotal.toLocaleString()}
                           </td>
@@ -687,7 +687,7 @@ export function PowerProgress() {
                                                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5 text-xs sm:text-sm">
                                                   <div>
                                                     <p className="text-gray-600">
-                                                      Total Households
+                                                      Total House Connections
                                                     </p>
                                                     <p className="font-bold text-gray-900">
                                                       {householdInfo.total_households.toLocaleString()}
